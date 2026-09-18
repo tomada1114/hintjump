@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency review, and a template bootstrap smoke job
 - Secret-gated release pipeline: DMG packaging, Developer ID signing,
   notarization, and build-provenance attestation
-- `CLAUDE.md` and path-scoped `.claude/rules/` for AI-assisted development
+- `AGENTS.md` and path-scoped `.claude/rules/` for AI-assisted development
 - ShellCheck joins the lint gate (`just lint` and CI) for every repo shell script
 - The launch UI test writes an `.xcresult` bundle; CI uploads it when the job fails
 - The release pipeline smoke-tests the signed Release app before packaging the DMG

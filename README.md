@@ -80,9 +80,9 @@ cleaner syntax than Make and is a task runner, not a build system, which is
 exactly what an Xcode project needs. Every recipe also works without Just (see
 CONTRIBUTING.md).
 
-### Why CLAUDE.md and .claude/rules/?
+### Why AGENTS.md and .claude/rules/?
 
-AI-assisted development is the norm, not the exception. `CLAUDE.md` and
+AI-assisted development is the norm, not the exception. `AGENTS.md` and
 path-scoped rules give LLMs the project's standards, architecture, and hard
 prohibitions (never lower the coverage floor, never disable safety lint
 rules) — reducing review cycles.
@@ -113,7 +113,7 @@ secrets — no workflow edits. See docs/distribution.md.
    all tracked files, renames the matching paths, and regenerates the Xcode
    project. Omitted optional arguments leave their placeholders as-is.
 3. Verify the rename: `just install && just check`
-4. Update `README.md` (this file), `SECURITY.md`, `CLAUDE.md`, and
+4. Update `README.md` (this file), `SECURITY.md`, `AGENTS.md`, and
    `CODE_OF_CONDUCT.md` for your app (the conduct-reporting contact stays
    `you@example.com` if `--email` was omitted, so check it), and review
    `LICENSE`'s copyright line (`CHANGELOG.md` is reset automatically)
