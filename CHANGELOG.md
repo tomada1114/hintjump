@@ -71,6 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   AWS access key ids), never printing the matched text and never inspecting a staged
   deletion; `smart-commit` and `changing-gates` point at `scripts/guard/` instead of
   keeping their own list
+- Harness-conformance checks under `scripts/checks/` (`just check-harness`, run by
+  `just check` before `just test` and by CI's `lint` job): every `just <recipe>` in
+  `AGENTS.md` exists, every workflow has a top-level `permissions:` and every non-local
+  `uses:` in a workflow or composite action is pinned to a full SHA with a `# v…`
+  comment, every `SKILL.md` frontmatter is exactly a matching `name` and a
+  `description`, and `AGENTS.md`'s Skills table matches `.agents/skills/`; each failure
+  mode is pinned by `scripts/tests/checks_test.sh`
 
 ### Changed
 
@@ -85,5 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with no early exit when no Swift file is staged
 - `typos` also spell-checks the dot-directories (`.agents/`, `.claude/`, `.github/`,
   `.githooks/`), which it skipped by default; `.git/` is excluded
+- `just test-scripts` runs `scripts/tests/run.sh` through `mise exec --`, since the
+  harness-check tests call the pinned `just`; CI's lint job installs `just` too
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main

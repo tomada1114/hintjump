@@ -32,6 +32,9 @@ just lint
 # Run the plain-bash tests for scripts/
 just test-scripts
 
+# Re-assert the harness's claims about itself (recipe names, workflow pins, skills)
+just check-harness
+
 # Run tests with the coverage floor
 just test
 
@@ -44,7 +47,7 @@ just run
 # Launch guarantee (Release build + alive check)
 just smoke
 
-# Run everything (format → lint → script tests → test → build)
+# Run everything (format → lint → script tests → harness checks → test → build)
 just check
 ```
 
@@ -56,7 +59,8 @@ git config core.hooksPath .githooks   # pre-commit lint gate (just install does 
 scripts/verify-hooks.sh               # confirm the hooks are installed and executable
 mise exec -- swiftformat .
 mise exec -- scripts/lint.sh
-scripts/tests/run.sh
+mise exec -- scripts/tests/run.sh
+mise exec -- scripts/checks/run-all.sh
 scripts/coverage.sh
 mise exec -- xcodegen generate
 xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedDataPath build/dev-derived-data build

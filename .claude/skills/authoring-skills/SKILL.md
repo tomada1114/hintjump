@@ -67,8 +67,10 @@ terms per host, so a portable skill keeps `description` as its one trigger surfa
 - Keep the description well under the 1,024-character limit of the Agent Skills format;
   the ones here run 330-570 characters.
 
-None of these rules is checked mechanically yet — see "Why this needs its own test"
-below.
+Enforced by: `scripts/checks/skills-frontmatter.sh` (exactly `name` and `description`,
+`name` equal to the directory, a non-empty `description`). The character set, the
+English-only rule, the description's wording, and its length are not checked — see
+"Why this needs its own test" below.
 
 ## When a new skill is warranted
 
@@ -97,7 +99,8 @@ Do not write down what a config already enforces. Name the gate in one line
 config cannot express — the same principle `AGENTS.md` states for itself.
 
 A skill added, renamed, or deleted gets its row in `AGENTS.md`'s Skills table updated in
-the same commit, and widening a skill's subject means widening its row.
+the same commit, and widening a skill's subject means widening its row. Enforced by:
+`scripts/checks/skills-index-complete.sh` (the row set, not its wording).
 
 ## Size and structure
 
@@ -131,16 +134,25 @@ No skill ships a script today.
 ## Why this needs its own test
 
 `scripts/sync-agents.sh --check` only proves the two trees are byte-identical; it says
-nothing about whether the source tree is well-formed. It is the only skills check that
-exists, whether reached through `just agents-check`, `just lint`, CI's `lint` job, or the
-pre-commit hook. A `SKILL.md` whose frontmatter fails to parse, whose `name` disagrees
-with its directory, whose frontmatter carries a stray key, or which sits in a nested
-directory passes that check, mirrors cleanly, and simply never loads in either host —
-nothing reports it. Nothing checks that `AGENTS.md`'s Skills table matches the
-directories under `.agents/skills/` either. Issue #25 adds those checks; until it lands,
-read the frontmatter yourself, and before committing a new or changed skill run:
+nothing about whether the source tree is well-formed. A `SKILL.md` whose frontmatter
+fails to parse, whose `name` disagrees with its directory, or whose frontmatter carries
+a stray key passes that check, mirrors cleanly, and simply never loads in either host.
+Two harness checks cover that, both run by `just check-harness` (part of `just check`)
+and CI's `lint` job through `scripts/checks/run-all.sh`:
+
+- `scripts/checks/skills-frontmatter.sh` — every `.agents/skills/<dir>/SKILL.md` opens
+  with a `---` block holding exactly `name` and `description`, `name` equals `<dir>`,
+  and `description` is non-empty (`ERR_CHECK_SKILL_FRONTMATTER`).
+- `scripts/checks/skills-index-complete.sh` — the first table under `AGENTS.md`'s
+  `## Skills` heading and the directories under `.agents/skills/` name the same skills,
+  in both directions (`ERR_CHECK_SKILL_INDEX`).
+
+Neither check sees a `SKILL.md` nested below a skill root, the description's wording
+or length, or the size limits above — read those yourself. Before committing a new or
+changed skill run:
 
 ```bash
 just agents-sync
 just agents-check
+just check-harness
 ```

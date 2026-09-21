@@ -17,12 +17,13 @@ just fmt       # Format code (swiftformat)
 just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just verify-hooks  # Verify the git hooks are installed and executable (scripts/verify-hooks.sh)
 just test-scripts  # Run the plain-bash tests for scripts/ (scripts/tests/run.sh)
+just check-harness # Re-assert the harness's claims about itself (scripts/checks/run-all.sh)
 just test      # Run tests with the 80% coverage floor on MyAppCore
 just build     # Build the app (Debug)
 just run       # Build (Debug) and launch the app, left running until you quit it
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
-just check     # Run all checks: verify-hooks → fmt → lint → test-scripts → test → build
+just check     # Run all checks: verify-hooks → fmt → lint → test-scripts → check-harness → test → build
 just agents-sync   # Regenerate the .claude/skills/ mirror from .agents/skills/
 just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
@@ -49,8 +50,10 @@ job call.
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
 | A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
-| A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` |
-| A workflow under `.github/workflows/` | `just lint` |
+| A harness check under `scripts/checks/` (including the sourced `scripts/checks/lib.sh`) | `just lint`, then `just test-scripts`; `just check-harness` for the checks themselves |
+| A `just` recipe name, a workflow's `uses:` or `permissions:`, a skill's frontmatter, or the Skills table | `just check-harness` |
+| A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` and `just check-harness` |
+| A workflow under `.github/workflows/` | `just lint`, then `just check-harness` |
 | Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
 | `.github/labels.yml`, or an issue form under `.github/ISSUE_TEMPLATE/` | `just lint` (its `typos` spell-check); `scripts/tests/sync-labels_test.sh` for `scripts/sync-labels.sh` itself |
@@ -141,8 +144,8 @@ of a check that enforces it.
 ## Repository scripts
 
 Every script under `scripts/` follows these rules, whoever writes it
-(`scripts/tests/lib.sh` and the `scripts/guard/*.sh` libraries are sourced, so they
-carry no shebang or `set` line of their own):
+(`scripts/tests/lib.sh`, `scripts/checks/lib.sh`, and the `scripts/guard/*.sh`
+libraries are sourced, so they carry no shebang or `set` line of their own):
 
 - `#!/usr/bin/env bash` and `set -euo pipefail`, and bash 3.2-compatible (macOS
   `/bin/bash`): no associative arrays, no `mapfile`/`readarray`, no `${var,,}`, and no
@@ -169,8 +172,11 @@ carry no shebang or `set` line of their own):
   repository or temp directory, never the real checkout, and fakes external commands
   with `stub_command`. A sourced library under `scripts/guard/` gets its own test file
   too, `scripts/tests/guard-<library>_test.sh` (`guard-paths_test.sh`,
-  `guard-credentials_test.sh`). Known exceptions, each with its reason: `bootstrap.sh`
-  (exercised end to end by CI's `bootstrap-smoke` job); `coverage.sh`,
+  `guard-credentials_test.sh`). The harness checks under `scripts/checks/`, their
+  runner `run-all.sh`, and their sourced `lib.sh` share one test file,
+  `scripts/tests/checks_test.sh`, which builds a fixture tree per failure mode and
+  points each check at it with `--root`. Known exceptions, each with its reason:
+  `bootstrap.sh` (exercised end to end by CI's `bootstrap-smoke` job); `coverage.sh`,
   `smoke_launch.sh`, and `package_dmg.sh` (need Xcode and a build; exercised by the
   `test`, `app`, and `release` jobs). `bootstrap.sh` and `coverage.sh` also predate the
   failure contract and do not follow it yet.
@@ -188,7 +194,8 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
-| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
+| `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, and the Skills table matches `.agents/skills/` |
+| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), the harness checks (`scripts/checks/run-all.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 
 These gaps are deliberate and stay open until their tracking issue closes them:

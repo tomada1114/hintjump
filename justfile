@@ -30,9 +30,15 @@ lint:
 verify-hooks:
     scripts/verify-hooks.sh
 
-# Run the plain-bash tests for the scripts under scripts/
+# Run the plain-bash tests for the scripts under scripts/ (through mise: the
+# scripts/checks/ tests call the pinned `just`)
 test-scripts:
-    scripts/tests/run.sh
+    mise exec -- scripts/tests/run.sh
+
+# Re-assert the harness's claims about itself: recipe names in AGENTS.md, workflow
+# pins and permissions, skill frontmatter, and the Skills index (scripts/checks/)
+check-harness:
+    mise exec -- scripts/checks/run-all.sh
 
 # Run tests with the 80% line-coverage floor on MyAppCore
 test:
@@ -57,8 +63,9 @@ uitest:
 smoke:
     scripts/smoke_launch.sh
 
-# Run all checks: verify hooks, format, lint, script tests, test, build (CI's app job adds uitest + smoke)
-check: verify-hooks fmt lint test-scripts test build
+# Run all checks: verify hooks, format, lint, script tests, harness checks, test, build
+# (CI's app job adds uitest + smoke)
+check: verify-hooks fmt lint test-scripts check-harness test build
 
 # Regenerate the .claude/skills/ mirror from .agents/skills/ (run after any skill edit)
 agents-sync:

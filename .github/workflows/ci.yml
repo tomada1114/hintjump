@@ -25,7 +25,8 @@ jobs:
       - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           # XcodeGen/xcbeautify are macOS-only; install just the Linux-capable linters here.
-          install_args: swiftlint swiftformat actionlint shellcheck typos
+          # just: scripts/checks/just-recipes-exist.sh (and its tests) call it.
+          install_args: swiftlint swiftformat actionlint shellcheck typos just
 
       - name: Lint (swiftformat, swiftlint, shellcheck, actionlint, typos)
         # The same script `just lint` and the pre-commit hook call. No `mise exec`:
@@ -34,8 +35,13 @@ jobs:
         run: scripts/lint.sh
 
       - name: Script tests (scripts/tests/run.sh)
-        # The same runner `just test-scripts` calls; needs only bash and git.
+        # The same runner `just test-scripts` calls; needs bash, git, and just.
         run: scripts/tests/run.sh
+
+      - name: Harness checks (scripts/checks/run-all.sh)
+        # The same runner `just check-harness` calls: recipe names in AGENTS.md,
+        # workflow pins and permissions, skill frontmatter, and the Skills index.
+        run: scripts/checks/run-all.sh
 
   # Already the single spelling: this job calls scripts/coverage.sh (what `just test` runs),
   # and the app/bootstrap-smoke jobs call the just recipes themselves.
