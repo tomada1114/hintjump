@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (editing a lint, format, compiler, hook, coverage, or CI gate, and which gate sees a
   change) and `triaging-issues` (the label taxonomy in `.github/labels.yml`, priority
   tiers, and the `Depends on #N` convention)
+- Two more skills under `.agents/skills/`, translated to this stack: `authoring-skills`
+  (authoring a skill once under `.agents/skills/`, the `just agents-sync` mirror, and
+  what no check verifies yet) and `updating-docs` (which documentation surface a change
+  lands on, including `CHANGELOG.md` and `docs/`)
 
 ### Changed
 
