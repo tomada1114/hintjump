@@ -1,26 +1,37 @@
 #!/usr/bin/env bash
-# Fast pre-commit gate: lint the staged Swift files.
-# Installed by `just install` (git config core.hooksPath .githooks).
+# Fast pre-commit gate. Installed by `just install` (git config core.hooksPath .githooks).
 #
-# The staged blobs are exported with checkout-index and linted from there, so
-# a partially staged file is checked as it will be committed — not as it sits
-# in the worktree. --diff-filter includes R so renamed files stay covered.
+# This file defines no rule of its own: each section calls a shared script
+# (scripts/lint.sh, the same one `just lint` and CI run) and only narrows *what*
+# it looks at, so a check cannot pass here and fail elsewhere.
 set -euo pipefail
 
-STAGED_SWIFT_FILES=()
+# The staged paths, collected once; each section derives the subset it cares about.
+# --diff-filter includes R so renamed files stay covered.
+STAGED_FILES=()
 while IFS= read -r -d '' file; do
-    STAGED_SWIFT_FILES+=("${file}")
-done < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.swift')
+    STAGED_FILES+=("${file}")
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
 
-if [ ${#STAGED_SWIFT_FILES[@]} -eq 0 ]; then
-    exit 0
+# --- Swift lint -------------------------------------------------------------
+# The staged blobs are exported with checkout-index and linted from there, so a
+# partially staged file is checked as it will be committed — not as it sits in
+# the worktree. Conditional because swiftlint fails on a tree with no Swift file.
+STAGED_SWIFT_FILES=()
+for file in ${STAGED_FILES[@]+"${STAGED_FILES[@]}"}; do
+    case "${file}" in
+        *.swift) STAGED_SWIFT_FILES+=("${file}") ;;
+    esac
+done
+
+if [ ${#STAGED_SWIFT_FILES[@]} -gt 0 ]; then
+    echo "pre-commit: Swift lint — checking the staged content of ${#STAGED_SWIFT_FILES[@]} Swift file(s)"
+    STAGED_TREE=$(mktemp -d)
+    trap 'rm -rf "${STAGED_TREE}"' EXIT
+    git checkout-index --prefix="${STAGED_TREE}/" -- "${STAGED_SWIFT_FILES[@]}"
+    mise exec -- scripts/lint.sh --staged-tree "${STAGED_TREE}"
 fi
 
-echo "pre-commit: checking the staged content of ${#STAGED_SWIFT_FILES[@]} Swift file(s)"
-
-STAGED_TREE=$(mktemp -d)
-trap 'rm -rf "${STAGED_TREE}"' EXIT
-git checkout-index --prefix="${STAGED_TREE}/" -- "${STAGED_SWIFT_FILES[@]}"
-
-mise exec -- swiftformat --lint --config .swiftformat "${STAGED_TREE}"
-mise exec -- swiftlint lint --strict --quiet --config .swiftlint.yml "${STAGED_TREE}"
+# Layout rule: each check is its own section, scoped by the staged paths it cares
+# about, and no section may exit early — a commit that skips one section must
+# still reach every other. Append later sections below this comment.

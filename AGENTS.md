@@ -14,7 +14,7 @@ day one.
 just install   # Install pinned tools (mise), git hooks, and generate the Xcode project
 just generate  # Regenerate MyApp.xcodeproj from project.yml
 just fmt       # Format code (swiftformat)
-just lint      # Lint (swiftformat --lint + swiftlint --strict + shellcheck + actionlint)
+just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just test      # Run tests with the 80% coverage floor on MyAppCore
 just build     # Build the app (Debug)
 just run       # Build (Debug) and launch the app, left running until you quit it
@@ -30,8 +30,8 @@ Without Just: run the underlying commands listed in each `justfile` recipe
 ## Validating a change
 
 Run the narrowest check that can fail, then `just check` before you open a PR.
-Rows describe what is true today; #13 moves every lint row, Markdown included, onto
-`just lint`.
+`just lint` runs `scripts/lint.sh`, the same script the pre-commit hook and CI's lint
+job call.
 
 | What you changed | The narrowest check that can fail |
 |---|---|
@@ -42,9 +42,9 @@ Rows describe what is true today; #13 moves every lint row, Markdown included, o
 | `project.yml` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
-| A shell script under `scripts/`, or `.githooks/pre-commit` | `mise exec -- shellcheck scripts/*.sh .githooks/pre-commit` |
-| A workflow under `.github/workflows/` | `mise exec -- actionlint` |
-| Markdown | the `typos` spell-check — CI's `Spell Check` job; no recipe or hook runs it locally and `mise.toml` does not pin it, so run `typos --config typos.toml` if you have it installed |
+| A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint` |
+| A workflow under `.github/workflows/` | `just lint` |
+| Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
 
 ## Architecture
@@ -113,8 +113,8 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
-| `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
-| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: format, lint, shellcheck, actionlint, tests with the coverage floor, build, UI test, and Release smoke |
+| `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
+| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 
 These gaps are deliberate and stay open until their tracking issue closes them:

@@ -26,7 +26,7 @@ just install
 # Format
 just fmt
 
-# Lint (swiftformat --lint + swiftlint --strict + shellcheck + actionlint)
+# Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just lint
 
 # Run tests with the coverage floor
@@ -51,10 +51,7 @@ just check
 mise install
 git config core.hooksPath .githooks   # pre-commit lint gate (just install does this)
 mise exec -- swiftformat .
-mise exec -- swiftformat --lint .
-mise exec -- swiftlint lint --strict --quiet
-mise exec -- shellcheck scripts/*.sh .githooks/pre-commit
-mise exec -- actionlint
+mise exec -- scripts/lint.sh
 scripts/coverage.sh
 mise exec -- xcodegen generate
 xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedDataPath build/dev-derived-data build

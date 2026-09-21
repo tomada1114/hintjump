@@ -21,12 +21,9 @@ generate:
 fmt:
     mise exec -- swiftformat .
 
-# Run formatters and linters in check mode
+# Run formatters and linters in check mode (swiftformat, swiftlint, shellcheck, actionlint, typos)
 lint:
-    mise exec -- swiftformat --lint .
-    mise exec -- swiftlint lint --strict --quiet
-    mise exec -- shellcheck scripts/*.sh .githooks/pre-commit
-    if [ -d .github/workflows ]; then mise exec -- actionlint; else echo "Skipping actionlint (no workflows yet)."; fi
+    mise exec -- scripts/lint.sh
 
 # Run tests with the 80% line-coverage floor on MyAppCore
 test:

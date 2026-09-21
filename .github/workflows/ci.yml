@@ -25,21 +25,16 @@ jobs:
       - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           # XcodeGen/xcbeautify are macOS-only; install just the Linux-capable linters here.
-          install_args: swiftlint swiftformat actionlint shellcheck
+          install_args: swiftlint swiftformat actionlint shellcheck typos
 
-      - name: SwiftFormat check
-        run: swiftformat --lint .
+      - name: Lint (swiftformat, swiftlint, shellcheck, actionlint, typos)
+        # The same script `just lint` and the pre-commit hook call. No `mise exec`:
+        # mise-action already put the tools on PATH, and `mise exec` would try to
+        # install the macOS-only tools this job leaves out.
+        run: scripts/lint.sh
 
-      - name: SwiftLint
-        run: swiftlint lint --strict --quiet
-
-      - name: ShellCheck
-        run: shellcheck scripts/*.sh .githooks/pre-commit
-
-      - name: actionlint
-        # With shellcheck on PATH, actionlint also lints workflow run: blocks.
-        run: actionlint
-
+  # Already the single spelling: this job calls scripts/coverage.sh (what `just test` runs),
+  # and the app/bootstrap-smoke jobs call the just recipes themselves.
   test:
     name: Test & Coverage Gate
     runs-on: macos-26
@@ -142,20 +137,6 @@ jobs:
           xcodegen generate
           set -o pipefail
           xcodebuild -project DemoApp.xcodeproj -scheme DemoApp -configuration Debug build | xcbeautify --quiet
-
-  spell-check:
-    name: Spell Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
-      - name: Spell check
-        uses: crate-ci/typos@37bb98842b0d8c4ffebdb75301a13db0267cef89 # v1.47.2
-        with:
-          config: typos.toml
 
   zizmor:
     name: Workflow Security Lint

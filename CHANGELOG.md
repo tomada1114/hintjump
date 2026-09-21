@@ -42,5 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `just clean` now removes everything the toolchain produced
 - `scripts/bootstrap.sh` resets `CHANGELOG.md` for the new project and prints a
   verify-first next-steps list
+- `just lint`, the pre-commit hook, and CI's lint job all call one script,
+  `scripts/lint.sh`; `typos` is pinned in `mise.toml` and runs in `just lint`
+  (CI's separate spell-check job is folded into the lint job)
+- The pre-commit hook runs each check as its own section scoped by staged paths,
+  with no early exit when no Swift file is staged
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main

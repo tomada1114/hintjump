@@ -16,7 +16,7 @@ just install
 mise refuses to read config files it has not been told to trust, so a fresh
 clone needs `mise trust` first (interactively it prompts; non-interactive
 runs fail without it). `just install` then runs `mise install` (SwiftLint,
-SwiftFormat, XcodeGen, xcbeautify, actionlint, ShellCheck — all pinned), points
+SwiftFormat, XcodeGen, xcbeautify, actionlint, ShellCheck, typos — all pinned), points
 `core.hooksPath` at `.githooks/` for the fast pre-commit lint, and generates
 `MyApp.xcodeproj`.
 
