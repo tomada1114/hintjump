@@ -36,7 +36,13 @@ it does not restate them, so the two cannot drift apart.
 - Bash 3.2 specifically, because that is macOS `/bin/bash` — the shell a contributor
   gets when nothing else is installed. `scripts/tests/run.sh` runs each test file with
   the same bash that runs it, so `/bin/bash scripts/tests/run.sh` exercises the whole
-  suite under 3.2.
+  suite under 3.2 — worth running by hand, because 3.2 can fail a file *silently*: it
+  scans `$(…)` for the closing `)` without understanding a heredoc inside it, so
+  `"$(cat <<'EOF' … case "$1" in a) … EOF)"` ends at that `a)` and the file dies with a
+  syntax error while still exiting 0, which no exit code can catch. `run.sh` parses
+  every file with `bash -n` before starting it for exactly this reason, and counts a
+  file that does not parse as that file failing. Write a multi-line stub body as one
+  single-quoted literal instead (`scripts/tests/apply-ruleset_test.sh`).
 - Pinned tools (`swiftlint`, `shellcheck`, `just`, …) arrive through the caller's PATH:
   `mise exec -- …` in a `just` recipe, `jdx/mise-action` in CI. A script never calls
   `mise exec` itself, because CI's `lint` job installs only a subset of `mise.toml`
@@ -132,6 +138,18 @@ finish
   gets a fixture tree instead (`scripts/tests/checks_test.sh`).
 - **Each case is a subshell.** `run_case` gives it its own `CASE_DIR` and `STUB_BIN`, so a
   `cd`, a PATH change, or a stub cannot leak into the next case.
+- **The files run concurrently**, which is why the independence above is a rule and not
+  just good manners: `run.sh` starts every file at once and `wait`s for each pid in glob
+  order, printing that file's captured log whole, so the output reads exactly like a
+  sequential run while the wall time is the slowest file rather than the sum. A file
+  that reached for a fixed shared path, or wrote into the checkout, would now race.
+  On INT or TERM it kills the files it started — a non-interactive shell starts a
+  background job with SIGINT ignored, so Ctrl-C reaches the runner alone and would
+  otherwise leave them writing into a log directory it has already removed — and prints
+  every log it had not reported yet, marked `(interrupted)`.
+  `scripts/tests/run_test.sh` covers the runner itself, including a case whose three
+  fixture files each wait for the other two — it can only pass if they really do run at
+  the same time.
 - **Fake every external command.** `stub_command gh '…'` writes an executable `gh` into
   the case's stub directory, prepends it to PATH, and logs each call's arguments to
   `${STUB_BIN}/gh.log`, so a test asserts on what would have been sent to GitHub

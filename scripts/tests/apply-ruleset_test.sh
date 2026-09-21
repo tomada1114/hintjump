@@ -4,6 +4,11 @@
 # the real checkout's `gh`), so a case can never reach a real repository — including
 # the ruleset-content case, which reads .github/rulesets/main.json but never calls
 # `gh` at all.
+#
+# Each stub body is one single-quoted literal, not `"$(cat <<'EOF' … EOF)"`: bash 3.2
+# scans a command substitution for its closing `)` without understanding the heredoc
+# inside it, so a body containing a `case` pattern ends early and the file dies with a
+# syntax error — while still exiting 0, which is why nothing caught it.
 set -euo pipefail
 # shellcheck source=scripts/tests/lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -30,9 +35,8 @@ make_sandbox() {
 case_no_existing_ruleset_posts_it() {
     local sandbox
     sandbox=$(make_sandbox)
-    stub_command gh "$(
-        cat <<'EOF'
-case "$1" in
+    # shellcheck disable=SC2016 # expanded by the stub at run time, not here
+    stub_command gh 'case "$1" in
     repo) echo "acme/widget" ;;
     api)
         shift
@@ -42,9 +46,7 @@ case "$1" in
             *) echo "" ;;
         esac
         ;;
-esac
-EOF
-    )"
+esac'
     capture "${BASH}" "${sandbox}/scripts/apply-ruleset.sh"
     assert_exit 0
     grep -qF -- 'api repos/acme/widget/rulesets --method POST --input .github/rulesets/main.json' "${STUB_BIN}/gh.log" ||
@@ -55,9 +57,8 @@ EOF
 case_existing_ruleset_puts_it_by_id() {
     local sandbox
     sandbox=$(make_sandbox)
-    stub_command gh "$(
-        cat <<'EOF'
-case "$1" in
+    # shellcheck disable=SC2016 # expanded by the stub at run time, not here
+    stub_command gh 'case "$1" in
     repo) echo "acme/widget" ;;
     api)
         shift
@@ -67,9 +68,7 @@ case "$1" in
             *) echo "42" ;;
         esac
         ;;
-esac
-EOF
-    )"
+esac'
     capture "${BASH}" "${sandbox}/scripts/apply-ruleset.sh"
     assert_exit 0
     grep -qF -- 'api repos/acme/widget/rulesets/42 --method PUT --input .github/rulesets/main.json' "${STUB_BIN}/gh.log" ||
@@ -80,17 +79,14 @@ EOF
 case_plan_unsupported_message_maps_to_plan_error() {
     local sandbox
     sandbox=$(make_sandbox)
-    stub_command gh "$(
-        cat <<'EOF'
-case "$1" in
+    # shellcheck disable=SC2016 # expanded by the stub at run time, not here
+    stub_command gh 'case "$1" in
     repo) echo "acme/widget" ;;
     api)
         echo "gh: Upgrade to GitHub Team or GitHub Enterprise Cloud to use this feature (HTTP 403)" >&2
         exit 1
         ;;
-esac
-EOF
-    )"
+esac'
     capture "${BASH}" "${sandbox}/scripts/apply-ruleset.sh"
     assert_exit 1
     assert_stderr_contains "ERR_RULESET_PLAN_UNSUPPORTED"
@@ -102,17 +98,14 @@ EOF
 case_plain_403_maps_to_forbidden_error() {
     local sandbox
     sandbox=$(make_sandbox)
-    stub_command gh "$(
-        cat <<'EOF'
-case "$1" in
+    # shellcheck disable=SC2016 # expanded by the stub at run time, not here
+    stub_command gh 'case "$1" in
     repo) echo "acme/widget" ;;
     api)
         echo "gh: Resource not accessible by integration (HTTP 403)" >&2
         exit 1
         ;;
-esac
-EOF
-    )"
+esac'
     capture "${BASH}" "${sandbox}/scripts/apply-ruleset.sh"
     assert_exit 1
     assert_stderr_contains "ERR_RULESET_FORBIDDEN"
