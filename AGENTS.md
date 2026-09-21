@@ -22,6 +22,8 @@ just run       # Build (Debug) and launch the app, left running until you quit i
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
 just check     # Run all checks: fmt → lint → test-scripts → test → build
+just agents-sync   # Regenerate the .claude/skills/ mirror from .agents/skills/
+just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
 ```
 
@@ -44,6 +46,7 @@ job call.
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
 | A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
+| A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` |
 | A workflow under `.github/workflows/` | `just lint` |
 | Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
@@ -68,6 +71,20 @@ LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
 
 Each skill owns one kind of change. Load the one whose subject you are working on.
 The `translate-skills-*` issues add rows here as their skills land.
+
+Skills are authored under `.agents/skills/` — the path Codex CLI reads — and mirrored
+into `.claude/skills/`, the only path Claude Code reads. Claude Code is therefore the
+tool that sees the generated copy rather than the authored one:
+
+- Edit a skill only under `.agents/skills/`, then run `just agents-sync` and commit
+  both trees together. Never hand-edit `.claude/skills/`, and never edit only one side;
+  `just agents-check` reports any drift (`scripts/sync-agents.sh`).
+- The mirror is a real, committed, byte-identical copy, never a symlink: Codex follows
+  a linked directory into its subdirectories and registers a nested
+  `references/SKILL.md` as a skill of its own. `.gitattributes` marks it
+  `linguist-generated`, so GitHub collapses it in pull request diffs.
+- `.claude/rules/` and `.claude/settings.json` are Claude Code-only and stay where they
+  are; they are not mirrored.
 
 | Skill | Load it when you are working on |
 |---|---|
@@ -156,6 +173,9 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   `core.hooksPath` is set by that recipe. #14 narrows this — it checks at
   `just install`/`just check` time — without closing it; CI stays the backstop for
   anyone who runs neither.
+- **Nothing checks the `.claude/skills/` mirror automatically yet**: a skill edited
+  without `just agents-sync` drifts until someone runs `just agents-check`. #17 wires
+  that check into `just lint`, the pre-commit hook, and CI.
 - **`main` has no branch protection**, so nothing requires CI to pass before a change
   lands on it. Tracked by #29.
 - **`COVERAGE_MIN` can lower the coverage floor** through an environment variable

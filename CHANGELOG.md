@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.xcode-version` is the single source of truth for the CI Xcode pin;
   `just install` warns when the local Xcode differs
 - CodeQL static analysis of the Swift package (weekly and on `main` pushes)
+- Skills are authored once under `.agents/skills/` (read by Codex CLI) and mirrored
+  byte for byte into `.claude/skills/` by `scripts/sync-agents.sh`
+  (`just agents-sync`; `just agents-check` reports drift); `.gitattributes` marks the
+  mirror as generated
 - `ContentView` accepts an injected view model and ships `#Preview` configurations
 
 ### Changed

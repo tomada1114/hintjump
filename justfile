@@ -55,6 +55,14 @@ smoke:
 # Run all checks: format, lint, script tests, test, build (CI's app job adds uitest + smoke)
 check: fmt lint test-scripts test build
 
+# Regenerate the .claude/skills/ mirror from .agents/skills/ (run after any skill edit)
+agents-sync:
+    scripts/sync-agents.sh
+
+# Fail if .claude/skills/ is not byte-identical to .agents/skills/ (writes nothing)
+agents-check:
+    scripts/sync-agents.sh --check
+
 # Remove build artifacts and the generated project
 clean:
     rm -rf build Packages/MyAppKit/.build MyApp.xcodeproj
