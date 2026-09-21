@@ -92,6 +92,16 @@ assert_stderr_contains() {
     grep -qF -- "$1" "${CASE_DIR}/stderr" || _fail "stderr does not contain: $1"
 }
 
+# The negative forms name only what was checked for, never the text itself: a test
+# that asserts a secret-shaped value was not printed must not print it either.
+assert_stdout_not_contains() {
+    ! grep -qF -- "$1" "${CASE_DIR}/stdout" || _fail "stdout contains ${2:-the forbidden text}"
+}
+
+assert_stderr_not_contains() {
+    ! grep -qF -- "$1" "${CASE_DIR}/stderr" || _fail "stderr contains ${2:-the forbidden text}"
+}
+
 # watch_file PATH — snapshots PATH before a capture; assert_file_unchanged PATH
 # then fails if the captured command changed, created, or removed it.
 watch_file() {

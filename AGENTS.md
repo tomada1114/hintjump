@@ -47,7 +47,7 @@ job call.
 | `project.yml` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
-| A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
+| A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
 | A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` |
 | A workflow under `.github/workflows/` | `just lint` |
@@ -95,7 +95,7 @@ tool that sees the generated copy rather than the authored one:
 | `smart-commit` | committing and pushing changes: grouping them into Conventional Commits, excluding sensitive files |
 | `create-pr` | opening or updating a pull request: the `just check` pre-check, title, template, and checklist |
 | `tdd` | a behavior change in `MyAppCore`: writing a failing Swift Testing test before the implementation |
-| `changing-gates` | a file that enforces rather than implements: `.swiftlint.yml`, `.swiftformat`, `Package.swift`'s `strictSettings`, `mise.toml`, `.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, or a workflow — and which gate would catch a change |
+| `changing-gates` | a file that enforces rather than implements: `.swiftlint.yml`, `.swiftformat`, `Package.swift`'s `strictSettings`, `mise.toml`, `.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, the `scripts/guard/` commit-time guard, or a workflow — and which gate would catch a change |
 | `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, and the `Depends on #N` convention |
 | `authoring-skills` | adding, editing, or reviewing a skill: authoring under `.agents/skills/`, the `just agents-sync` mirror, frontmatter, layout, and size limits |
 | `updating-docs` | deciding whether a change owes a documentation update and which surface it lands on: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/*.md`, a skill, or a `///` comment |
@@ -113,6 +113,11 @@ matching its `paths:` globs.
 | `.claude/rules/testing.md` | `Packages/**/Tests/**`, `LaunchUITests/**` |
 
 ## Security and human approval
+
+Only what is mechanically decidable is blocked at commit time; whether a commit
+*should* contain what it contains stays in PR review. See `scripts/guard/` for exactly
+what is checked: the pre-commit hook's "Staged guard" section (`scripts/check-staged.sh`)
+refuses a secret-shaped staged path or credential-shaped staged content.
 
 Get a human's sign-off before acting on any of these. No file in this repository
 blocks them mechanically today — this section is the rule itself, not a description
@@ -136,7 +141,8 @@ of a check that enforces it.
 ## Repository scripts
 
 Every script under `scripts/` follows these rules, whoever writes it
-(`scripts/tests/lib.sh` is sourced, so it carries no shebang or `set` line of its own):
+(`scripts/tests/lib.sh` and the `scripts/guard/*.sh` libraries are sourced, so they
+carry no shebang or `set` line of their own):
 
 - `#!/usr/bin/env bash` and `set -euo pipefail`, and bash 3.2-compatible (macOS
   `/bin/bash`): no associative arrays, no `mapfile`/`readarray`, no `${var,,}`, and no
@@ -161,7 +167,9 @@ Every script under `scripts/` follows these rules, whoever writes it
   built on `scripts/tests/lib.sh`, and `scripts/tests/run.sh` (`just test-scripts`,
   part of `just check` and CI's lint job) runs them all. A test works in a throwaway
   repository or temp directory, never the real checkout, and fakes external commands
-  with `stub_command`. Known exceptions, each with its reason: `bootstrap.sh`
+  with `stub_command`. A sourced library under `scripts/guard/` gets its own test file
+  too, `scripts/tests/guard-<library>_test.sh` (`guard-paths_test.sh`,
+  `guard-credentials_test.sh`). Known exceptions, each with its reason: `bootstrap.sh`
   (exercised end to end by CI's `bootstrap-smoke` job); `coverage.sh`,
   `smoke_launch.sh`, and `package_dmg.sh` (need Xcode and a build; exercised by the
   `test`, `app`, and `release` jobs). `bootstrap.sh` and `coverage.sh` also predate the
@@ -178,6 +186,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
+| `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
 | CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
@@ -185,7 +194,9 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 These gaps are deliberate and stay open until their tracking issue closes them:
 
 - **`git commit --no-verify` bypasses the hook**, and nothing in this repository
-  blocks it. "Never bypass the hooks" holds as an instruction, and CI is the backstop.
+  blocks it. "Never bypass the hooks" holds as an instruction, and CI is the backstop —
+  except for the staged guard, which no CI job reruns over a pull request's diff:
+  GitHub push protection and secret scanning are the server-side layer for secrets.
 - **Hooks are absent on a bare clone until `just install` runs**, because
   `core.hooksPath` is set by that recipe. `scripts/verify-hooks.sh` narrows this: it
   fails loudly at `just install` and `just check` time when git does not resolve the

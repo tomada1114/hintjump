@@ -52,17 +52,33 @@ as candidates.
 
 ## Step 2: Sensitive File Check
 
-Never commit files that could contain secrets:
+The mechanical list — secret-shaped paths (`.env*`, `secrets/`, signing material
+such as `.p12` or `.p8`, keychains, provisioning profiles, and the rest) and
+credential-shaped content (private-key blocks, GitHub tokens, AWS access key ids) —
+lives in `scripts/guard/paths.sh` and `scripts/guard/credentials.sh`, and the
+pre-commit hook's "Staged guard" section (`scripts/check-staged.sh`) enforces it
+on every commit. Do not keep a second copy of that list here; read those files for
+what exactly is blocked.
 
-- `.env`, `.env.*` (environment variables)
-- `**/credentials.json`, `**/secrets.json`, `**/private-key.*`
-- Files matching `*password*`, `*secret*`, `*key*.pem`, `*.p12`
+What stays with you is the judgment no pattern can make:
+
+- A file whose *name* is innocent but whose purpose is secret — a `config.plist`
+  or `Settings.swift` holding a real API key, a copied export of the login
+  keychain, a signing script with a password inlined.
+- A name like `*password*` or `*secret*`: deliberately not a path rule (too many
+  legitimate files share the word), so look at what such a file holds.
+- Content the guard's literal patterns do not cover: a password, a webhook URL
+  with an embedded token, a customer's personal data.
+- Something the user plainly did not mean to commit, secret or not.
 
 Also never commit generated artifacts: `MyApp.xcodeproj/`, `.build/`, `build/`
 (all gitignored — if one shows up as untracked, something is wrong; investigate
 instead of committing it).
 
 If any are detected among the candidates, **exclude them** and warn the user.
+If the hook refuses a commit with `ERR_STAGED_BLOCKED_PATH` or
+`ERR_STAGED_CREDENTIAL_SHAPED`, unstage the named path (`git restore --staged
+<path>`) and tell the user; never work around the guard.
 Everything else — config files, source code, docs, test files — should be
 committed. Prefer committing work-in-progress over leaving it uncommitted.
 
@@ -168,7 +184,8 @@ Report any remaining uncommitted files and explain why they were excluded
 ## Pre-commit Hook Interaction
 
 This project's pre-commit hook (`.githooks/pre-commit`) runs
-`swiftformat --lint` and `swiftlint lint --strict` on the staged Swift files.
+`swiftformat --lint` and `swiftlint lint --strict` on the staged Swift files, and
+the staged guard (`scripts/check-staged.sh`) on every commit that stages a change.
 It checks but never modifies files. The skill does NOT duplicate these checks —
 the hook handles code quality, while the skill handles commit workflow.
 

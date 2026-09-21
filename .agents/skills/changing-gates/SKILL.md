@@ -3,7 +3,8 @@ name: changing-gates
 description: >
   Covers editing a file that enforces rather than implements: .swiftlint.yml,
   .swiftformat, Package.swift's strictSettings, mise.toml, .githooks/pre-commit,
-  scripts/lint.sh, scripts/coverage.sh, or a .github/workflows/*.yml workflow. Use when a
+  scripts/lint.sh, scripts/coverage.sh, the scripts/guard/ commit-time guard, or a
+  .github/workflows/*.yml workflow. Use when a
   SwiftLint rule is added, disabled, or loosened, a SwiftFormat option changes, a target
   is added to Package.swift, a tool pin is added or bumped, a pre-commit section or a CI
   job or step is proposed, the coverage floor is touched, or the question is which gate
@@ -14,10 +15,10 @@ description: >
 
 **Owns:** a change to a file that enforces rather than implements — `.swiftlint.yml`,
 `.swiftformat`, `Packages/MyAppKit/Package.swift`'s `strictSettings`, `mise.toml`,
-`.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, and
-`.github/workflows/*.yml` — and which gate can see a given change at all. **Does not
+`.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, the commit-time guard
+under `scripts/guard/`, and `.github/workflows/*.yml` — and which gate can see a given change at all. **Does not
 own:** adding a package dependency (the Dependency Policy in `.claude/rules/project.md`);
-the content of a repository-specific lint rule; what a commit-time guard blocks; how a
+the content of a repository-specific lint rule; how a
 script under `scripts/` is written (`AGENTS.md`'s "Repository scripts"); the label set
 in `.github/labels.yml` (`triaging-issues`).
 
@@ -48,8 +49,9 @@ A check in `scripts/lint.sh` is three edits, not one:
 
 `scripts/tests/run.sh` (`just test-scripts`, part of `just check` and CI's `lint` job)
 is a gate on the gates: `scripts/tests/lint_test.sh` pins `scripts/lint.sh`'s argument
-and tool checks, and `scripts/tests/pre-commit-skills_test.sh` pins the hook's "Skills
-mirror" section. A change to either file keeps its test green, and a new script under
+and tool checks, `scripts/tests/pre-commit-skills_test.sh` pins the hook's "Skills
+mirror" section, and `scripts/tests/check-staged_test.sh` pins its "Staged guard"
+section. A change to either file keeps its test green, and a new script under
 `scripts/` gets a test as `AGENTS.md`'s "Repository scripts" requires.
 
 ## `.swiftlint.yml`
@@ -105,8 +107,9 @@ Independent sections, each scoped by the staged paths it cares about, none exiti
 early — a commit that skips one section must still reach every other. Each section
 calls a shared script: "Swift lint" exports the staged Swift blobs and runs
 `scripts/lint.sh --staged-tree`; "Skills mirror" exports both skill trees from the
-index and runs `scripts/sync-agents.sh --check --root`. Both check the staged content,
-not the worktree. A new section is appended below the layout-rule comment, and one that
+index and runs `scripts/sync-agents.sh --check --root`; "Staged guard" runs
+`scripts/check-staged.sh` on every commit that stages any change (see
+`scripts/guard/` below). All three check the staged content, not the worktree. A new section is appended below the layout-rule comment, and one that
 needs a scratch directory takes it from `new_temp_dir`, which registers it in
 `CLEANUP_DIRS` for the one shared `EXIT` trap — a second `trap … EXIT` would replace the
 first and leak its directory. The hook only reaches clones that ran `just install`
@@ -116,6 +119,34 @@ lost its executable bit, narrowing — not closing — that gap: a contributor w
 neither still commits without the hook, so CI stays the backstop. It skips under CI or
 the named `ALLOW_MISSING_GIT_HOOKS` opt-out, for an environment that genuinely cannot
 have git hooks.
+
+## `scripts/guard/`
+
+`scripts/check-staged.sh` (the hook's "Staged guard" section) classifies each staged
+path with `scripts/guard/paths.sh` first, and only scans the staged blob of a path that
+passes with `scripts/guard/credentials.sh`. Staged deletions are never inspected: they
+cannot add a secret, and blocking one would block the commit that removes a secret.
+Those two files are the list — read them for exactly what is checked:
+
+- **Blocked by path:** `.env` and `.env.*` (except `.example`/`.sample`/`.template`),
+  any `secrets` path segment, and signing material and credential files (`.p12`,
+  `.pfx`, `.p8`, provisioning profiles, keychains, `*key*.pem`, `.netrc`,
+  `credentials.json`, `secrets.json`, `private-key.*`).
+- **Blocked by content:** literal patterns for a PEM private-key header, GitHub tokens,
+  and AWS access key ids. It prints the category, never the matched text.
+- **Deliberately not blocked:** `.cer` and `.certSigningRequest` (public), `.key`
+  (collides with Keynote documents), a regenerated `Package.resolved`, and anything
+  that needs judgment rather than a pattern — no entropy heuristic. Whether a commit
+  *should* contain what it contains stays in PR review.
+
+A new pattern starts from a real false negative and lands with a fixture case in
+`scripts/tests/guard-paths_test.sh` or `scripts/tests/guard-credentials_test.sh`.
+Fixtures are assembled at runtime from pieces that do not match on their own, so no
+committed file — the tests included — is secret-shaped; GitHub push protection is the
+server-side layer and would refuse such a file too. Removing a pattern or a path rule is
+weakening a gate. `git commit --no-verify` skips this guard with every other hook
+section, and no CI job reruns it: that gap is listed in `AGENTS.md`'s "Enforcement
+layers".
 
 ## `.github/workflows/`
 

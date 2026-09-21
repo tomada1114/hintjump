@@ -63,6 +63,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the end of `just install` and as the first step of `just check`; it skips under CI or
   the named `ALLOW_MISSING_GIT_HOOKS=1` opt-out, for an environment that genuinely
   cannot have git hooks
+- The pre-commit hook gains a "Staged guard" section, run on every commit that stages a
+  change: `scripts/check-staged.sh` refuses a secret-shaped staged path
+  (`scripts/guard/paths.sh`: `.env*` except samples, `secrets/`, `.p12`/`.pfx`/`.p8`,
+  provisioning profiles, keychains, and named credential files) and credential-shaped
+  staged content (`scripts/guard/credentials.sh`: a private-key header, GitHub tokens,
+  AWS access key ids), never printing the matched text and never inspecting a staged
+  deletion; `smart-commit` and `changing-gates` point at `scripts/guard/` instead of
+  keeping their own list
 
 ### Changed
 
