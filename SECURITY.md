@@ -36,6 +36,15 @@ in `mise.toml`, runs zizmor and OpenSSF Scorecard, and delays automated
 dependency updates with a Dependabot cooldown. Scorecard's Fuzzing and
 Packaging checks legitimately read N/A for a macOS GUI app.
 
+`main`'s intended branch protection is defined as code in
+[`.github/rulesets/main.json`](.github/rulesets/main.json) (PR required, checks
+green, no force-push or deletion) and applied by a repository admin running
+`just ruleset` (`scripts/apply-ruleset.sh`). Whether it is actually in force on
+this repository is visible only via `gh api repos/{owner}/{repo}/rulesets`, not
+from the checkout — rulesets are server-side configuration, and "Use this
+template" does not copy them, so a repository created from this template needs
+its own admin to apply it.
+
 ## Responsible Disclosure
 
 We follow a coordinated disclosure process. We ask that you:

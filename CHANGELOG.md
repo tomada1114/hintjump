@@ -78,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   comment, every `SKILL.md` frontmatter is exactly a matching `name` and a
   `description`, and `AGENTS.md`'s Skills table matches `.agents/skills/`; each failure
   mode is pinned by `scripts/tests/checks_test.sh`
+- `.github/rulesets/main.json` defines the intended `main` branch ruleset (PR
+  required, checks green, no force-push or deletion) as code; `scripts/apply-ruleset.sh`
+  (`just ruleset`) creates or updates it via `gh` for a repository admin, mapping a
+  plan-gated API refusal and any other refusal to distinct named errors
 
 ### Changed
 

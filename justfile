@@ -84,3 +84,10 @@ clean:
 # not a mise tool (see mise.toml), so it comes from your own PATH, not `mise exec --`.
 labels:
     scripts/sync-labels.sh
+
+# Create or update the "main" branch ruleset from .github/rulesets/main.json
+# (admin-only: applying a ruleset needs repository admin permissions). Requires
+# `gh`, authenticated against this repository: like `labels` above, it is not a
+# mise tool, so it comes from your own PATH, not `mise exec --`.
+ruleset:
+    scripts/apply-ruleset.sh

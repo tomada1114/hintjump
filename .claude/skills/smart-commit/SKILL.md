@@ -24,15 +24,18 @@ git log --oneline -5              # recent commit style
 
 ## Branch Guard
 
-Check the current branch before staging. Committing straight to `main` is
-fine for solo development — this template ships without branch protection,
-and its own early history is linear on `main`. Use a feature branch instead
-when either holds:
+Check the current branch before staging. The intended `main` ruleset lives at
+`.github/rulesets/main.json`, but it only takes effect once an admin runs
+`just ruleset` (`scripts/apply-ruleset.sh`) — a manual, admin-only step. Until
+then, committing straight to `main` is fine for solo work, and its own early
+history is linear on `main`. Once the ruleset is applied, a direct push to
+`main` is rejected, so every change goes through a feature branch and the
+`create-pr` skill. Use a feature branch instead when either holds:
 
 - The user wants a PR for this change (the `create-pr` skill requires a
   feature branch), or
-- The repository has branch protection / a team workflow (see
-  CONTRIBUTING.md's fork-and-branch process).
+- The repository has the ruleset applied, or otherwise has a team workflow
+  (see CONTRIBUTING.md's fork-and-branch process).
 
 When it is unclear which mode the user wants, ask before staging.
 

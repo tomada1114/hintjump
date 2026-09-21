@@ -28,6 +28,7 @@ just agents-sync   # Regenerate the .claude/skills/ mirror from .agents/skills/
 just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
 just labels    # Create/update GitHub labels from .github/labels.yml (never deletes)
+just ruleset   # Create/update the "main" branch ruleset from .github/rulesets/main.json (admin-only)
 ```
 
 Without Just: run the underlying commands listed in each `justfile` recipe
@@ -57,6 +58,7 @@ job call.
 | Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
 | `.github/labels.yml`, or an issue form under `.github/ISSUE_TEMPLATE/` | `just lint` (its `typos` spell-check); `scripts/tests/sync-labels_test.sh` for `scripts/sync-labels.sh` itself |
+| `.github/rulesets/main.json`, or `scripts/apply-ruleset.sh` | `scripts/tests/apply-ruleset_test.sh` |
 
 ## Architecture
 
@@ -139,7 +141,11 @@ of a check that enforces it.
   (`just labels`) is such a script for labels: it only ever creates or updates a
   label `.github/labels.yml` declares, via `gh label create --force`, and never
   deletes one — but running it against the live repository still needs sign-off
-  before its first run there, the same as any other remote write.
+  before its first run there, the same as any other remote write. `scripts/apply-ruleset.sh`
+  (`just ruleset`) is the same kind of script for branch protection: it only ever
+  creates or updates the ruleset named "main" from `.github/rulesets/main.json`,
+  needs repository admin permissions to succeed, and still needs sign-off before
+  its first run against the live repository.
 
 ## Repository scripts
 
@@ -155,10 +161,10 @@ libraries are sourced, so they carry no shebang or `set` line of their own):
   locally and in `just` recipes, `jdx/mise-action` in CI). Beyond that, assume only
   `git` and POSIX utilities, and no GNU- or BSD-only flag (`sed -i`, `readlink -f`,
   `mktemp -t`) — the scripts run on macOS and on CI's Ubuntu. A script whose job is
-  a GitHub write (`scripts/sync-labels.sh`) may also depend on `gh`: like `git`, it
-  is assumed on PATH rather than routed through `mise exec --`, since it is not a
-  mise tool (see `mise.toml`) — its tests stub it out, so `just check` never needs
-  the real binary.
+  a GitHub write (`scripts/sync-labels.sh`, `scripts/apply-ruleset.sh`) may also
+  depend on `gh`: like `git`, it is assumed on PATH rather than routed through
+  `mise exec --`, since it is not a mise tool (see `mise.toml`) — its tests stub it
+  out, so `just check` never needs the real binary.
 - Failure contract: the first stderr line is `ERR_<STAGE>_<WHAT>: <what failed>`, then
   `Expected:`, `Actual:`, and `Next:` lines (the next safe command); exit 1. List the
   codes in the script's header comment. Never print a secret value.
@@ -213,8 +219,15 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   nor `just check` still commits without hooks — so CI stays the backstop.
   `ALLOW_MISSING_GIT_HOOKS=1` opts out for an environment that genuinely cannot have
   git hooks (e.g. a read-only or sandboxed checkout); every failure names it.
-- **`main` has no branch protection**, so nothing requires CI to pass before a change
-  lands on it. Tracked by #29.
+- **Whether `main`'s ruleset is actually in force is invisible from the checkout.**
+  The intended ruleset — PR required, checks green, no force-push or deletion — is
+  defined as code in `.github/rulesets/main.json`; `just ruleset`
+  (`scripts/apply-ruleset.sh`) creates or updates it via the GitHub API for whoever
+  runs it as a repository admin. Nothing in the checkout verifies that it was
+  actually applied to the live repository — that is visible only via
+  `gh api repos/{owner}/{repo}/rulesets`, never from a git checkout. "Use this
+  template" does not copy rulesets, so every repository created from this template
+  still needs its own admin to run `just ruleset` once.
 - **`COVERAGE_MIN` can lower the coverage floor** through an environment variable
   (`scripts/coverage.sh`), so the 80% floor is a default, not a lock. Closed by #24.
 - **The `PostToolUse` swiftformat hook in `.claude/settings.json` applies to Claude
