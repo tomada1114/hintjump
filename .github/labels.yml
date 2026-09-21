@@ -23,7 +23,7 @@
   description: "Repository work: tooling, automation, refactor, hardening, or docs."
 
 # PR-only labels. `dependencies` is applied by Dependabot itself; `ci` is
-# applied by hand (see .github/workflows/pr-label.yml). Never used for issue
+# applied by .github/workflows/pr-label.yml from a `ci:` PR title. Never used for issue
 # triage.
 - name: dependencies
   color: 0366d6
@@ -53,4 +53,4 @@
   description: "The approach is not settled; needs a human decision first."
 - name: "blocked: dependency"
   color: f9d0c4
-  description: "Waits on a specific open issue named by a Depends on: #N line."
+  description: "Waits on a specific open issue named by a Depends on #N line."

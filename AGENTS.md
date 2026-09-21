@@ -93,6 +93,8 @@ tool that sees the generated copy rather than the authored one:
 | `smart-commit` | committing and pushing changes: grouping them into Conventional Commits, excluding sensitive files |
 | `create-pr` | opening or updating a pull request: the `just check` pre-check, title, template, and checklist |
 | `tdd` | a behavior change in `MyAppCore`: writing a failing Swift Testing test before the implementation |
+| `changing-gates` | a file that enforces rather than implements: `.swiftlint.yml`, `.swiftformat`, `Package.swift`'s `strictSettings`, `mise.toml`, `.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, or a workflow — and which gate would catch a change |
+| `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, and the `Depends on #N` convention |
 
 ### Rules
 

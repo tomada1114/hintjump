@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/sync-labels.sh` (`just labels`) creates or updates each label from it,
   never deleting one it does not mention, and a `.github/ISSUE_TEMPLATE/task.yml`
   form files repository chores with `chore` and an unset priority
+- Two skills under `.agents/skills/`, translated to this stack: `changing-gates`
+  (editing a lint, format, compiler, hook, coverage, or CI gate, and which gate sees a
+  change) and `triaging-issues` (the label taxonomy in `.github/labels.yml`, priority
+  tiers, and the `Depends on #N` convention)
 
 ### Changed
 
