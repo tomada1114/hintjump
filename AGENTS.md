@@ -109,6 +109,8 @@ tool that sees the generated copy rather than the authored one:
 | `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, and the `Depends on #N` convention |
 | `authoring-skills` | adding, editing, or reviewing a skill: authoring under `.agents/skills/`, the `just agents-sync` mirror, frontmatter, layout, and size limits |
 | `updating-docs` | deciding whether a change owes a documentation update and which surface it lands on: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/*.md`, a skill, or a `///` comment |
+| `writing-repo-scripts` | writing or testing a shell script under `scripts/`, `.githooks/pre-commit`, or `scripts/tests/`: why bash, refusing or skipping outside a git checkout, the stderr contract by example, and `scripts/tests/lib.sh` |
+| `starting-an-app` | turning this template into a new app: `scripts/bootstrap.sh`'s rename, what the new repository keeps, and its `just labels` and `just ruleset` setup |
 
 ### Rules
 
@@ -156,7 +158,8 @@ of a check that enforces it.
 
 Every script under `scripts/` follows these rules, whoever writes it
 (`scripts/tests/lib.sh`, `scripts/checks/lib.sh`, and the `scripts/guard/*.sh`
-libraries are sourced, so they carry no shebang or `set` line of their own):
+libraries are sourced, so they carry no shebang or `set` line of their own). The
+reasons behind them, with worked examples, are in the `writing-repo-scripts` skill:
 
 - `#!/usr/bin/env bash` and `set -euo pipefail`, and bash 3.2-compatible (macOS
   `/bin/bash`): no associative arrays, no `mapfile`/`readarray`, no `${var,,}`, and no

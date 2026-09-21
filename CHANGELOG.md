@@ -86,6 +86,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`no_ui_import_in_core` in `.swiftlint.yml`) and a Swift Testing suite
   (`ArchitectureBoundaryTests`) both reject `SwiftUI`, `AppKit`, `UIKit`, and `Cocoa`
   imports in `Sources/MyAppCore`, including attributed and kind-qualified spellings
+- Two skills: `writing-repo-scripts` (why the repository scripts are bash, refusing or
+  skipping outside a git checkout, the stderr contract by worked example, and testing
+  with `scripts/tests/lib.sh`, pointing at `AGENTS.md`'s "Repository scripts" for the
+  rules) and `starting-an-app` (what `scripts/bootstrap.sh` renames and how, and what a
+  new app keeps, including its labels and branch ruleset)
 
 ### Changed
 
@@ -93,6 +98,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `just clean` now removes everything the toolchain produced
 - `scripts/bootstrap.sh` resets `CHANGELOG.md` for the new project and prints a
   verify-first next-steps list
+- `scripts/bootstrap.sh`'s next steps and `README.md`'s "Using This Template" add
+  `just labels` for the new repository, and `just ruleset` as an optional, admin-only
+  last step once the bootstrap commit is on `main`
 - `just lint`, the pre-commit hook, and CI's lint job all call one script,
   `scripts/lint.sh`; `typos` is pinned in `mise.toml` and runs in `just lint`
   (CI's separate spell-check job is folded into the lint job)

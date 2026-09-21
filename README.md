@@ -114,13 +114,18 @@ secrets — no workflow edits. See docs/distribution.md.
    all tracked files, renames the matching paths, and regenerates the Xcode
    project. Omitted optional arguments leave their placeholders as-is.
 3. Verify the rename: `just install && just check`
-4. Update `README.md` (this file), `SECURITY.md`, `AGENTS.md`, and
+4. Create the label set on the new repository: `just labels`
+   (`.github/labels.yml`; issue forms rely on these labels existing)
+5. Update `README.md` (this file), `SECURITY.md`, `AGENTS.md`, and
    `CODE_OF_CONDUCT.md` for your app (the conduct-reporting contact stays
    `you@example.com` if `--email` was omitted, so check it), and review
    `LICENSE`'s copyright line (`CHANGELOG.md` is reset automatically)
-5. Replace the counter placeholder in `Packages/<YourApp>Kit` with real code —
+6. Replace the counter placeholder in `Packages/<YourApp>Kit` with real code —
    keep the Core/UI split and the tests
-6. For signed releases, add the secrets listed in docs/distribution.md
+7. For signed releases, add the secrets listed in docs/distribution.md
+8. Optional, repository admin only: once the bootstrap commit is on `main`,
+   protect it with `just ruleset` (`.github/rulesets/main.json`; it requires
+   pull requests from then on, and needs a paid plan on a private repository)
 
 To find any placeholders the script left untouched (the pattern uses `.`
 wildcards so the rename cannot rewrite this very command into your new names):
