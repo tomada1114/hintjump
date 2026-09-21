@@ -66,3 +66,9 @@ agents-check:
 # Remove build artifacts and the generated project
 clean:
     rm -rf build Packages/MyAppKit/.build MyApp.xcodeproj
+
+# Create or update this repository's GitHub labels from .github/labels.yml
+# (never deletes). Requires `gh`, authenticated against this repository: it is
+# not a mise tool (see mise.toml), so it comes from your own PATH, not `mise exec --`.
+labels:
+    scripts/sync-labels.sh

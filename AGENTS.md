@@ -25,6 +25,7 @@ just check     # Run all checks: fmt → lint → test-scripts → test → buil
 just agents-sync   # Regenerate the .claude/skills/ mirror from .agents/skills/
 just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
+just labels    # Create/update GitHub labels from .github/labels.yml (never deletes)
 ```
 
 Without Just: run the underlying commands listed in each `justfile` recipe
@@ -50,6 +51,7 @@ job call.
 | A workflow under `.github/workflows/` | `just lint` |
 | Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
+| `.github/labels.yml`, or an issue form under `.github/ISSUE_TEMPLATE/` | `just lint` (its `typos` spell-check); `scripts/tests/sync-labels_test.sh` for `scripts/sync-labels.sh` itself |
 
 ## Architecture
 
@@ -118,9 +120,12 @@ of a check that enforces it.
 - Weakening any gate: lowering the coverage floor, disabling or relaxing a SwiftLint
   rule, or widening a workflow's `permissions:`. If a gate looks wrong, say so and let
   a human decide.
-- Any write to a remote: `git push`, `gh pr create`, `gh label create`, or any other
-  remote write that is not performed by a script this repository ships (none does
-  today).
+- Any write to a remote: `git push`, `gh pr create`, or any other remote write that
+  is not performed by a script this repository ships. `scripts/sync-labels.sh`
+  (`just labels`) is such a script for labels: it only ever creates or updates a
+  label `.github/labels.yml` declares, via `gh label create --force`, and never
+  deletes one — but running it against the live repository still needs sign-off
+  before its first run there, the same as any other remote write.
 
 ## Repository scripts
 
@@ -134,7 +139,11 @@ Every script under `scripts/` follows these rules, whoever writes it
 - Pinned tools are called by bare name; the caller provides PATH (`mise exec -- …`
   locally and in `just` recipes, `jdx/mise-action` in CI). Beyond that, assume only
   `git` and POSIX utilities, and no GNU- or BSD-only flag (`sed -i`, `readlink -f`,
-  `mktemp -t`) — the scripts run on macOS and on CI's Ubuntu.
+  `mktemp -t`) — the scripts run on macOS and on CI's Ubuntu. A script whose job is
+  a GitHub write (`scripts/sync-labels.sh`) may also depend on `gh`: like `git`, it
+  is assumed on PATH rather than routed through `mise exec --`, since it is not a
+  mise tool (see `mise.toml`) — its tests stub it out, so `just check` never needs
+  the real binary.
 - Failure contract: the first stderr line is `ERR_<STAGE>_<WHAT>: <what failed>`, then
   `Expected:`, `Actual:`, and `Next:` lines (the next safe command); exit 1. List the
   codes in the script's header comment. Never print a secret value.

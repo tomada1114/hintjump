@@ -36,6 +36,9 @@ jobs:
           esac
           # Ensure the label exists — a default repo has no "ci" label, and
           # `--add-label` fails on a missing one. `create` no-ops if present.
+          # .github/labels.yml (synced by `just labels`) is the source of truth and
+          # declares all four labels this workflow applies; this line is a fallback
+          # for a repository where `just labels` was never run.
           gh label create "$label" >/dev/null 2>&1 || true
           # Best-effort: PRs from forks get a read-only GITHUB_TOKEN, so the
           # write below is rejected there. Never fail the check over it.

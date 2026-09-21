@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `just lint`, the pre-commit hook (a new "Skills mirror" section, scoped to commits
   that stage a path under `.agents/skills/` or `.claude/skills/`), and CI's lint job
   now all fail when the two skill trees drift, via `scripts/sync-agents.sh --check`
+- `.github/labels.yml` declares this repository's GitHub label taxonomy as code;
+  `scripts/sync-labels.sh` (`just labels`) creates or updates each label from it,
+  never deleting one it does not mention, and a `.github/ISSUE_TEMPLATE/task.yml`
+  form files repository chores with `chore` and an unset priority
 
 ### Changed
 

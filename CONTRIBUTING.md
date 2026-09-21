@@ -63,6 +63,9 @@ open build/dev-derived-data/Build/Products/Debug/MyApp.app
 rm -rf build/LaunchUITests.xcresult
 xcodebuild test -project MyApp.xcodeproj -scheme MyApp -destination 'platform=macOS' -derivedDataPath build/dev-derived-data -resultBundlePath build/LaunchUITests.xcresult
 scripts/smoke_launch.sh
+scripts/sync-agents.sh           # after editing .agents/skills/ (just agents-sync)
+scripts/sync-agents.sh --check   # just agents-check
+scripts/sync-labels.sh           # just labels — writes labels to the GitHub repo gh is pointed at
 ```
 
 ## Pull Request Process
