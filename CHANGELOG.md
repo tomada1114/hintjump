@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ShellCheck joins the lint gate (`just lint` and CI) for every repo shell script
 - The launch UI test writes an `.xcresult` bundle; CI uploads it when the job fails
 - The release pipeline smoke-tests the signed Release app before packaging the DMG
+- `AGENTS.md` gains a narrowest-check table, a skill and rule index, the actions
+  that need human approval, and the enforcement layers with their known gaps
 - Release runs are serialized per tag via a workflow `concurrency` group
 - `.xcode-version` is the single source of truth for the CI Xcode pin;
   `just install` warns when the local Xcode differs

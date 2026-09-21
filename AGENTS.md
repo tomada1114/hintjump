@@ -27,6 +27,26 @@ just clean     # Remove build artifacts and the generated project
 Without Just: run the underlying commands listed in each `justfile` recipe
 (see CONTRIBUTING.md).
 
+## Validating a change
+
+Run the narrowest check that can fail, then `just check` before you open a PR.
+Rows describe what is true today; #13 moves every lint row, Markdown included, onto
+`just lint`.
+
+| What you changed | The narrowest check that can fail |
+|---|---|
+| A Swift file under `Packages/MyAppKit/Sources/MyAppCore/` | `just test` |
+| A test under `Packages/MyAppKit/Tests/MyAppCoreTests/` | `just test` |
+| A view under `Packages/MyAppKit/Sources/MyAppUI/`, or anything under `App/` | `just build` |
+| Formatting or style of any Swift file | `just lint` |
+| `project.yml` | `just generate && just build` |
+| A test under `LaunchUITests/`, or launch behavior | `just uitest` |
+| The Release configuration, or anything only a Release launch shows | `just smoke` |
+| A shell script under `scripts/`, or `.githooks/pre-commit` | `mise exec -- shellcheck scripts/*.sh .githooks/pre-commit` |
+| A workflow under `.github/workflows/` | `mise exec -- actionlint` |
+| Markdown | the `typos` spell-check — CI's `Spell Check` job; no recipe or hook runs it locally and `mise.toml` does not pin it, so run `typos --config typos.toml` if you have it installed |
+| `mise.toml` | `mise install`, then `just check` |
+
 ## Architecture
 
 ```
@@ -42,6 +62,76 @@ LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
 - New logic goes in `MyAppCore` with tests; views only render Core state
 - The dependency direction is one-way: Core ← UI ← App
 - `MyApp.xcodeproj` is generated — edit `project.yml` instead
+
+## Skills
+
+Each skill owns one kind of change. Load the one whose subject you are working on.
+The `translate-skills-*` issues add rows here as their skills land.
+
+| Skill | Load it when you are working on |
+|---|---|
+| `smart-commit` | committing and pushing changes: grouping them into Conventional Commits, excluding sensitive files |
+| `create-pr` | opening or updating a pull request: the `just check` pre-check, title, template, and checklist |
+| `tdd` | a behavior change in `MyAppCore`: writing a failing Swift Testing test before the implementation |
+
+### Rules
+
+The files under `.claude/rules/` load by path: each applies while you touch a file
+matching its `paths:` globs.
+
+| Rule | Loads when you touch |
+|---|---|
+| `.claude/rules/project.md` | `project.yml`, `Packages/**/Package.swift`, `mise.toml`, `.swiftlint.yml`, `.swiftformat`, `scripts/coverage.sh` |
+| `.claude/rules/docs.md` | `docs/**/*.md`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` |
+| `.claude/rules/swift.md` | `Packages/**/*.swift`, `App/**/*.swift` |
+| `.claude/rules/testing.md` | `Packages/**/Tests/**`, `LaunchUITests/**` |
+
+## Security and human approval
+
+Get a human's sign-off before acting on any of these. No file in this repository
+blocks them mechanically today — this section is the rule itself, not a description
+of a check that enforces it.
+
+- Touching `App/MyApp.entitlements`, a signing identity, or any signing,
+  notarization, or release secret.
+- Creating or pushing a release tag.
+- Adding a new package dependency — see the dependency policy in
+  `.claude/rules/project.md`.
+- Weakening any gate: lowering the coverage floor, disabling or relaxing a SwiftLint
+  rule, or widening a workflow's `permissions:`. If a gate looks wrong, say so and let
+  a human decide.
+- Any write to a remote: `git push`, `gh pr create`, `gh label create`, or any other
+  remote write that is not performed by a script this repository ships (none does
+  today).
+
+## Enforcement layers
+
+Later issues update the Enforcement layers table and gap list as they close each gap
+named here — see the linked issue in each bullet.
+
+The rules in this file are enforced by these layers, from mechanical to procedural:
+
+| Layer | Fires on | Applies to | Holds |
+|---|---|---|---|
+| `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
+| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: format, lint, shellcheck, actionlint, tests with the coverage floor, build, UI test, and Release smoke |
+| This file | read at session start | every agent | everything else — the reasons behind the rules above |
+
+These gaps are deliberate and stay open until their tracking issue closes them:
+
+- **`git commit --no-verify` bypasses the hook**, and nothing in this repository
+  blocks it. "Never bypass the hooks" holds as an instruction, and CI is the backstop.
+- **Hooks are absent on a bare clone until `just install` runs**, because
+  `core.hooksPath` is set by that recipe. #14 narrows this — it checks at
+  `just install`/`just check` time — without closing it; CI stays the backstop for
+  anyone who runs neither.
+- **`main` has no branch protection**, so nothing requires CI to pass before a change
+  lands on it. Tracked by #29.
+- **`COVERAGE_MIN` can lower the coverage floor** through an environment variable
+  (`scripts/coverage.sh`), so the 80% floor is a default, not a lock. Closed by #24.
+- **The `PostToolUse` swiftformat hook in `.claude/settings.json` applies to Claude
+  Code only.** It formats after an agent's edit on that one host; the git hook, not
+  this hook, is the real gate.
 
 ## Review Checklist
 
