@@ -5,7 +5,8 @@
 #                                [--author "Full Name"] [--email ADDRESS] [--repo slug]
 #
 # Replaces (in all git-tracked text files):
-#   MyApp        -> NewName            (also MyAppKit/MyAppCore/MyAppUI/MyAppApp)
+#   MyApp        -> NewName            (also MyAppKit/MyAppCore/MyAppUI/
+#                                      MyAppPlatform/MyAppApp)
 #   my-app       -> repo slug          (default: kebab-case of NewName)
 #   com.example  -> --bundle-id-prefix (kept if omitted)
 #   your-username / Your Name / you@example.com -> optional args (kept if omitted)

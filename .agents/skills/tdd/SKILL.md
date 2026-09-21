@@ -19,7 +19,13 @@ Never write implementation before a failing test exists.
   the default. Core is coverage-gated, so code here is forced to stay tested.
 - **Rendering only** → `Packages/MyAppKit/Sources/MyAppUI`, as a thin view over a
   Core view model. If a view needs an `if`, the condition belongs in Core.
-- If you are about to put logic in `MyAppUI` or `App/`, stop and move it to Core.
+- **Talking to the OS** → a `Sendable` port (protocol) in `MyAppCore` plus its adapter
+  in `Packages/MyAppKit/Sources/MyAppPlatform`. Test the Core side against a fake of
+  the port (`.claude/rules/testing.md` › Fakes, not mocks); the adapter itself is
+  translation only and sits outside the coverage floor, so anything it would need a
+  test for belongs in Core instead.
+- If you are about to put logic in `MyAppUI`, `MyAppPlatform`, or `App/`, stop and move
+  it to Core.
 
 ## Step 1: RED — Write the Failing Test First
 

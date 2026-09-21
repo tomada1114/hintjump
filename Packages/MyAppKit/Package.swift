@@ -14,10 +14,16 @@ let package = Package(
     products: [
         .library(name: "MyAppCore", targets: ["MyAppCore"]),
         .library(name: "MyAppUI", targets: ["MyAppUI"]),
+        .library(name: "MyAppPlatform", targets: ["MyAppPlatform"]),
     ],
     targets: [
         .target(name: "MyAppCore", swiftSettings: strictSettings),
         .target(name: "MyAppUI", dependencies: ["MyAppCore"], swiftSettings: strictSettings),
+        // OS-integration adapters behind Core-declared ports. Depends on MyAppCore
+        // only: it must not see MyAppUI, and MyAppUI must not see it (enforced by
+        // ArchitectureBoundaryTests, since SwiftPM cannot stop a system framework
+        // import and this graph alone would not stop a later dependency edit).
+        .target(name: "MyAppPlatform", dependencies: ["MyAppCore"], swiftSettings: strictSettings),
         .testTarget(
             name: "MyAppCoreTests",
             dependencies: ["MyAppCore"],

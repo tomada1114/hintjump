@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `MyAppPlatform` target: the home for OS-integration code, behind `Sendable` ports
+  declared in `MyAppCore`. Ships a worked example — the `FrontmostAppProviding` port,
+  its `NSWorkspace`-backed `WorkspaceFrontmostAppProvider` adapter, and the fake the
+  Core tests use — and the app now shows the frontmost application's name
+  (`docs/architecture.md` › Ports and adapters)
+- Architecture boundary tests that `MyAppUI` and `MyAppPlatform` never import each other
 - Initial template: XcodeGen-generated app shell over a local Swift package
   with a Core/UI split and a working counter placeholder
 - Swift Testing suite with an enforced 80% line-coverage floor on `MyAppCore`
@@ -96,6 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `MyAppCore`'s import ban list now also rejects `ApplicationServices`, `Carbon`, and
+  `ServiceManagement`, in both `.swiftlint.yml`'s `no_ui_import_in_core` and
+  `ArchitectureBoundaryTests`: an adapter that needs one belongs in `MyAppPlatform`
 - `scripts/bootstrap.sh` now removes the template-only `bootstrap-smoke` CI job and
   its required status check, so a new app's CI and branch ruleset no longer require a
   job that cannot pass

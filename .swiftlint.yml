@@ -34,13 +34,14 @@ excluded:
   - build
   - MyApp.xcodeproj
 
-# MyAppCore stays free of UI frameworks (AGENTS.md › Architecture). Enforced twice:
-# here, and by ArchitectureBoundaryTests in MyAppCoreTests — change both module
-# lists together. No match_kinds: the ^\s* anchor already skips `// import …`
-# comments, and a kind filter would drop the attributed-import case.
+# MyAppCore stays free of UI and OS-integration frameworks (AGENTS.md › Architecture):
+# an adapter that needs one belongs in MyAppPlatform, behind a Core-declared port.
+# Enforced twice: here, and by ArchitectureBoundaryTests in MyAppCoreTests — change
+# both module lists together. No match_kinds: the ^\s* anchor already skips
+# `// import …` comments, and a kind filter would drop the attributed-import case.
 custom_rules:
   no_ui_import_in_core:
     included: 'Packages/MyAppKit/Sources/MyAppCore/.+\.swift$'
-    regex: '^\s*(@[\w()]+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?(SwiftUI|AppKit|UIKit|Cocoa)\b'
-    message: "MyAppCore must not import SwiftUI, AppKit, UIKit, or Cocoa — it stays UI-framework-free (AGENTS.md › Architecture)."
+    regex: '^\s*(@[\w()]+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?(SwiftUI|AppKit|UIKit|Cocoa|ApplicationServices|Carbon|ServiceManagement)\b'
+    message: "MyAppCore must not import SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon, or ServiceManagement — it stays UI- and OS-integration-free; put the adapter in MyAppPlatform behind a Core port (AGENTS.md › Architecture)."
     severity: error

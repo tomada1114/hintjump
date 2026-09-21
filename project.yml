@@ -22,6 +22,10 @@ targets:
     dependencies:
       - package: MyAppKit
         product: MyAppUI
+      # The app shell is the composition root: it is the only target that links the
+      # OS adapters (MyAppPlatform) and hands them to Core view models as ports.
+      - package: MyAppKit
+        product: MyAppPlatform
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.MyApp

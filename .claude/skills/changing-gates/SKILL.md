@@ -63,12 +63,18 @@ is incomplete, and removing a rule needs explicit approval
 (`.claude/rules/project.md`). Prefer an inline `// swiftlint:disable:next <rule>` with
 a reason when only one site needs the exception — a global disable widens the gate for
 every future file. Repository-specific rules live under `custom_rules:`. The one there,
-`no_ui_import_in_core`, keeps `MyAppCore` from importing SwiftUI, AppKit, UIKit, or
-Cocoa, attributed and kind-qualified spellings included; `ArchitectureBoundaryTests` in
+`no_ui_import_in_core`, keeps `MyAppCore` from importing a UI or OS-integration
+framework — SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon, and
+ServiceManagement — attributed and kind-qualified spellings included;
+`ArchitectureBoundaryTests` in
 `MyAppCoreTests` enforces the same boundary a second way. Its module list and the
 test's `forbiddenModules` change together, in one commit — adding a framework to one
-and not the other leaves the boundary enforced once. Its `included` regex names the
+and not the other leaves the boundary enforced once. Adding to that list strengthens
+the gate and is the routine direction; removing from it is weakening one. Its
+`included` regex names the
 package and module, so a new Core-like target means widening it and the test's path.
+The sibling boundary — `MyAppUI` and `MyAppPlatform` never importing each other — is
+held by `ArchitectureBoundaryTests` alone, with no lint-rule twin.
 `analyzer_rules` is deliberately absent: those run only under
 `swiftlint analyze` with a compiler log, which no gate here invokes. `trailing_comma`
 is set to agree with SwiftFormat; the two tools must never disagree about one file.
@@ -100,8 +106,10 @@ silently. The Xcode pin lives in `.xcode-version`, not here.
 
 ## `scripts/coverage.sh`
 
-It gates on line coverage of `Sources/MyAppCore/` only. `MyAppUI` is not measured: no
-test target links it, so llvm-cov has no data for it. The floor is
+It gates on line coverage of `Sources/MyAppCore/` only. `MyAppUI` and `MyAppPlatform`
+are not measured: no test target links them, so llvm-cov has no data for them, and an
+adapter holds translation rather than a decision (`docs/architecture.md` › Ports and
+adapters). The floor is
 `readonly COVERAGE_FLOOR=80` in the script and nothing else — no environment variable or
 flag moves it, so every change to it is a reviewed diff of this file, and a change is
 only ever a raise. The script rejects the environment override it used to read with
@@ -182,7 +190,8 @@ Nothing boots the app and asserts behavior beyond two checks: `scripts/smoke_lau
 (`just smoke`) builds Release, verifies the code signature, launches the binary, and
 asserts only that the process stays alive; `LaunchUITests/LaunchTests.swift`
 (`just uitest`) asserts that a window appears and one increment click updates the
-counter. Any other UI behavior, `MyAppUI` code paths (outside the coverage floor), the
+counter. Any other UI behavior, `MyAppUI` and `MyAppPlatform` code paths (both outside
+the coverage floor — an adapter's real OS call is exercised by no gate at all), the
 signed and notarized release (built only on a tag push by `release.yml`), and
 entitlements or signing settings are places a change can be wrong while every gate
 passes. A gate proposed to close such a gap is a real gate change and belongs in the PR

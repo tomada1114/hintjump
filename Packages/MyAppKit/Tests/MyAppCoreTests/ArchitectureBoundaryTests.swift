@@ -1,40 +1,62 @@
 import Foundation
 import Testing
 
-/// The second enforcement of the Core boundary (`AGENTS.md` › Architecture): `MyAppCore`
-/// never imports a UI framework. `.swiftlint.yml`'s `no_ui_import_in_core` is the first;
-/// this suite runs in the macOS `test` job, the lint rule in the `lint` job and the
-/// pre-commit hook, so removing either one still leaves the other catching a regression.
+/// The second enforcement of the module boundaries (`AGENTS.md` › Architecture).
+///
+/// `MyAppCore` never imports a UI or OS-integration framework — `.swiftlint.yml`'s
+/// `no_ui_import_in_core` is the first enforcement, this suite the second; the lint rule
+/// runs in the `lint` job and the pre-commit hook, this suite in the macOS `test` job,
+/// so removing either one still leaves the other catching a regression.
+///
+/// `MyAppUI` and `MyAppPlatform` are siblings over Core and never import each other.
+/// SwiftPM's target graph already withholds the modules, but only until someone adds a
+/// dependency edge; this suite is what makes that edit fail a check rather than compile.
 @Suite("Architecture boundary")
 struct ArchitectureBoundaryTests {
-    /// UI frameworks `MyAppCore` must not import. `Cocoa` re-exports AppKit.
+    /// Frameworks `MyAppCore` must not import. `Cocoa` re-exports AppKit; the three
+    /// OS-integration frameworks are the ones an adapter reaches for first
+    /// (accessibility, hotkeys, login items) and each belongs in `MyAppPlatform`.
     ///
     /// Must match `.swiftlint.yml`'s `no_ui_import_in_core`: change both lists together.
-    static let forbiddenModules = ["SwiftUI", "AppKit", "UIKit", "Cocoa"]
+    static let forbiddenModules = [
+        "SwiftUI", "AppKit", "UIKit", "Cocoa",
+        "ApplicationServices", "Carbon", "ServiceManagement",
+    ]
+
+    /// `Sources/MyAppCore`, the directory the Core ban list applies to.
+    static let coreSourcesDirectory = sourcesDirectory(of: "MyAppCore")
+
+    // MARK: - Helpers
 
     /// The same pattern as the lint rule: any attributes (`@preconcurrency`, `@_exported`)
     /// and an optional kind keyword (`import struct SwiftUI.Color`) before the module.
     /// The `^\s*` anchor keeps a commented-out `// import SwiftUI` from matching.
-    static let importPattern = #"^\s*(@[\w()]+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?("#
-        + forbiddenModules.joined(separator: "|")
-        + #")\b"#
+    static func pattern(forAnyOf modules: [String]) -> String {
+        #"^\s*(@[\w()]+\s+)*import\s+((typealias|struct|class|enum|protocol|let|var|func)\s+)?("#
+            + modules.joined(separator: "|")
+            + #")\b"#
+    }
 
-    /// `Sources/MyAppCore`, resolved from this file's path:
+    /// `Sources/<module>`, resolved from this file's path:
     /// `Tests/MyAppCoreTests/<this file>` up to the package root, then down.
-    static let coreSourcesDirectory = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .appendingPathComponent("Sources", isDirectory: true)
-        .appendingPathComponent("MyAppCore", isDirectory: true)
+    static func sourcesDirectory(of module: String) -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources", isDirectory: true)
+            .appendingPathComponent(module, isDirectory: true)
+    }
 
-    // MARK: - Helpers
+    /// The compiled pattern. Simple (ICU-style) word boundaries, as in the lint rule:
+    /// Swift's default Unicode boundaries treat `SwiftUI.Color` as one word, so `\b`
+    /// would never match after the module in a kind-qualified import.
+    static func importRegex(forAnyOf modules: [String]) throws -> Regex<AnyRegexOutput> {
+        try Regex(pattern(forAnyOf: modules)).wordBoundaryKind(.simple)
+    }
 
-    /// The compiled ``importPattern``. Simple (ICU-style) word boundaries, as in the
-    /// lint rule: Swift's default Unicode boundaries treat `SwiftUI.Color` as one
-    /// word, so `\b` would never match after the module in a kind-qualified import.
     static func importRegex() throws -> Regex<AnyRegexOutput> {
-        try Regex(importPattern).wordBoundaryKind(.simple)
+        try importRegex(forAnyOf: forbiddenModules)
     }
 
     /// Every `.swift` file under `directory`, recursively; empty if it does not exist.
@@ -51,25 +73,42 @@ struct ArchitectureBoundaryTests {
             .sorted { $0.path < $1.path }
     }
 
-    // MARK: - The real Core sources
-
-    @Test
-    func `no MyAppCore source file imports a UI framework`() throws {
-        let files = Self.swiftFiles(in: Self.coreSourcesDirectory)
-        // A wrong path must fail here rather than pass on zero files.
+    /// Records an issue for every line in `module`'s sources that imports one of
+    /// `modules`. Requires the module to have sources, so a wrong path fails here
+    /// rather than passing on zero files.
+    static func expectNoImports(of modules: [String], in module: String) throws {
+        let directory = sourcesDirectory(of: module)
+        let files = swiftFiles(in: directory)
         try #require(
             !files.isEmpty,
-            "no .swift files found under \(Self.coreSourcesDirectory.path) — is the path resolution wrong?",
+            "no .swift files found under \(directory.path) — is the path resolution wrong?",
         )
 
-        let regex = try Self.importRegex()
+        let regex = try importRegex(forAnyOf: modules)
         for file in files {
             let lines = try String(contentsOf: file, encoding: .utf8)
                 .components(separatedBy: .newlines)
             for (index, line) in lines.enumerated() where line.firstMatch(of: regex) != nil {
-                Issue.record("\(file.path):\(index + 1): UI framework import in MyAppCore: \(line)")
+                Issue.record("\(file.path):\(index + 1): forbidden import in \(module): \(line)")
             }
         }
+    }
+
+    // MARK: - The real sources
+
+    @Test
+    func `no MyAppCore source file imports a UI or OS-integration framework`() throws {
+        try Self.expectNoImports(of: Self.forbiddenModules, in: "MyAppCore")
+    }
+
+    @Test
+    func `no MyAppUI source file imports MyAppPlatform`() throws {
+        try Self.expectNoImports(of: ["MyAppPlatform"], in: "MyAppUI")
+    }
+
+    @Test
+    func `no MyAppPlatform source file imports MyAppUI`() throws {
+        try Self.expectNoImports(of: ["MyAppUI"], in: "MyAppPlatform")
     }
 
     // MARK: - The pattern itself
@@ -79,6 +118,9 @@ struct ArchitectureBoundaryTests {
         "import AppKit",
         "import UIKit",
         "import Cocoa",
+        "import ApplicationServices",
+        "import Carbon",
+        "import ServiceManagement",
         "  import SwiftUI",
         "@preconcurrency import AppKit",
         "@_exported import SwiftUI",
@@ -86,8 +128,9 @@ struct ArchitectureBoundaryTests {
         "import struct SwiftUI.Color",
         "import class AppKit.NSView",
         "import func Cocoa.NSApplicationMain",
+        "import Carbon.HIToolbox",
     ])
-    func `pattern matches every spelling of a UI framework import`(line: String) throws {
+    func `pattern matches every spelling of a forbidden import`(line: String) throws {
         let regex = try Self.importRegex()
         #expect(line.firstMatch(of: regex) != nil)
     }
@@ -98,6 +141,7 @@ struct ArchitectureBoundaryTests {
         "import Foundation",
         "import Observation",
         "import SwiftUIExtras",
+        "import ServiceManagementExtras",
         "@preconcurrency import Combine",
         "let text = \"import SwiftUI\"",
     ])

@@ -16,6 +16,12 @@ private enum Layout {
 /// `CounterViewModel` in MyAppCore.
 public struct ContentView: View {
     @State private var model: CounterViewModel
+    /// Present only when the app shell handed one down — the view has no way to build a
+    /// ``FrontmostAppViewModel``, because the port's adapter lives in `MyAppPlatform`,
+    /// which `MyAppUI` must not import. Previews and tests simply leave it out.
+    @State private var frontmostApp: FrontmostAppViewModel?
+    @Environment(\.scenePhase)
+    private var scenePhase
 
     public var body: some View {
         VStack(spacing: Layout.stackSpacing) {
@@ -32,15 +38,39 @@ public struct ContentView: View {
                     .disabled(!model.canIncrement)
                     .accessibilityIdentifier("incrementButton")
             }
+            if let frontmostApp {
+                Text("Frontmost: \(frontmostApp.displayName)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("frontmostAppLabel")
+            }
         }
         .padding(Layout.windowPadding)
         .frame(minWidth: Layout.minWindowWidth, minHeight: Layout.minWindowHeight)
+        // The port answers with a snapshot, so the snapshot is retaken every time this
+        // scene becomes active — reading it once at launch would pin the label to
+        // whoever launched the app. `initial: true` covers the case where the scene is
+        // already active on first render.
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            guard phase == .active else {
+                return
+            }
+            frontmostApp?.refresh()
+        }
     }
 
     /// Creates the view over `model` — previews and tests inject alternate
     /// states; the app shell uses the default.
-    public init(model: CounterViewModel = CounterViewModel()) {
+    ///
+    /// `frontmostApp` is the worked example of a Core view model over an OS port: the
+    /// app shell builds it with a `MyAppPlatform` adapter and hands it down, so this
+    /// view renders the answer without knowing where it came from.
+    public init(
+        model: CounterViewModel = CounterViewModel(),
+        frontmostApp: FrontmostAppViewModel? = nil,
+    ) {
         _model = State(initialValue: model)
+        _frontmostApp = State(initialValue: frontmostApp)
     }
 }
 
