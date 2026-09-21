@@ -162,7 +162,8 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
-| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
+| `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
+| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 
 These gaps are deliberate and stay open until their tracking issue closes them:
@@ -173,9 +174,6 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   `core.hooksPath` is set by that recipe. #14 narrows this — it checks at
   `just install`/`just check` time — without closing it; CI stays the backstop for
   anyone who runs neither.
-- **Nothing checks the `.claude/skills/` mirror automatically yet**: a skill edited
-  without `just agents-sync` drifts until someone runs `just agents-check`. #17 wires
-  that check into `just lint`, the pre-commit hook, and CI.
 - **`main` has no branch protection**, so nothing requires CI to pass before a change
   lands on it. Tracked by #29.
 - **`COVERAGE_MIN` can lower the coverage floor** through an environment variable

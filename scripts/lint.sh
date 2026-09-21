@@ -5,9 +5,9 @@
 #   scripts/lint.sh --staged-tree DIR    lint only the Swift files exported into DIR
 #
 # Whole repository: swiftformat --lint, swiftlint --strict, shellcheck over every
-# tracked shell script, actionlint, and typos. --staged-tree: swiftformat and
-# swiftlint only, against DIR. Every check runs even if an earlier one fails; the
-# script exits 1 if any failed.
+# tracked shell script, actionlint, typos, and the .agents/skills/ <-> .claude/skills/
+# mirror check. --staged-tree: swiftformat and swiftlint only, against DIR. Every
+# check runs even if an earlier one fails; the script exits 1 if any failed.
 #
 # Tools are called by bare name, never through `mise exec --`: that would
 # auto-install every tool in mise.toml, including the macOS-only ones CI's Linux
@@ -97,6 +97,7 @@ else
     run actionlint
     # typos reads typos.toml from the repository root automatically.
     run typos
+    run scripts/sync-agents.sh --check
 fi
 
 if [ ${#FAILED[@]} -gt 0 ]; then

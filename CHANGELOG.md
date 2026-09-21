@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`just agents-sync`; `just agents-check` reports drift); `.gitattributes` marks the
   mirror as generated
 - `ContentView` accepts an injected view model and ships `#Preview` configurations
+- `just lint`, the pre-commit hook (a new "Skills mirror" section, scoped to commits
+  that stage a path under `.agents/skills/` or `.claude/skills/`), and CI's lint job
+  now all fail when the two skill trees drift, via `scripts/sync-agents.sh --check`
 
 ### Changed
 
