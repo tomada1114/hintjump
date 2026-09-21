@@ -52,7 +52,8 @@ isowords.
 
 ### Why the Core/UI split and a coverage floor on Core only?
 
-`MyAppCore` holds all logic and never imports SwiftUI; `MyAppUI` holds thin
+`MyAppCore` holds all logic and never imports SwiftUI, AppKit, UIKit, or Cocoa
+(a lint rule and a test both enforce it); `MyAppUI` holds thin
 views. The 80% line-coverage floor applies to Core only — that is what makes a
 strict numeric gate *honest* for a GUI app instead of an invitation to write
 meaningless view tests. Note: Swift's llvm-cov has no dependable branch

@@ -65,8 +65,9 @@ job call.
 ```
 App/                        # Thin shell: @main entry point + resources, NO logic
 Packages/MyAppKit/
-├── Sources/MyAppCore/      # Domain logic + view models — platform-agnostic, no SwiftUI,
-│                           #   coverage-gated at 80%
+├── Sources/MyAppCore/      # Domain logic + view models — platform-agnostic, no
+│                           #   SwiftUI/AppKit/UIKit/Cocoa import (enforced by lint
+│                           #   and test), coverage-gated at 80%
 ├── Sources/MyAppUI/        # SwiftUI views — thin, delegate to Core view models
 └── Tests/MyAppCoreTests/   # Swift Testing suites
 LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
@@ -74,6 +75,10 @@ LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
 
 - New logic goes in `MyAppCore` with tests; views only render Core state
 - The dependency direction is one-way: Core ← UI ← App
+- `MyAppCore` never imports SwiftUI, AppKit, UIKit, or Cocoa — in any spelling, including
+  `@preconcurrency import AppKit` and `import struct SwiftUI.Color`. SwiftPM cannot block a
+  system framework, so this is enforced twice: `.swiftlint.yml`'s `no_ui_import_in_core`
+  and the `ArchitectureBoundaryTests` suite; their module lists change together
 - `MyApp.xcodeproj` is generated — edit `project.yml` instead
 
 ## Skills
@@ -197,6 +202,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
+| `.swiftlint.yml`'s `no_ui_import_in_core` custom rule and `ArchitectureBoundaryTests` (`Packages/MyAppKit/Tests/MyAppCoreTests/`) | the lint rule: `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job; the test: `just test` and CI's `test` job | every author | `MyAppCore` imports none of SwiftUI, AppKit, UIKit, or Cocoa, including attributed and kind-qualified imports — enforced twice, so removing either mechanism leaves the other |
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |

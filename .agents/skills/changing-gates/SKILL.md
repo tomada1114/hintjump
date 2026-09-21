@@ -62,8 +62,14 @@ entry in `disabled_rules` carries a one-line trailing reason; a new entry withou
 is incomplete, and removing a rule needs explicit approval
 (`.claude/rules/project.md`). Prefer an inline `// swiftlint:disable:next <rule>` with
 a reason when only one site needs the exception — a global disable widens the gate for
-every future file. A repository-specific rule would live under `custom_rules:` (there
-are none today). `analyzer_rules` is deliberately absent: those run only under
+every future file. Repository-specific rules live under `custom_rules:`. The one there,
+`no_ui_import_in_core`, keeps `MyAppCore` from importing SwiftUI, AppKit, UIKit, or
+Cocoa, attributed and kind-qualified spellings included; `ArchitectureBoundaryTests` in
+`MyAppCoreTests` enforces the same boundary a second way. Its module list and the
+test's `forbiddenModules` change together, in one commit — adding a framework to one
+and not the other leaves the boundary enforced once. Its `included` regex names the
+package and module, so a new Core-like target means widening it and the test's path.
+`analyzer_rules` is deliberately absent: those run only under
 `swiftlint analyze` with a compiler log, which no gate here invokes. `trailing_comma`
 is set to agree with SwiftFormat; the two tools must never disagree about one file.
 

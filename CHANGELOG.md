@@ -82,6 +82,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   required, checks green, no force-push or deletion) as code; `scripts/apply-ruleset.sh`
   (`just ruleset`) creates or updates it via `gh` for a repository admin, mapping a
   plan-gated API refusal and any other refusal to distinct named errors
+- `MyAppCore` is mechanically kept free of UI frameworks, twice: a SwiftLint custom rule
+  (`no_ui_import_in_core` in `.swiftlint.yml`) and a Swift Testing suite
+  (`ArchitectureBoundaryTests`) both reject `SwiftUI`, `AppKit`, `UIKit`, and `Cocoa`
+  imports in `Sources/MyAppCore`, including attributed and kind-qualified spellings
 
 ### Changed
 
