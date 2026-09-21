@@ -33,6 +33,10 @@ jobs:
         # install the macOS-only tools this job leaves out.
         run: scripts/lint.sh
 
+      - name: Script tests (scripts/tests/run.sh)
+        # The same runner `just test-scripts` calls; needs only bash and git.
+        run: scripts/tests/run.sh
+
   # Already the single spelling: this job calls scripts/coverage.sh (what `just test` runs),
   # and the app/bootstrap-smoke jobs call the just recipes themselves.
   test:

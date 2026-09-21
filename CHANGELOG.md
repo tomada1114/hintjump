@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ShellCheck joins the lint gate (`just lint` and CI) for every repo shell script
 - The launch UI test writes an `.xcresult` bundle; CI uploads it when the job fails
 - The release pipeline smoke-tests the signed Release app before packaging the DMG
+- A repository-script contract in `AGENTS.md` (`## Repository scripts`) and a
+  plain-bash test runner for `scripts/` (`scripts/tests/run.sh`, `just test-scripts`),
+  run by `just check` and CI's lint job; `scripts/lint.sh` errors now carry
+  `Expected:`/`Actual:`/`Next:` lines
 - `AGENTS.md` gains a narrowest-check table, a skill and rule index, the actions
   that need human approval, and the enforcement layers with their known gaps
 - Release runs are serialized per tag via a workflow `concurrency` group

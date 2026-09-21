@@ -25,6 +25,10 @@ fmt:
 lint:
     mise exec -- scripts/lint.sh
 
+# Run the plain-bash tests for the scripts under scripts/
+test-scripts:
+    scripts/tests/run.sh
+
 # Run tests with the 80% line-coverage floor on MyAppCore
 test:
     scripts/coverage.sh
@@ -48,8 +52,8 @@ uitest:
 smoke:
     scripts/smoke_launch.sh
 
-# Run all checks: format, lint, test, build (CI's app job adds uitest + smoke)
-check: fmt lint test build
+# Run all checks: format, lint, script tests, test, build (CI's app job adds uitest + smoke)
+check: fmt lint test-scripts test build
 
 # Remove build artifacts and the generated project
 clean:

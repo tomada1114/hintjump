@@ -15,12 +15,13 @@ just install   # Install pinned tools (mise), git hooks, and generate the Xcode 
 just generate  # Regenerate MyApp.xcodeproj from project.yml
 just fmt       # Format code (swiftformat)
 just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
+just test-scripts  # Run the plain-bash tests for scripts/ (scripts/tests/run.sh)
 just test      # Run tests with the 80% coverage floor on MyAppCore
 just build     # Build the app (Debug)
 just run       # Build (Debug) and launch the app, left running until you quit it
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
-just check     # Run all checks: fmt → lint → test → build
+just check     # Run all checks: fmt → lint → test-scripts → test → build
 just clean     # Remove build artifacts and the generated project
 ```
 
@@ -42,7 +43,7 @@ job call.
 | `project.yml` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
-| A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint` |
+| A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | A workflow under `.github/workflows/` | `just lint` |
 | Markdown | `just lint` (its `typos` spell-check) |
 | `mise.toml` | `mise install`, then `just check` |
@@ -104,6 +105,36 @@ of a check that enforces it.
   remote write that is not performed by a script this repository ships (none does
   today).
 
+## Repository scripts
+
+Every script under `scripts/` follows these rules, whoever writes it
+(`scripts/tests/lib.sh` is sourced, so it carries no shebang or `set` line of its own):
+
+- `#!/usr/bin/env bash` and `set -euo pipefail`, and bash 3.2-compatible (macOS
+  `/bin/bash`): no associative arrays, no `mapfile`/`readarray`, no `${var,,}`, and no
+  `"${arr[@]}"` on a possibly empty array under `set -u` (use `${arr[@]+"${arr[@]}"}`).
+- `shellcheck`-clean — `scripts/lint.sh` checks every tracked `*.sh`.
+- Pinned tools are called by bare name; the caller provides PATH (`mise exec -- …`
+  locally and in `just` recipes, `jdx/mise-action` in CI). Beyond that, assume only
+  `git` and POSIX utilities, and no GNU- or BSD-only flag (`sed -i`, `readlink -f`,
+  `mktemp -t`) — the scripts run on macOS and on CI's Ubuntu.
+- Failure contract: the first stderr line is `ERR_<STAGE>_<WHAT>: <what failed>`, then
+  `Expected:`, `Actual:`, and `Next:` lines (the next safe command); exit 1. List the
+  codes in the script's header comment. Never print a secret value.
+- Never assume the checkout is the only repository on the machine. A script that
+  enumerates or rewrites tracked files refuses to run outside a git work tree (the
+  `scripts/bootstrap.sh` pattern); a check that is meaningless outside one skips with a
+  one-line notice instead. Each script's header states which it does.
+- Every script directly under `scripts/` has a test file `scripts/tests/<script-name>_test.sh`
+  built on `scripts/tests/lib.sh`, and `scripts/tests/run.sh` (`just test-scripts`,
+  part of `just check` and CI's lint job) runs them all. A test works in a throwaway
+  repository or temp directory, never the real checkout, and fakes external commands
+  with `stub_command`. Known exceptions, each with its reason: `bootstrap.sh`
+  (exercised end to end by CI's `bootstrap-smoke` job); `coverage.sh`,
+  `smoke_launch.sh`, and `package_dmg.sh` (need Xcode and a build; exercised by the
+  `test`, `app`, and `release` jobs). `bootstrap.sh` and `coverage.sh` also predate the
+  failure contract and do not follow it yet.
+
 ## Enforcement layers
 
 Later issues update the Enforcement layers table and gap list as they close each gap
@@ -114,7 +145,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
-| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos), tests with the coverage floor, build, UI test, and Release smoke |
+| CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 
 These gaps are deliberate and stay open until their tracking issue closes them:
