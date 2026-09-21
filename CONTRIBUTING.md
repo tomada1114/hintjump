@@ -26,6 +26,9 @@ just install
 # Format
 just fmt
 
+# Format, auto-fix SwiftLint violations, then run the full lint check
+just fix
+
 # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just lint
 
@@ -37,6 +40,9 @@ just check-harness
 
 # Run tests with the coverage floor
 just test
+
+# While iterating: run only the matching tests, with no coverage floor
+just test-fast CounterTests
 
 # Build the app
 just build
@@ -58,10 +64,12 @@ mise install
 git config core.hooksPath .githooks   # pre-commit lint gate (just install does this)
 scripts/verify-hooks.sh               # confirm the hooks are installed and executable
 mise exec -- swiftformat .
+mise exec -- swiftlint lint --fix --quiet   # just fix = swiftformat, this, then scripts/lint.sh
 mise exec -- scripts/lint.sh
 mise exec -- scripts/tests/run.sh
 mise exec -- scripts/checks/run-all.sh
 scripts/coverage.sh
+(cd Packages/MyAppKit && swift test --filter CounterTests)   # just test-fast CounterTests
 mise exec -- xcodegen generate
 xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedDataPath build/dev-derived-data build
 open build/dev-derived-data/Build/Products/Debug/MyApp.app

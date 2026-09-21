@@ -14,11 +14,13 @@ day one.
 just install   # Install pinned tools (mise), git hooks, and generate the Xcode project
 just generate  # Regenerate MyApp.xcodeproj from project.yml
 just fmt       # Format code (swiftformat)
+just fix       # Format, auto-fix SwiftLint violations, then run just lint
 just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just verify-hooks  # Verify the git hooks are installed and executable (scripts/verify-hooks.sh)
 just test-scripts  # Run the plain-bash tests for scripts/ (scripts/tests/run.sh)
 just check-harness # Re-assert the harness's claims about itself (scripts/checks/run-all.sh)
 just test      # Run tests with the 80% coverage floor on MyAppCore
+just test-fast CounterTests  # Run only the matching tests, no coverage floor (iteration only)
 just build     # Build the app (Debug)
 just run       # Build (Debug) and launch the app, left running until you quit it
 just uitest    # Run the XCUITest launch test
@@ -46,6 +48,8 @@ job call.
 | A test under `Packages/MyAppKit/Tests/MyAppCoreTests/` | `just test` |
 | A view under `Packages/MyAppKit/Sources/MyAppUI/`, or anything under `App/` | `just build` |
 | Formatting or style of any Swift file | `just lint` |
+| A SwiftLint or SwiftFormat violation that may be auto-fixable | `just fix` (formats, runs `swiftlint --fix`, then `just lint` reports what still needs a hand edit) |
+| One Core suite, while iterating | `just test-fast <filter>` (e.g. `just test-fast CounterTests`) — no coverage floor, so finish with `just test` |
 | `project.yml` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |

@@ -22,6 +22,13 @@ generate:
 fmt:
     mise exec -- swiftformat .
 
+# Format and auto-fix SwiftLint violations, then run the full lint check: some
+# violations have no safe auto-fix, and the check reports what still needs a hand edit
+fix:
+    mise exec -- swiftformat .
+    mise exec -- swiftlint lint --fix --quiet
+    just lint
+
 # Run formatters and linters in check mode (swiftformat, swiftlint, shellcheck, actionlint, typos)
 lint:
     mise exec -- scripts/lint.sh
@@ -43,6 +50,11 @@ check-harness:
 # Run tests with the 80% line-coverage floor on MyAppCore
 test:
     scripts/coverage.sh
+
+# Run only the tests matching FILTER (swift test --filter), with no coverage floor —
+# for fast local iteration; `just test` is still the gate
+test-fast filter:
+    cd Packages/MyAppKit && swift test --filter '{{filter}}'
 
 # Build the app (Debug)
 build:

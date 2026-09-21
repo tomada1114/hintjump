@@ -91,6 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `scripts/tests/lib.sh`, pointing at `AGENTS.md`'s "Repository scripts" for the
   rules) and `starting-an-app` (what `scripts/bootstrap.sh` renames and how, and what a
   new app keeps, including its labels and branch ruleset)
+- `just fix` formats and auto-fixes SwiftLint violations, then runs `just lint`;
+  `just test-fast <filter>` runs only the matching tests, without the coverage floor
 
 ### Changed
 
