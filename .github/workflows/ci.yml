@@ -44,7 +44,7 @@ jobs:
         run: scripts/checks/run-all.sh
 
   # Already the single spelling: this job calls scripts/coverage.sh (what `just test` runs),
-  # and the app/bootstrap-smoke jobs call the just recipes themselves.
+  # and the app job calls the just recipes itself.
   test:
     name: Test & Coverage Gate
     runs-on: macos-26
@@ -135,6 +135,16 @@ jobs:
             echo "::error::template history still present in CHANGELOG.md"
             exit 1
           fi
+
+      - name: Assert the template-only job was retired
+        run: |
+          cd "$RUNNER_TEMP/bootstrap-smoke"
+          if grep -nE '^  bootstrap-smoke:$|Template Bootstrap Smoke' .github/workflows/ci.yml .github/rulesets/main.json; then
+            echo "::error::bootstrap did not retire the bootstrap-smoke job and its required check"
+            exit 1
+          fi
+          # Every remaining required context still names a job (parses main.json too).
+          bash scripts/tests/apply-ruleset_test.sh
 
       - name: Test the renamed package
         run: |

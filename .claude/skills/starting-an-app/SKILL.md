@@ -55,6 +55,10 @@ scripts/bootstrap.sh CoolApp --bundle-id-prefix io.example --github-user janedoe
   skipping `.git/` and build output, and the Xcode project is regenerated.
 - **`CHANGELOG.md`** is reset to a one-entry history for the new project, guarded by a
   marker line so a re-run never wipes the new app's own entries.
+- **Template-only CI job:** `bootstrap-smoke` and its `Template Bootstrap Smoke`
+  required check in `.github/rulesets/main.json` are removed together, guarded by
+  their presence. If either is in a shape the script cannot delete (the ruleset entry
+  not one comma-terminated line), it stops with an error naming both files.
 - **Idempotent:** running it again with the same name is a no-op.
 
 When it finishes, it prints next steps, including a leftover check: an `rg -i` over the
@@ -64,10 +68,12 @@ replace cannot see — fix those by hand. `README.md`'s own leftover command spe
 for the same reason the script quote-splits them.
 
 Changing the script means keeping `bootstrap-smoke` green: it bootstraps a clone as
-`DemoApp`, asserts no placeholder survives, asserts the `CHANGELOG.md` reset, then runs
-`swift test` and an `xcodebuild` on the renamed tree. Its leftover grep is
-case-insensitive and allows a missing hyphen, so a new mention of the app name in a
-spelling the literal replace does not cover (all lowercase, say) fails that job.
+`DemoApp`, asserts no placeholder survives, asserts the `CHANGELOG.md` reset, asserts
+the template-only job was retired (and re-runs `scripts/tests/apply-ruleset_test.sh`
+in the clone), then runs `swift test` and an `xcodebuild` on the renamed tree. Its
+leftover grep is case-insensitive and allows a missing hyphen, so a new mention of the
+app name in a spelling the literal replace does not cover (all lowercase, say) fails
+that job.
 
 ## What the new app keeps
 
@@ -76,11 +82,9 @@ the rename unchanged and is most of what starting from this template buys:
 
 - **The gate set** — the `justfile` recipes and the scripts under `scripts/` they call,
   and `.github/workflows/`. A red run early in a new project is an argument for fixing
-  the code, never for deleting the check that found it. The one job that is about the
-  template rather than the app is `bootstrap-smoke`: once the rename has run there are
-  no placeholders left for it to rename, so it renames nothing and then fails to find
-  the `DemoApp` package it expects. Retire it deliberately — the workflow job and its
-  `Template Bootstrap Smoke` entry in `.github/rulesets/main.json` together.
+  the code, never for deleting the check that found it. `bootstrap-smoke` is the one
+  job about the template rather than the app, so `scripts/bootstrap.sh` removes it and
+  its ruleset entry, and `just ruleset` then requires only jobs the app runs.
 - **The commit-time guard** — `.githooks/pre-commit` and its "Staged guard" section
   (`scripts/check-staged.sh`, with the rules in `scripts/guard/`), the one layer that
   stops a secret-shaped path or credential before it reaches history. It knows nothing

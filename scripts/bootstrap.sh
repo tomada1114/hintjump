@@ -11,6 +11,8 @@
 #   your-username / Your Name / you@example.com -> optional args (kept if omitted)
 #
 # Then renames MyApp* paths and regenerates the Xcode project.
+# Also removes the template-only CI job (bootstrap-smoke) and its required check
+# in .github/rulesets/main.json.
 # Running it again with the same name is a no-op, so it is safe to re-run
 # (values a previous run already replaced are not replaced again).
 set -euo pipefail
@@ -110,6 +112,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/${PH_USER}/${PH_SLUG}/commits/main
 EOF
+fi
+
+# Retire the template-only CI job. bootstrap-smoke renames a pristine copy of the
+# template; once this rename has run there is nothing left for it to rename, so it
+# can only fail. Remove the job and its required-check entry together. Guarded by
+# their presence, so a re-run (or an app that already removed them) is a no-op.
+CI_FILE=".github/workflows/ci.yml"
+RULESET_FILE=".github/rulesets/main.json"
+SMOKE_JOB='  bootstrap-smoke:'
+SMOKE_NAME='Template Bootstrap Smoke'
+if grep -qxF "${SMOKE_JOB}" "${CI_FILE}" 2>/dev/null || grep -qF "\"${SMOKE_NAME}\"" "${RULESET_FILE}" 2>/dev/null; then
+    echo "==> Retiring the template-only bootstrap-smoke CI job"
+    # The job key, then every following line that is blank or indented 4+ spaces,
+    # i.e. up to (not including) the next 2-space-indented job key or EOF.
+    [ -f "${CI_FILE}" ] && perl -0pi -e 's/^  bootstrap-smoke:\n(?:(?:    [^\n]*)?\n)*//m' "${CI_FILE}"
+    # Only the one-line, comma-terminated shape is deleted, so the JSON stays valid;
+    # any other shape is left alone and reported below.
+    [ -f "${RULESET_FILE}" ] && perl -ni -e 'print unless /^\s*\{ "context": "Template Bootstrap Smoke", "integration_id": \d+ \},\s*$/' "${RULESET_FILE}"
+    if grep -qxF "${SMOKE_JOB}" "${CI_FILE}" 2>/dev/null || grep -qF "${SMOKE_NAME}" "${CI_FILE}" "${RULESET_FILE}" 2>/dev/null; then
+        echo "error: could not retire the template's bootstrap-smoke job automatically." >&2
+        echo "       Still present (anything already removed was left removed):" >&2
+        grep -nE "^${SMOKE_JOB}\$|${SMOKE_NAME}" "${CI_FILE}" "${RULESET_FILE}" 2>/dev/null | sed 's/^/         /' >&2 || true
+        echo "       Remove those lines by hand (keep ${RULESET_FILE} valid JSON), then re-run this script." >&2
+        exit 1
+    fi
 fi
 
 echo "==> Replacing placeholders"

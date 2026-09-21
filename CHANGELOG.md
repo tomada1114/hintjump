@@ -96,6 +96,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `scripts/bootstrap.sh` now removes the template-only `bootstrap-smoke` CI job and
+  its required status check, so a new app's CI and branch ruleset no longer require a
+  job that cannot pass
 - `just build` and `just uitest` isolate DerivedData under `build/`, so
   `just clean` now removes everything the toolchain produced
 - `scripts/bootstrap.sh` resets `CHANGELOG.md` for the new project and prints a
