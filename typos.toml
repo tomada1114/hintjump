@@ -1,7 +1,5 @@
 [files]
-# docs/harness-reference is a verbatim snapshot of another repository (see its README);
-# it is removed again by the final harness-transplant issue.
 # typos skips hidden paths by default, which would leave .agents/, .claude/, .github/
 # and .githooks/ unchecked; .git is excluded instead so pack data is never scanned.
 ignore-hidden = false
-extend-exclude = ["*.xcassets", ".build", ".git", "Package.resolved", "docs/harness-reference"]
+extend-exclude = ["*.xcassets", ".build", ".git", "Package.resolved"]
