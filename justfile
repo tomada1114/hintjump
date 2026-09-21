@@ -12,6 +12,7 @@ install:
     if git rev-parse --git-dir >/dev/null 2>&1; then git config core.hooksPath .githooks; else echo "Skipping git hook installation (not a Git repository)."; fi
     mise exec -- xcodegen generate
     @if command -v xcodebuild >/dev/null 2>&1; then xcode_local="$(xcodebuild -version | head -n1 | awk '{print $2}')"; xcode_pinned="$(cat .xcode-version)"; if [ "$xcode_local" != "$xcode_pinned" ]; then echo "warning: local Xcode $xcode_local differs from the CI-pinned $xcode_pinned — results may diverge from CI"; fi; fi
+    just verify-hooks
 
 # Regenerate MyApp.xcodeproj from project.yml
 generate:
@@ -24,6 +25,10 @@ fmt:
 # Run formatters and linters in check mode (swiftformat, swiftlint, shellcheck, actionlint, typos)
 lint:
     mise exec -- scripts/lint.sh
+
+# Verify the git hooks are installed and executable (skips under CI or ALLOW_MISSING_GIT_HOOKS)
+verify-hooks:
+    scripts/verify-hooks.sh
 
 # Run the plain-bash tests for the scripts under scripts/
 test-scripts:
@@ -52,8 +57,8 @@ uitest:
 smoke:
     scripts/smoke_launch.sh
 
-# Run all checks: format, lint, script tests, test, build (CI's app job adds uitest + smoke)
-check: fmt lint test-scripts test build
+# Run all checks: verify hooks, format, lint, script tests, test, build (CI's app job adds uitest + smoke)
+check: verify-hooks fmt lint test-scripts test build
 
 # Regenerate the .claude/skills/ mirror from .agents/skills/ (run after any skill edit)
 agents-sync:

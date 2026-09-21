@@ -53,6 +53,7 @@ just check
 ```bash
 mise install
 git config core.hooksPath .githooks   # pre-commit lint gate (just install does this)
+scripts/verify-hooks.sh               # confirm the hooks are installed and executable
 mise exec -- swiftformat .
 mise exec -- scripts/lint.sh
 scripts/tests/run.sh

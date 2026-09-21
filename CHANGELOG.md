@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (authoring a skill once under `.agents/skills/`, the `just agents-sync` mirror, and
   what no check verifies yet) and `updating-docs` (which documentation surface a change
   lands on, including `CHANGELOG.md` and `docs/`)
+- `scripts/verify-hooks.sh` (`just verify-hooks`) checks that git really resolves the
+  hooks directory to `.githooks/` and that `.githooks/pre-commit` is executable, run at
+  the end of `just install` and as the first step of `just check`; it skips under CI or
+  the named `ALLOW_MISSING_GIT_HOOKS=1` opt-out, for an environment that genuinely
+  cannot have git hooks
 
 ### Changed
 

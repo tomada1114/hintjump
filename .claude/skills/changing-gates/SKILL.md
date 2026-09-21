@@ -110,7 +110,12 @@ not the worktree. A new section is appended below the layout-rule comment, and o
 needs a scratch directory takes it from `new_temp_dir`, which registers it in
 `CLEANUP_DIRS` for the one shared `EXIT` trap — a second `trap … EXIT` would replace the
 first and leak its directory. The hook only reaches clones that ran `just install`
-(`core.hooksPath`), so CI stays the backstop.
+(`core.hooksPath`); `scripts/verify-hooks.sh` (`just install`'s last step, and `just
+check`'s first) fails loudly when that config did not stick or `.githooks/pre-commit`
+lost its executable bit, narrowing — not closing — that gap: a contributor who runs
+neither still commits without the hook, so CI stays the backstop. It skips under CI or
+the named `ALLOW_MISSING_GIT_HOOKS` opt-out, for an environment that genuinely cannot
+have git hooks.
 
 ## `.github/workflows/`
 

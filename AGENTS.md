@@ -15,13 +15,14 @@ just install   # Install pinned tools (mise), git hooks, and generate the Xcode 
 just generate  # Regenerate MyApp.xcodeproj from project.yml
 just fmt       # Format code (swiftformat)
 just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
+just verify-hooks  # Verify the git hooks are installed and executable (scripts/verify-hooks.sh)
 just test-scripts  # Run the plain-bash tests for scripts/ (scripts/tests/run.sh)
 just test      # Run tests with the 80% coverage floor on MyAppCore
 just build     # Build the app (Debug)
 just run       # Build (Debug) and launch the app, left running until you quit it
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
-just check     # Run all checks: fmt → lint → test-scripts → test → build
+just check     # Run all checks: verify-hooks → fmt → lint → test-scripts → test → build
 just agents-sync   # Regenerate the .claude/skills/ mirror from .agents/skills/
 just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
@@ -47,6 +48,7 @@ job call.
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
 | A shell script under `scripts/`, or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
+| `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
 | A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` |
 | A workflow under `.github/workflows/` | `just lint` |
 | Markdown | `just lint` (its `typos` spell-check) |
@@ -175,6 +177,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
+| `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
 | CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
@@ -184,9 +187,14 @@ These gaps are deliberate and stay open until their tracking issue closes them:
 - **`git commit --no-verify` bypasses the hook**, and nothing in this repository
   blocks it. "Never bypass the hooks" holds as an instruction, and CI is the backstop.
 - **Hooks are absent on a bare clone until `just install` runs**, because
-  `core.hooksPath` is set by that recipe. #14 narrows this — it checks at
-  `just install`/`just check` time — without closing it; CI stays the backstop for
-  anyone who runs neither.
+  `core.hooksPath` is set by that recipe. `scripts/verify-hooks.sh` narrows this: it
+  fails loudly at `just install` and `just check` time when git does not resolve the
+  hooks directory to `.githooks/` or `.githooks/pre-commit` is not executable, so a
+  clone whose hook silently failed to install no longer looks identical to one that
+  succeeded. It does not close the gap — a contributor who runs neither `just install`
+  nor `just check` still commits without hooks — so CI stays the backstop.
+  `ALLOW_MISSING_GIT_HOOKS=1` opts out for an environment that genuinely cannot have
+  git hooks (e.g. a read-only or sandboxed checkout); every failure names it.
 - **`main` has no branch protection**, so nothing requires CI to pass before a change
   lands on it. Tracked by #29.
 - **`COVERAGE_MIN` can lower the coverage floor** through an environment variable
