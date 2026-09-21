@@ -70,5 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (CI's separate spell-check job is folded into the lint job)
 - The pre-commit hook runs each check as its own section scoped by staged paths,
   with no early exit when no Swift file is staged
+- `typos` also spell-checks the dot-directories (`.agents/`, `.claude/`, `.github/`,
+  `.githooks/`), which it skipped by default; `.git/` is excluded
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main

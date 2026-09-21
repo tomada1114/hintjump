@@ -107,11 +107,11 @@ the same commit, and widening a skill's subject means widening its row.
 
 ## Spell-check and formatting
 
-`typos` runs in `scripts/lint.sh`, but it skips hidden paths by default and `typos.toml`
-does not turn that off, so neither `.agents/skills/` nor `.claude/skills/` is
-spell-checked today (`typos --files` lists neither tree). Proofread a new or edited
-`SKILL.md` yourself. When a technical term has to be allowed later, add it to
-`typos.toml`'s `default.extend-words` rather than working around the checker.
+`just lint` spell-checks both trees with `typos` (`typos.toml` sets
+`ignore-hidden = false`, so dot-directories are scanned). The content is identical, so a
+typo is reported twice — fix it once in `.agents/skills/` and run `just agents-sync`.
+When a technical term has to be allowed, add it to `typos.toml`'s `default.extend-words`
+rather than working around the checker.
 
 Markdown has no auto-formatter here: `just fmt` runs SwiftFormat on Swift files only, so
 a `SKILL.md` is formatted by hand and reviewed by eye. Wrap prose at the width the
