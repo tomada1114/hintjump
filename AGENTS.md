@@ -189,8 +189,11 @@ libraries are sourced, so they carry no shebang or `set` line of their own):
   points each check at it with `--root`. Known exceptions, each with its reason:
   `bootstrap.sh` (exercised end to end by CI's `bootstrap-smoke` job); `coverage.sh`,
   `smoke_launch.sh`, and `package_dmg.sh` (need Xcode and a build; exercised by the
-  `test`, `app`, and `release` jobs). `bootstrap.sh` and `coverage.sh` also predate the
-  failure contract and do not follow it yet.
+  `test`, `app`, and `release` jobs) — `coverage.sh` still has a partial test file,
+  `scripts/tests/coverage_test.sh`, which stubs `swift` to cover its rejection of the
+  removed environment override and its floor comparison, but not a real coverage run.
+  `bootstrap.sh` also predates the failure contract and does not follow it yet, and
+  neither does `coverage.sh`'s below-the-floor failure.
 
 ## Enforcement layers
 
@@ -234,8 +237,6 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   `gh api repos/{owner}/{repo}/rulesets`, never from a git checkout. "Use this
   template" does not copy rulesets, so every repository created from this template
   still needs its own admin to run `just ruleset` once.
-- **`COVERAGE_MIN` can lower the coverage floor** through an environment variable
-  (`scripts/coverage.sh`), so the 80% floor is a default, not a lock. Closed by #24.
 - **The `PostToolUse` swiftformat hook in `.claude/settings.json` applies to Claude
   Code only.** It formats after an agent's edit on that one host; the git hook, not
   this hook, is the real gate.

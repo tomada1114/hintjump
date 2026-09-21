@@ -100,12 +100,14 @@ silently. The Xcode pin lives in `.xcode-version`, not here.
 
 ## `scripts/coverage.sh`
 
-It gates on line coverage of `Sources/MyAppCore/` only (`MyAppUI` is exempt by design).
-The floor defaults to 80 in the script (`THRESHOLD="${COVERAGE_MIN:-80}"`), so moving
-the default is always a reviewed diff. `COVERAGE_MIN` can still override it from the
-environment — a gap `AGENTS.md`'s "Enforcement layers" lists and #24 closes. Until then,
-setting `COVERAGE_MIN` in a recipe, workflow, or hook is lowering the floor by another
-route.
+It gates on line coverage of `Sources/MyAppCore/` only. `MyAppUI` is not measured: no
+test target links it, so llvm-cov has no data for it. The floor is
+`readonly COVERAGE_FLOOR=80` in the script and nothing else — no environment variable or
+flag moves it, so every change to it is a reviewed diff of this file, and a change is
+only ever a raise. The script rejects the environment override it used to read with
+`ERR_COVERAGE_OVERRIDE_REMOVED` before any test runs, rather than silently ignoring it;
+`scripts/tests/coverage_test.sh` holds that. Adding a new way to set the floor from a
+recipe, workflow, or hook is lowering it by another route.
 
 ## `.githooks/pre-commit`
 

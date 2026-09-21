@@ -102,5 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.githooks/`), which it skipped by default; `.git/` is excluded
 - `just test-scripts` runs `scripts/tests/run.sh` through `mise exec --`, since the
   harness-check tests call the pinned `just`; CI's lint job installs `just` too
+- The coverage floor is `readonly COVERAGE_FLOOR=80` in `scripts/coverage.sh` and moves
+  only by a reviewed diff: the `COVERAGE_MIN` environment override is removed, and
+  setting it now fails with `ERR_COVERAGE_OVERRIDE_REMOVED` before any test runs
+  (`scripts/tests/coverage_test.sh`)
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main
