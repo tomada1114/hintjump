@@ -117,7 +117,7 @@ matching its `paths:` globs.
 
 | Rule | Loads when you touch |
 |---|---|
-| `.claude/rules/project.md` | `project.yml`, `Packages/**/Package.swift`, `mise.toml`, `.swiftlint.yml`, `.swiftformat`, `scripts/coverage.sh` |
+| `.claude/rules/project.md` | `project.yml`, `Packages/**/Package.swift`, `Packages/**/Package.resolved`, `mise.toml`, `.swiftlint.yml`, `.swiftformat`, `scripts/coverage.sh` |
 | `.claude/rules/docs.md` | `docs/**/*.md`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` |
 | `.claude/rules/swift.md` | `Packages/**/*.swift`, `App/**/*.swift` |
 | `.claude/rules/testing.md` | `Packages/**/Tests/**`, `LaunchUITests/**` |

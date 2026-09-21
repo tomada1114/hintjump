@@ -109,5 +109,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependency review fails a pull request that adds a dependency outside the permissive
   license allow-list in `.claude/rules/project.md` (MIT, Apache-2.0, BSD-2-Clause,
   BSD-3-Clause, ISC, 0BSD, Zlib), via the action's `allow-licenses`
+- `.claude/rules/project.md` holds the review record a new SwiftPM dependency needs
+  (need, continuity, license, weight, build-time code, platforms, advisories) and how to
+  declare, add, and bump one without hand-editing `Package.resolved`; it now also loads
+  when `Package.resolved` is touched
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main
