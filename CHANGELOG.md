@@ -106,5 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only by a reviewed diff: the `COVERAGE_MIN` environment override is removed, and
   setting it now fails with `ERR_COVERAGE_OVERRIDE_REMOVED` before any test runs
   (`scripts/tests/coverage_test.sh`)
+- Dependency review fails a pull request that adds a dependency outside the permissive
+  license allow-list in `.claude/rules/project.md` (MIT, Apache-2.0, BSD-2-Clause,
+  BSD-3-Clause, ISC, 0BSD, Zlib), via the action's `allow-licenses`
 
 [Unreleased]: https://github.com/your-username/my-app/commits/main

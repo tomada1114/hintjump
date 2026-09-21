@@ -18,3 +18,14 @@ jobs:
 
       - name: Dependency Review
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        # The allow-list mirrors .claude/rules/project.md's permissive-only dependency
+        # policy (ISC, 0BSD, and Zlib are MIT-equivalent permissive licenses). It covers
+        # every ecosystem in the dependency graph: SwiftPM packages from Package.resolved
+        # and the actions a workflow `uses:`. This gates *what* a dependency is; how one
+        # is added and pinned is .claude/rules/project.md's policy.
+        # - fail-on-severity is intentionally unset: its default, `low`, is the strictest.
+        # - deny-licenses is deprecated upstream; an allow-list is the supported option.
+        # - A justified exception for one package goes in allow-dependencies-licenses
+        #   (purl form), with a comment giving the reason.
+        with:
+          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, Zlib

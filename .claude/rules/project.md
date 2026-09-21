@@ -11,8 +11,12 @@ paths:
 ## Dependency Policy
 
 - The template ships with ZERO package dependencies — keep it that way unless the app truly needs one
-- Before adding a dependency: verify active maintenance, compatible license (MIT/BSD/Apache),
-  and minimal transitive dependencies
+- Before adding a dependency: verify active maintenance, a permissive license, and minimal
+  transitive dependencies
+- Allowed licenses (SPDX): MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, Zlib.
+  `.github/workflows/dependency-review.yml` enforces this exact list (`allow-licenses`) on
+  every pull request — change both together; a per-package exception goes in its
+  `allow-dependencies-licenses` with a comment giving the reason
 - `Package.resolved` MUST be committed alongside any dependency change
 - NEVER lower the coverage floor (currently 80% on MyAppCore)
 - NEVER remove SwiftLint rules without explicit user approval
