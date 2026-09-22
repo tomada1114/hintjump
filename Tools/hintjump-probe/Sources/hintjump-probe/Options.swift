@@ -12,12 +12,16 @@ enum Command: String, CaseIterable {
 struct Options {
     /// How many reads `time` makes when `--runs` is not given.
     static let defaultRuns = 10
+    /// The commands that print a dump, and so can print ranks in it.
+    static let rankingCommands: Set<Command> = [.dump, .wake]
 
     let command: Command
     let bundleIdentifier: String
     let scope: ReadScope
     let strategy: ReadStrategy
     let runs: Int
+    /// Whether `dump` (and `wake`, which dumps) adds each element's rank to its row.
+    let rank: Bool
 
     /// Parses the arguments after the executable name.
     ///
@@ -36,6 +40,7 @@ struct Options {
         var parsedScope = ReadScope.focusedWindow
         var parsedStrategy = ReadStrategy.naive
         var parsedRuns = defaultRuns
+        var parsedRank = false
 
         var rest = arguments.dropFirst()
         while let flag = rest.first {
@@ -53,6 +58,9 @@ struct Options {
             case "--runs":
                 parsedRuns = try parseRuns(value(for: flag, from: &rest))
 
+            case "--rank":
+                parsedRank = true
+
             default:
                 throw ProbeError.unknownArgument(flag)
             }
@@ -61,13 +69,23 @@ struct Options {
         guard let parsedApp else {
             throw ProbeError.missingValue("--app")
         }
+        try checkRank(parsedRank, appliesTo: parsedCommand)
         return Self(
             command: parsedCommand,
             bundleIdentifier: parsedApp,
             scope: parsedScope,
             strategy: parsedStrategy,
             runs: parsedRuns,
+            rank: parsedRank,
         )
+    }
+
+    /// `--rank` changes what a dump prints, so it is refused on a command that prints
+    /// none rather than silently ignored.
+    private static func checkRank(_ rank: Bool, appliesTo command: Command) throws {
+        guard !rank || rankingCommands.contains(command) else {
+            throw ProbeError.inapplicable(flag: "--rank", command: command)
+        }
     }
 
     private static func value(

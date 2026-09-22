@@ -8,6 +8,7 @@ let failureExitCode: Int32 = 1
 
 /// Everything the probe can refuse to do, with the sentence it prints on stderr.
 enum ProbeError: Error {
+    case inapplicable(flag: String, command: Command)
     case missingValue(String)
     case notRunning(String)
     case unknownArgument(String)
@@ -20,7 +21,7 @@ enum ProbeError: Error {
         case .notRunning:
             failureExitCode
 
-        case .missingValue, .unknownArgument, .unknownValue, .usage:
+        case .inapplicable, .missingValue, .unknownArgument, .unknownValue, .usage:
             usageExitCode
         }
     }
@@ -29,6 +30,9 @@ enum ProbeError: Error {
     /// about how the tool was called.
     var message: String {
         switch self {
+        case let .inapplicable(flag, command):
+            "\(flag) does not apply to \(command.rawValue).\n\n\(usageText)"
+
         case let .missingValue(flag):
             "\(flag) needs a value.\n\n\(usageText)"
 
@@ -62,6 +66,7 @@ options:
     --scope <scope>    focusedWindow (default), menuBar, or application
     --strategy <name>  naive (default), batched, pruned, or batchedPruned
     --runs <n>         reads for `time` (default \(Options.defaultRuns))
+    --rank             with dump or wake: each element's rank, or why it is not a target
 
 `--scope` also accepts the short spellings focused, menubar, and app.
 
