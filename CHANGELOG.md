@@ -109,6 +109,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the bundle identifier `project.yml` declares, read by the new
   `scripts/bundle-id.sh`, so both recipes that need it survive
   `scripts/bootstrap.sh`
+- `docs/architecture.md` › "Recommended optional dependencies" gains the four needs a
+  utility app hits first — global hotkeys, launch at login, a human-editable config
+  file, and a settings window — each with its zero-dependency answer first and each
+  candidate checked against `.claude/rules/project.md`'s checklist on a recorded date
+  (`KeyboardShortcuts` and `TOMLDecoder` pass; `LaunchAtLogin`, `TOMLKit`, and
+  `Settings` are recorded with the reason they do not). No dependency is added
 
 ### Changed
 
