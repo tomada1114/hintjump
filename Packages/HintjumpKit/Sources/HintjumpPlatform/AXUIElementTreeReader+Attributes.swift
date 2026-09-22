@@ -95,8 +95,9 @@ extension AXUIElementTreeReader {
     ///
     /// When `strategy` prunes, the visible rectangle is the root's own frame, so a
     /// `.focusedWindow` or `.menuBar` read prunes against the window or the bar and an
-    /// `.application` read — whose root has no frame — prunes nothing by rectangle and
-    /// relies on the visible-children attributes alone. An element whose frame misses
+    /// `.application` read — whose root has no frame, or an empty one
+    /// (``visibleRect(ofRoot:)``) — prunes nothing by rectangle and relies on the
+    /// visible-children attributes and the sliver test alone. An element whose frame misses
     /// that rectangle, or is clipped to a sliver (``clippedExtent``), is **still
     /// recorded**, and only its subtree is skipped: keeping the element makes a pruned
     /// read's element list comparable with an unpruned one instead of silently shorter
@@ -122,7 +123,7 @@ extension AXUIElementTreeReader {
             elements.append(read.snapshot(depth: pending.depth, parentIndex: pending.parentIndex))
 
             if index == 0 {
-                visibleRect = prunes ? read.frame : nil
+                visibleRect = prunes ? Self.visibleRect(ofRoot: read.frame) : nil
             } else if prunes, isOutOfView(read.frame, within: visibleRect) {
                 continue
             }
@@ -137,6 +138,21 @@ extension AXUIElementTreeReader {
             }
         }
         return elements
+    }
+
+    /// The rectangle a pruning walk keeps elements inside: the root's frame, or `nil` —
+    /// nothing pruned by rectangle — when the root reports none or an empty one.
+    ///
+    /// An application element is not a place on screen, and some applications say so
+    /// with a zero-size frame rather than none (Finder reports `0,1440,0,0`). An empty
+    /// rectangle intersects nothing, so taking it at its word would record every window
+    /// and the menu bar and read nothing under them; reading it as "no frame" is what
+    /// ``walk(from:strategy:maxDepth:)`` already promises for an `.application` read.
+    static func visibleRect(ofRoot frame: CGRect?) -> CGRect? {
+        guard let frame, !frame.isEmpty else {
+            return nil
+        }
+        return frame
     }
 
     /// Whether the application places `frame` where nothing of it can be seen: outside
