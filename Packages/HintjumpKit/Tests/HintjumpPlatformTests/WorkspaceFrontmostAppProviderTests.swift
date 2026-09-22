@@ -34,13 +34,15 @@ struct WorkspaceFrontmostAppProviderTests {
         // Checked against the running applications rather than against a second read of
         // `frontmostApplication`: the frontmost application can change between two reads,
         // while the one just reported is certainly still running a moment later. This is
-        // the assertion that the name and bundle identifier came off a real
-        // `NSRunningApplication` instead of being invented by the translation.
+        // the assertion that the name, bundle identifier, and process identifier came off
+        // a real `NSRunningApplication` instead of being invented by the translation.
         let running = NSWorkspace.shared.runningApplications
+        #expect(frontmost.processIdentifier != nil)
         #expect(
             running.contains { application in
                 application.localizedName == frontmost.name
                     && application.bundleIdentifier == frontmost.bundleIdentifier
+                    && application.processIdentifier == frontmost.processIdentifier
             },
             "\(frontmost) matches none of the \(running.count) running applications",
         )

@@ -74,4 +74,14 @@ public enum AppLog {
     /// point names, key combinations, and OS status codes are `.public` — a shortcut is
     /// configuration vocabulary, not user data.
     public static let triggers = Logger(subsystem: subsystem, category: "triggers")
+
+    /// The hints concern: ``HintSession`` turning a trigger press into hints, a typed
+    /// label into a click, and why a press showed nothing.
+    ///
+    /// Its own category because it is the stream a "my shortcut shows no hints" or "the
+    /// wrong thing was clicked" investigation watches, and the one the 300 ms budget is
+    /// read from: `log stream --predicate 'category == "hints"'`. Entry points, counts,
+    /// durations, labels, and reasons are `.public`; nothing element-level beyond a role
+    /// is logged, and no title or description ever reaches a line.
+    public static let hints = Logger(subsystem: subsystem, category: "hints")
 }

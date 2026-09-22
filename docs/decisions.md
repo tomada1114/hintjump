@@ -310,3 +310,22 @@ file is their public record.
   pointer back after the click.
 - Supersedes: nothing; it names the API and the pointer behaviour that "Name,
   distribution, and foundation" left as "click synthesis".
+
+## 2026-09-22 Pressing the same trigger again closes the hints; a different trigger replaces them
+
+- Decision: while hints are shown, a second press of the shortcut that showed
+  them closes them without clicking; a press of any other trigger closes them
+  and shows that trigger's hints instead. Typed characters are lowercased
+  before they are matched, and a selected hint's click is posted on the next
+  main-run-loop turn after the overlay is hidden. `HintSession` in
+  `HintjumpCore` owns the whole sequence, reaching the overlay through the
+  `HintOverlayPresenting` port.
+- Why: the shortcut a user just pressed is the most natural way out besides
+  Esc, and a different trigger means they changed their mind about the target
+  set. Lowercasing lets a trigger's Shift still be held while the label is
+  typed. Deferring the click by one turn lets the window server order the
+  overlay out before the click lands, so the click reaches the target app and
+  not the overlay.
+- Rejected: ignoring a trigger while hints are shown (leaves Esc as the only
+  way out); re-reading and re-labeling on a repeated press of the same trigger
+  (a toggle is what a repeated shortcut means everywhere else).
