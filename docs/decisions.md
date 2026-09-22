@@ -338,8 +338,11 @@ file is their public record.
   without Hintjump ever calling `NSApp.activate`, and reads each key-down's
   `charactersIgnoringModifiers` — never its key code — as the typed key: Esc and
   backspace are control keys, any other single character is handed to the
-  session. Losing key status (a mouse click elsewhere, an app switch) closes the
-  hints. The adapter is `PanelHintOverlayPresenter` in `HintjumpPlatform`; the
+  session. Losing key status (an app switch) closes the hints, and so does any
+  mouse press while they are shown, seen through a global mouse-down monitor
+  (which needs no permission): a click in the target app, which is already
+  active, takes keyboard focus back without the panel ever being told it
+  resigned key. The adapter is `PanelHintOverlayPresenter` in `HintjumpPlatform`; the
   view it hosts, `HintOverlayView`, is in `HintjumpUI` and is installed by the
   composition root.
 - Why: a key window receives its keystrokes from the window server, so the

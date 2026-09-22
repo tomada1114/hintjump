@@ -17,6 +17,8 @@ import HintjumpCore
 public final class PanelHintOverlayPresenter: HintOverlayPresenting {
     /// The overlay window; internal so the local-machine test can see what was shown.
     let panel = HintOverlayPanel()
+    /// The global mouse-down monitor, installed only while the overlay is shown.
+    private var mouseDownMonitor: Any?
 
     public init() {
         // The panel is created ordered out; nothing is shown until `show`.
@@ -67,6 +69,7 @@ public final class PanelHintOverlayPresenter: HintOverlayPresenting {
         panel.onResignKey = onDismiss
         panel.setFrame(Self.flipped(canvas, primaryScreenHeight: height), display: true)
         panel.makeKeyAndOrderFront(nil)
+        watchMouseDowns()
     }
 
     /// Forgets the handlers, then orders the panel out — in that order, so the loss of
@@ -74,6 +77,38 @@ public final class PanelHintOverlayPresenter: HintOverlayPresenting {
     public func hide() {
         panel.onKey = nil
         panel.onResignKey = nil
+        stopWatchingMouseDowns()
         panel.orderOut(nil)
+    }
+
+    /// Reports a mouse press anywhere as a dismissal while the overlay is shown.
+    ///
+    /// The panel ignores the mouse, so every press lands in another app. When that app is
+    /// the one already active — the usual case, since the overlay never activates
+    /// Hintjump — the window server moves keyboard focus back to it without telling the
+    /// panel it resigned key, so `resignKey` alone would leave the hints up while the
+    /// keys went elsewhere. A global monitor for mouse presses needs no permission (only
+    /// key events do). The session's own click is posted after ``hide()`` has removed the
+    /// monitor, so it is never reported.
+    private func watchMouseDowns() {
+        guard mouseDownMonitor == nil else {
+            return
+        }
+        mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown],
+        ) { [weak self] _ in
+            // AppKit calls a global monitor's handler on the main thread.
+            MainActor.assumeIsolated {
+                self?.panel.onResignKey?()
+            }
+        }
+    }
+
+    private func stopWatchingMouseDowns() {
+        guard let monitor = mouseDownMonitor else {
+            return
+        }
+        NSEvent.removeMonitor(monitor)
+        mouseDownMonitor = nil
     }
 }
