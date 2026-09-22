@@ -67,6 +67,12 @@ build:
 run: build
     scripts/run-app.sh
 
+# Make macOS forget every permission (TCC) decision for this app — and only this
+# app, whose bundle identifier is read from project.yml — so the next launch asks
+# again (scripts/reset-permissions.sh)
+reset-permissions:
+    scripts/reset-permissions.sh
+
 # Stream this app's unified-log output (subsystem == the bundle identifier
 # project.yml declares), until you stop it with Ctrl-C
 logs:

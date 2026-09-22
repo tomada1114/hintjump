@@ -47,6 +47,7 @@ just test-local    # Run the local-machine adapter tests (MyAppPlatformTests) CI
 just build     # Build the app (Debug)
 just run       # Build (Debug), quit any running instance, and launch the fresh build
 just logs      # Stream this app's unified-log output (Ctrl-C to stop)
+just reset-permissions  # Make macOS forget this app's permission (TCC) grants
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
 just check     # Run all checks: verify-hooks → fmt → lint → test-scripts → check-harness → test → build
@@ -77,7 +78,7 @@ job call.
 | Formatting or style of any Swift file | `just lint` |
 | A SwiftLint or SwiftFormat violation that may be auto-fixable | `just fix` (formats, runs `swiftlint --fix`, then `just lint` reports what still needs a hand edit) |
 | One Core suite, while iterating | `just test-fast <filter>` (e.g. `just test-fast CounterTests`) — no coverage floor, so finish with `just test` |
-| `project.yml` | `just generate && just build` |
+| `project.yml`, or `Config/Debug.xcconfig` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
 | A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
@@ -112,6 +113,9 @@ Packages/MyAppKit/
                             # Adapter tests against the real OS — opt-in and human-run
                             #   (`just test-local`), reported as skipped everywhere else
 LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
+Config/Debug.xcconfig       # Debug-only build settings project.yml cannot express:
+                            #   the optional `#include?` of a gitignored
+                            #   Config/Local.xcconfig (a local signing identity)
 ```
 
 - New logic goes in `MyAppCore` with tests; views only render Core state
@@ -177,7 +181,7 @@ matching its `paths:` globs.
 
 | Rule | Loads when you touch |
 |---|---|
-| `.claude/rules/project.md` | `project.yml`, `Packages/**/Package.swift`, `Packages/**/Package.resolved`, `mise.toml`, `.swiftlint.yml`, `.swiftformat`, `scripts/coverage.sh` |
+| `.claude/rules/project.md` | `project.yml`, `Config/*.xcconfig`, `Packages/**/Package.swift`, `Packages/**/Package.resolved`, `mise.toml`, `.swiftlint.yml`, `.swiftformat`, `scripts/coverage.sh` |
 | `.claude/rules/docs.md` | `docs/**/*.md`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` |
 | `.claude/rules/swift.md` | `Packages/**/*.swift`, `App/**/*.swift` |
 | `.claude/rules/testing.md` | `Packages/**/Tests/**`, `LaunchUITests/**` |
@@ -193,8 +197,10 @@ Get a human's sign-off before acting on any of these. No file in this repository
 blocks them mechanically today — this section is the rule itself, not a description
 of a check that enforces it.
 
-- Touching `App/MyApp.entitlements`, a signing identity, or any signing,
-  notarization, or release secret.
+- Touching `App/MyApp.entitlements`, a signing identity — including the Debug
+  signing `Config/Debug.xcconfig` and `project.yml` set up — or any signing,
+  notarization, or release secret. Creating your own `Config/Local.xcconfig` is not
+  such a change: it is gitignored, never committed, and changes nobody else's build.
 - Creating or pushing a release tag.
 - Adding a new package dependency — see the dependency policy in
   `.claude/rules/project.md`.
@@ -272,7 +278,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | `.swiftlint.yml`'s `no_ui_import_in_core` custom rule and `ArchitectureBoundaryTests` (`Packages/MyAppKit/Tests/MyAppCoreTests/`) | the lint rule: `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job; the test: `just test` and CI's `test` job | every author | `MyAppCore` imports none of SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon, or ServiceManagement, including attributed and kind-qualified imports — enforced twice, so removing either mechanism leaves the other. The test alone also holds the sibling boundary: `MyAppUI` and `MyAppPlatform` never import each other |
 | `.swiftlint.yml`'s `no_print_in_sources` custom rule | `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job | every author | no `print(`, `debugPrint(`, or `NSLog(` call site under `Packages/*/Sources/` or `App/` — shipped code logs through `MyAppCore`'s `AppLog` (`os.Logger`), whose output survives an `open`-launched `.app` and is what `just logs` streams. A mention inside a comment or a string literal does not count, and test targets are exempt |
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
-| `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
+| `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material, `Config/Local.xcconfig`) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
 | `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, the Skills table matches `.agents/skills/`, and the `## Product` section above stays a `TODO:` skeleton here while `project.yml` still names the template's app-name placeholder and holds no `TODO:` marker once `scripts/bootstrap.sh` has renamed this into an app |
 | CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), the harness checks (`scripts/checks/run-all.sh`), tests with the coverage floor, build, UI test, and Release smoke |

@@ -68,6 +68,15 @@ case_named_key_and_credential_files_blocked() {
         credentials.json config/secrets.json private-key.txt keys/private-key.der
 }
 
+case_local_xcconfig_blocked() {
+    expect_blocked Config/Local.xcconfig Local.xcconfig config/local.xcconfig Config/LOCAL.XCCONFIG
+}
+
+case_other_xcconfigs_allowed() {
+    expect_allowed Config/Debug.xcconfig Config/Release.xcconfig Config/LocalOverrides.xcconfig \
+        Config/Local.xcconfig.example
+}
+
 case_public_and_ordinary_files_allowed() {
     expect_allowed App/MyApp.entitlements cert.cer Signing/Request.certSigningRequest \
         Slides.key Package.resolved README.md cert.pem \
@@ -80,5 +89,7 @@ run_case "a path with a secrets segment is blocked" case_secrets_segment_blocked
 run_case "secrets as a substring of a segment is allowed" case_secrets_substring_allowed
 run_case "p12, pfx, p8, provisioning profiles, and keychains are blocked" case_signing_material_blocked
 run_case "key-named .pem, .netrc, credentials/secrets.json, private-key.* are blocked" case_named_key_and_credential_files_blocked
+run_case "a Local.xcconfig is blocked, in any directory or case" case_local_xcconfig_blocked
+run_case "every other xcconfig is allowed" case_other_xcconfigs_allowed
 run_case "entitlements, .cer, CSR, Keynote .key, Package.resolved are allowed" case_public_and_ordinary_files_allowed
 finish

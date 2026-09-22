@@ -16,7 +16,9 @@
 #   - `.key`: the extension collides with Keynote documents;
 #   - `.env.example`, `.env.sample`, `.env.template`: committed, secret-free samples;
 #   - a regenerated file such as `Package.resolved`: committing one is normal, and
-#     whether it was hand-edited is not something a path can tell.
+#     whether it was hand-edited is not something a path can tell;
+#   - every xcconfig but `Local.xcconfig`: `Config/Debug.xcconfig` is committed on
+#     purpose and holds no per-machine value (project.yml's `configFiles`).
 # A new pattern needs a case in scripts/tests/guard-paths_test.sh.
 #
 # Basename matches are case-insensitive (`Cert.P12` is as secret as `cert.p12`, and
@@ -71,6 +73,9 @@ is_blocked_path() {
             ;;
         private-key.*)
             BLOCKED_REASON="a file named as a private key"
+            ;;
+        local.xcconfig)
+            BLOCKED_REASON="a local xcconfig names a signing identity and team, which are per-machine and gitignored"
             ;;
         *)
             return 1

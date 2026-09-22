@@ -57,6 +57,10 @@ just run
 # Stream this app's unified-log output (Ctrl-C to stop)
 just logs
 
+# Make macOS forget this app's permission (TCC) grants, so the next launch asks again
+# (docs/getting-started.md explains when you need this)
+just reset-permissions
+
 # Launch guarantee (Release build + alive check)
 just smoke
 
@@ -86,6 +90,7 @@ xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedD
 scripts/run-app.sh               # just run — quits the running instance, then launches
 scripts/bundle-id.sh             # the bundle identifier project.yml declares
 log stream --predicate "subsystem == \"$(scripts/bundle-id.sh)\"" --level debug   # just logs
+scripts/reset-permissions.sh     # just reset-permissions — resets TCC for this app only
 rm -rf build/LaunchUITests.xcresult
 xcodebuild test -project MyApp.xcodeproj -scheme MyApp -destination 'platform=macOS' -derivedDataPath build/dev-derived-data -resultBundlePath build/LaunchUITests.xcresult
 scripts/smoke_launch.sh

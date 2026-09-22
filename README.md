@@ -183,7 +183,9 @@ just check
 
 The first local `just uitest` run may prompt for Accessibility permission
 (System Settings → Privacy & Security); CI runners are pre-provisioned and
-run it on every push.
+run it on every push. If your app itself asks for such a permission, see
+[Keeping Permission Grants Across Rebuilds](docs/getting-started.md#keeping-permission-grants-across-rebuilds) —
+ad-hoc-signed Debug builds lose the grant on every rebuild.
 
 ## Documentation
 

@@ -176,9 +176,11 @@ cannot add a secret, and blocking one would block the commit that removes a secr
 Those two files are the list — read them for exactly what is checked:
 
 - **Blocked by path:** `.env` and `.env.*` (except `.example`/`.sample`/`.template`),
-  any `secrets` path segment, and signing material and credential files (`.p12`,
+  any `secrets` path segment, signing material and credential files (`.p12`,
   `.pfx`, `.p8`, provisioning profiles, keychains, `*key*.pem`, `.netrc`,
-  `credentials.json`, `secrets.json`, `private-key.*`).
+  `credentials.json`, `secrets.json`, `private-key.*`), and `Local.xcconfig` — the
+  per-machine Debug signing identity `Config/Debug.xcconfig` optionally includes,
+  which is gitignored as well.
 - **Blocked by content:** literal patterns for a PEM private-key header, GitHub tokens,
   and AWS access key ids. It prints the category, never the matched text.
 - **Deliberately not blocked:** `.cer` and `.certSigningRequest` (public), `.key`
@@ -226,5 +228,8 @@ the coverage floor — an adapter's real OS call is exercised by no *gate*: it h
 in `Tests/MyAppPlatformTests`, that only a human runs with `just test-local`, because a
 runner has no GUI session and no TCC grants), the signed and notarized release (built only on a tag push by `release.yml`), and
 entitlements or signing settings are places a change can be wrong while every gate
-passes. A gate proposed to close such a gap is a real gate change and belongs in the PR
+passes. Debug signing is now one of those settings: `Config/Debug.xcconfig` may
+`#include?` an uncommitted `Config/Local.xcconfig`, so what a developer's Debug build
+is signed with is by design invisible to every gate — which is why Release reads no
+xcconfig, and why `just smoke` stays the check that Release signing is intact. A gate proposed to close such a gap is a real gate change and belongs in the PR
 as one.

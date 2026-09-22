@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- An optional local signing identity for Debug builds: `Config/Debug.xcconfig`
+  (wired in by `project.yml`'s `configFiles`) ends with
+  `#include? "Local.xcconfig"`, so a gitignored `Config/Local.xcconfig` can give
+  Debug builds a stable designated requirement and keep a TCC permission grant
+  alive across rebuilds. Without that file the build is signed ad hoc exactly as
+  before, and Release reads no xcconfig at all
+  (`docs/getting-started.md` › Keeping Permission Grants Across Rebuilds)
+- `just reset-permissions` (`scripts/reset-permissions.sh`): resets every recorded
+  permission decision for this app, and only this app — the bundle identifier comes
+  from `project.yml`, never from an argument
+- The commit-time guard refuses a staged `Local.xcconfig`
+  (`scripts/guard/paths.sh`)
 - `AGENTS.md` gains a `## Product` section — what the app is and who for, the core
   interaction, its **Non-goals**, and where those decisions are recorded — shipped here
   as a `TODO` skeleton and filled in right after the rename (`README.md` › Using This

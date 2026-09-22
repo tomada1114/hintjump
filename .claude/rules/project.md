@@ -1,6 +1,7 @@
 ---
 paths:
   - "project.yml"
+  - "Config/*.xcconfig"
   - "Packages/**/Package.swift"
   - "Packages/**/Package.resolved"
   - "mise.toml"
@@ -52,6 +53,18 @@ paths:
 - `project.yml` is the source of truth; `MyApp.xcodeproj` is generated and gitignored —
   never hand-edit or commit it
 - After changing `project.yml`, run `just generate` and build to verify
+- `Config/Debug.xcconfig` holds only what `project.yml` cannot express — the optional
+  `#include?` of a gitignored `Config/Local.xcconfig` and the ad-hoc default it may
+  override. Any other setting belongs in `project.yml`, and Release reads no xcconfig
+  at all, so a local file can never change a Release or release-workflow build
+
+## Local Signing Identity
+
+- `Config/Local.xcconfig` is per-machine, gitignored, and refused by the commit-time
+  guard (`scripts/guard/paths.sh`) — never commit one, and never put a Team ID or a
+  certificate name into a tracked file, a commit message, or a pull request
+- A build with no such file is signed ad hoc, exactly as CI and a fresh clone sign it;
+  see `docs/getting-started.md` for when a developer needs one
 
 ## Toolchain Pinning
 

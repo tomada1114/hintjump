@@ -24,6 +24,10 @@ build/
 # Claude Code
 .claude/settings.local.json
 
+# Local, machine-specific build settings — an optional Debug signing identity
+# (see Config/Debug.xcconfig); the commit-time guard refuses it too
+Config/Local.xcconfig
+
 # Environment variables
 .env
 .env.*

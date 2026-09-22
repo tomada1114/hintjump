@@ -29,6 +29,65 @@ just uitest    # XCUITest launch test (first local run may prompt for Accessibil
 just smoke     # Release build + "does it actually launch" assertion
 ```
 
+## Keeping Permission Grants Across Rebuilds
+
+Skip this unless your app asks for a permission macOS records — Accessibility,
+Input Monitoring, Screen Recording, and the rest of TCC. Until then the template's
+default ad-hoc signing is fine.
+
+A Debug build is signed ad hoc (`CODE_SIGN_IDENTITY = -`), which gives it no stable
+identity: macOS tells one such build from the next by its code hash, so **every
+rebuild is a new app**. The grant you gave a minute ago no longer applies, the API
+reports you are not trusted again, and System Settings shows a checked entry for the
+old build that has to be removed and re-added — on every iteration.
+
+Signing with a real certificate fixes it: the app then has a designated requirement
+that a rebuild does not change, so the grant survives. The certificate is yours and
+your machine's, so it is never committed — put it in `Config/Local.xcconfig`, which
+is gitignored and which the pre-commit guard refuses even if you force it into the
+index:
+
+```bash
+security find-identity -v -p codesigning   # confirm you have an Apple Development cert
+cat > Config/Local.xcconfig <<'EOF'
+DEVELOPMENT_TEAM = ABCDE12345
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = Apple Development
+EOF
+just build
+codesign -d -r- build/dev-derived-data/Build/Products/Debug/MyApp.app
+```
+
+Two details cost time if you guess them:
+
+- Keep `CODE_SIGN_IDENTITY` as the generic `Apple Development`, and let
+  `DEVELOPMENT_TEAM` pick the certificate. A full common name
+  (`Apple Development: You (XXXXXXXXXX)`) is rejected with *"No certificate for
+  team … matching …"*, because the parenthesised id in that name is not your Team
+  ID. Your Team ID is the certificate's `OU`:
+  `security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`
+- The first build that signs with a keychain identity opens a *"wants to sign using
+  key … in your keychain"* dialog and waits for it. Click **Always Allow** once; an
+  unattended build (an agent's, or a `just check` you walked away from) simply hangs
+  until someone does.
+
+`Config/Debug.xcconfig` ends with `#include? "Local.xcconfig"`, so the file is picked
+up when it exists and silently skipped when it does not — a fresh clone and CI keep
+signing ad hoc, and nothing about Release or the release workflow changes either way
+(Release reads no xcconfig at all). Run `codesign -d -r-` after two consecutive
+builds: the designated requirement printed should be identical, and that is what TCC
+matches on.
+
+Switching a build between ad-hoc and real signing leaves macOS holding decisions for
+what it considers a different app. Clear them for this app — and only this app,
+whose bundle identifier is read from `project.yml` — with:
+
+```bash
+just reset-permissions   # tccutil reset All <this app's bundle id>
+```
+
+That drops your own grants for it, so the next launch prompts from scratch.
+
 ## Open in Xcode
 
 ```bash
