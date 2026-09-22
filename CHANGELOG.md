@@ -47,5 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   they were
 - The status menu gains "Open Config File", which opens `~/.config/hintjump/config.toml`
   in the default plain-text editor, next to "Reload Config"
+- Clicking and right-clicking in the frontmost window with hints: ⌃⇧Space shows labels
+  on the frontmost window's clickable elements and typing one left-clicks it; ⌃⌥⇧Space
+  does the same with a right click, with outlined labels and a "Right click" chip. Esc,
+  the same shortcut again, or a mouse click elsewhere closes the labels. The overlay
+  takes the typed label without activating Hintjump, so the app being clicked keeps its
+  focus and its menu bar, and without the Input Monitoring permission. Labels are typed
+  with an ABC (US-layout) input source
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
