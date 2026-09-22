@@ -62,6 +62,9 @@ just smoke
 
 # Run everything (format → lint → script tests → harness checks → test → build)
 just check
+
+# Prepare a release: version bump + changelog roll, checked (docs/distribution.md)
+just release-prep 0.2.0
 ```
 
 **Without Just**, run the equivalent commands:
@@ -89,6 +92,7 @@ scripts/smoke_launch.sh
 scripts/sync-agents.sh           # after editing .agents/skills/ (just agents-sync)
 scripts/sync-agents.sh --check   # just agents-check
 scripts/sync-labels.sh           # just labels — writes labels to the GitHub repo gh is pointed at
+scripts/release-prep.sh 0.2.0    # just release-prep 0.2.0 — version bump + changelog roll
 ```
 
 ## Pull Request Process

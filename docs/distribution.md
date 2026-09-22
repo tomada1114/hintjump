@@ -16,6 +16,38 @@ Pushing a tag `v*` that matches `MARKETING_VERSION` in `project.yml` triggers
 Bump `MARKETING_VERSION` first; the workflow fails loudly if the tag and the
 project version disagree.
 
+### Preparing the version bump
+
+`just release-prep <version>` (`scripts/release-prep.sh`) makes the edits a
+release needs before its tag exists, and checks them while that is still cheap —
+the tag/version disagreement above is only reported once the tag is pushed:
+
+- `project.yml`: `MARKETING_VERSION` becomes `<version>` and
+  `CURRENT_PROJECT_VERSION` is incremented.
+- `CHANGELOG.md`: the `[Unreleased]` entries move under
+  `## [<version>] - <date>`, leaving a fresh empty `[Unreleased]`, plus a
+  `[<version>]:` release-tag link reference beside the `[Unreleased]:` one — and
+  when that one is a `…/compare/<range>` URL, its range moves on to
+  `v<version>...HEAD`. An `[Unreleased]:` line of any other shape is left alone.
+
+It refuses a version that is not above the current one (compared component by
+component, so 1.10.0 follows 1.9.0), a work tree with uncommitted changes, and an
+empty `[Unreleased]`. `--dry-run` runs every one of those checks and writes
+nothing. It creates no commit, tag, or push — those stay human actions
+(`AGENTS.md`'s "Security and human approval") — and prints them in order:
+
+```bash
+just release-prep 0.2.0            # writes project.yml and CHANGELOG.md only
+git switch -c release/0.2.0
+git add project.yml CHANGELOG.md
+git commit -m 'chore(release): 0.2.0'
+gh pr create --fill
+# then, once that pull request is merged into main:
+git switch main && git pull
+git tag v0.2.0
+git push origin v0.2.0             # pushing the tag is what starts the release
+```
+
 ## Required secrets for trusted distribution
 
 All optional — without them you still get an ad-hoc-signed DMG.

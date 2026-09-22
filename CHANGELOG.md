@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `just release-prep <version>` (`scripts/release-prep.sh`): the edits a release needs
+  before its tag exists, in one checked step — `MARKETING_VERSION` set,
+  `CURRENT_PROJECT_VERSION` incremented, and `CHANGELOG.md`'s `[Unreleased]` entries
+  rolled into `## [<version>] - <date>`, leaving a fresh empty `[Unreleased]`. It
+  refuses a version that is not above the current one (compared component by component,
+  so 1.10.0 follows 1.9.0), a dirty work tree, and an empty `[Unreleased]`; `--dry-run`
+  runs every check and writes nothing. It creates no commit, tag, or push and prints
+  the commands that do, ending with the tag `.github/workflows/release.yml` checks
+  against `MARKETING_VERSION` (`docs/distribution.md` › Preparing the version bump)
+
 - `.template-origin`: `scripts/bootstrap.sh` records the template commit and repository
   an app was created from, so listing the template changes the app does not have yet is
   one command — `git log --oneline "$(sed -n 1p .template-origin)"..template/main`

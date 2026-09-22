@@ -33,6 +33,7 @@ just agents-check  # Fail if .claude/skills/ differs from .agents/skills/
 just clean     # Remove build artifacts and the generated project
 just labels    # Create/update GitHub labels from .github/labels.yml (never deletes)
 just ruleset   # Create/update the "main" branch ruleset from .github/rulesets/main.json (admin-only)
+just release-prep 0.2.0  # Set MARKETING_VERSION, bump the build, roll CHANGELOG.md's [Unreleased] (no commit/tag/push)
 ```
 
 Without Just: run the underlying commands listed in each `justfile` recipe
