@@ -10,14 +10,20 @@ import Observation
 @MainActor
 @Observable
 public final class TriggerController {
-    /// The bindings the last ``apply(_:)`` could not register — empty when all four did.
+    /// The bindings the last registration could not register — empty when all four did,
+    /// and while ``isSuspended``, when nothing is registered at all.
     public private(set) var failures: [TriggerRegistrationFailure] = []
+    /// Whether the triggers are unregistered on purpose, because a disabled app is
+    /// frontmost (``DisabledAppsPolicy``). Nothing is registered while it is `true`.
+    public private(set) var isSuspended = false
 
     /// Where a press goes, after it is logged. `nil` until the hint session is wired in;
     /// a press is logged either way, so a trigger is observable before it does anything.
     @ObservationIgnored public var onTrigger: (@MainActor (EntryPoint) -> Void)?
 
     @ObservationIgnored private let registrar: any TriggerRegistering
+    /// The configuration the last ``apply(_:)`` handed over — what resuming registers.
+    @ObservationIgnored private var config: HintjumpConfig?
 
     /// Registers nothing: registering is ``apply(_:)``'s job, once a configuration is in
     /// force.
@@ -25,13 +31,44 @@ public final class TriggerController {
         self.registrar = registrar
     }
 
-    /// Unregisters every trigger, then registers the four `config` names.
+    /// Unregisters every trigger, then registers the four `config` names — or, while
+    /// ``isSuspended``, only records them, for ``setSuspended(_:)`` to register on resume.
     ///
     /// Always from nothing rather than a diff against what is registered: four Carbon
     /// calls are cheap, and a diff would be one more thing that could disagree with the
     /// OS. The counts and every refusal are logged `.public` — a key combination is a
     /// shortcut, not user data.
     public func apply(_ config: HintjumpConfig) {
+        self.config = config
+        guard !isSuspended else {
+            AppLog.triggers.info("triggers not registered: suspended")
+            return
+        }
+        register(config)
+    }
+
+    /// Unregisters every trigger (`true`), or registers the last applied configuration
+    /// again (`false`).
+    ///
+    /// Setting the state it already has does nothing, so an app switch that changes
+    /// nothing costs no Carbon call. Resuming before any ``apply(_:)`` has nothing to
+    /// register and registers nothing.
+    public func setSuspended(_ suspended: Bool) {
+        guard suspended != isSuspended else {
+            return
+        }
+        isSuspended = suspended
+        if suspended {
+            registrar.unregisterAll()
+            failures = []
+        } else if let config {
+            register(config)
+        }
+    }
+
+    /// Unregisters every trigger, then registers the four `config` names and logs the
+    /// outcome.
+    private func register(_ config: HintjumpConfig) {
         registrar.unregisterAll()
         let bindings = EntryPoint.allCases.map { entryPoint in
             TriggerBinding(entryPoint: entryPoint, combination: config.combination(for: entryPoint))

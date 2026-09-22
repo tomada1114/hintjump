@@ -192,4 +192,108 @@ struct TriggerControllerTests {
 
         #expect(pressed.isEmpty)
     }
+
+    // MARK: - Suspension
+
+    @Test
+    func `starts not suspended`() {
+        let controller = TriggerController(registrar: FakeTriggerRegistrar())
+
+        #expect(!controller.isSuspended)
+    }
+
+    @Test
+    func `suspending unregisters every trigger, and resuming registers the four again`() {
+        let registrar = FakeTriggerRegistrar()
+        let controller = TriggerController(registrar: registrar)
+        controller.apply(.default)
+
+        controller.setSuspended(true)
+
+        #expect(controller.isSuspended)
+        #expect(registrar.registered.isEmpty)
+        #expect(registrar.calls == ["unregisterAll", "register", "unregisterAll"])
+
+        controller.setSuspended(false)
+
+        #expect(!controller.isSuspended)
+        #expect(registrar.registered == Self.defaultBindings)
+        #expect(registrar.calls.suffix(2) == ["unregisterAll", "register"])
+    }
+
+    @Test(arguments: [true, false])
+    func `setting the state it already has asks the registrar nothing`(_ suspended: Bool) {
+        let registrar = FakeTriggerRegistrar()
+        let controller = TriggerController(registrar: registrar)
+        controller.apply(.default)
+        controller.setSuspended(suspended)
+        let calls = registrar.calls
+
+        controller.setSuspended(suspended)
+
+        #expect(registrar.calls == calls)
+        #expect(controller.isSuspended == suspended)
+    }
+
+    @Test
+    func `apply while suspended registers nothing, and resuming registers what it applied`() throws {
+        let registrar = FakeTriggerRegistrar()
+        let controller = TriggerController(registrar: registrar)
+        controller.apply(.default)
+        controller.setSuspended(true)
+        let calls = registrar.calls
+
+        try controller.apply(configWithAppMenusOnJ())
+
+        #expect(registrar.calls == calls)
+        #expect(registrar.registered.isEmpty)
+
+        controller.setSuspended(false)
+
+        #expect(try registrar.combination(for: .appMenus) == KeyCombination.parse("ctrl+shift+j"))
+        #expect(registrar.registered.count == EntryPoint.allCases.count)
+    }
+
+    @Test
+    func `resuming before any apply registers nothing`() {
+        let registrar = FakeTriggerRegistrar()
+        let controller = TriggerController(registrar: registrar)
+        controller.setSuspended(true)
+
+        controller.setSuspended(false)
+
+        #expect(!controller.isSuspended)
+        #expect(registrar.calls == ["unregisterAll"])
+        #expect(registrar.registered.isEmpty)
+    }
+
+    @Test
+    func `suspending clears the failures, and resuming reports them again`() {
+        let registrar = FakeTriggerRegistrar()
+        registrar.failing = [.statusIcons]
+        let controller = TriggerController(registrar: registrar)
+        controller.apply(.default)
+
+        controller.setSuspended(true)
+
+        #expect(controller.failures.isEmpty)
+
+        controller.setSuspended(false)
+
+        #expect(controller.failures.map(\.binding.entryPoint) == [.statusIcons])
+    }
+
+    @Test
+    func `a press while suspended reaches nothing`() {
+        let registrar = FakeTriggerRegistrar()
+        let controller = TriggerController(registrar: registrar)
+        var pressed: [EntryPoint] = []
+        controller.onTrigger = { pressed.append($0) }
+        controller.apply(.default)
+        controller.setSuspended(true)
+
+        registrar.press(.clickInWindow)
+
+        #expect(pressed.isEmpty)
+    }
 }

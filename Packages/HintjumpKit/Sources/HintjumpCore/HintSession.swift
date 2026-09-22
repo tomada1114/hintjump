@@ -88,8 +88,9 @@ public final class HintSession {
     ///
     /// With hints up, the press closes them (reason `retrigger`); the same trigger stops
     /// there, a different one goes on to show its own. Nothing is shown — and why is
-    /// logged — when there is no frontmost app to read, the frontmost app is this one,
-    /// the entry point has no collector, the read fails, or no target gets a label.
+    /// logged — when there is no frontmost app to read, the frontmost app is this one or
+    /// a disabled one, the entry point has no collector, the read fails, or no target
+    /// gets a label.
     public func trigger(_ entryPoint: EntryPoint) {
         let clock = ContinuousClock()
         let start = clock.now
@@ -166,6 +167,13 @@ public final class HintSession {
         }
         guard pid != ProcessInfo.processInfo.processIdentifier else {
             AppLog.hints.info("trigger ignored: Hintjump itself is frontmost")
+            return nil
+        }
+        // The triggers are unregistered while a disabled app is frontmost
+        // (`DisabledAppsPolicy`), but a press can land between an app switch and its
+        // notification.
+        if let bundleID = app.bundleIdentifier, configuration().disabledApps.contains(bundleID) {
+            AppLog.hints.info("trigger ignored: disabled app")
             return nil
         }
         return app
