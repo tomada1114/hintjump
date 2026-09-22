@@ -60,5 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   While a disabled app is frontmost all four triggers are unregistered, so their key
   combinations reach that app, and they come back as soon as another app is in front.
   A reload that adds or removes the frontmost app takes effect at once
+- Hints on the menu bar's app menus: ⌃⇧M labels the frontmost app's menu bar titles,
+  from the Apple menu to Help, left to right, and typing a label opens that menu with a
+  left click; macOS's own menu keys take over from there. The accessibility reader
+  gains a depth limit, so reading the bar costs its titles and not every item of every
+  closed menu under them
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

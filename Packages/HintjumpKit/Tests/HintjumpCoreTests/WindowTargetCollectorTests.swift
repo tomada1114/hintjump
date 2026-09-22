@@ -72,7 +72,7 @@ struct WindowTargetCollectorTests {
         _ = try collector.collect(from: Self.app)
 
         #expect(reader.readRequests == [
-            .init(pid: Self.pid, scope: .focusedWindow, strategy: .batchedPruned),
+            .init(pid: Self.pid, scope: .focusedWindow, strategy: .batchedPruned, maxDepth: nil),
         ])
     }
 
