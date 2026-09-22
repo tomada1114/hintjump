@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-- [Priority research and labeling](#priority-research-and-labeling-opus)
+- [Priority research and labeling](#priority-research-and-labeling-architect)
 - [Implementation](#implementation-step-3)
 - [Review fix, parallel mode](#review-fix-parallel-mode)
 - [Review fallback](#review-fallback)
@@ -70,7 +70,7 @@ The design agent is the one named exception to the first rule: it writes two
 specific things to GitHub (a design comment, a label clear) as its whole
 purpose, spelled out in its own template.
 
-## Priority research and labeling (`opus`)
+## Priority research and labeling (`architect`)
 
 Spawned only when more than ~3 open issues still lack a `priority:` label, or
 when the top rows of a labeled backlog are close enough that the pick needs
@@ -86,16 +86,17 @@ still has to clear the repository's own viability gate before any of it runs.
 
 Prompt body: [references/agents/priority-research.md](agents/priority-research.md).
 Fill its `{brace}` placeholders from the current repo and run count, then
-spawn an `opus` sub-agent with it.
+spawn an `architect` sub-agent with it.
 
 ## Implementation (step 3)
 
-Spawn one sub-agent per issue. **`opus` is the default; `fable` when the
-issue is foundational** — architecture or a skeleton, an interface/port/schema,
+Spawn one sub-agent per issue. **`executor` is the default; `architect` when
+the issue is foundational** (architecture or a skeleton, an interface/port/schema,
 or a skill, instruction file, or gate whose shape the rest of the backlog
-copies. The test is blast radius, not difficulty:
-[cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on](cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on).
-A resume/patch run stays on the model its first run used. In parallel mode
+copies) **or hard to carry out** (edits across modules that must agree,
+non-trivial logic, choices the body leaves open):
+[cost-discipline.md#when-implementation-goes-to-architect](cost-discipline.md#when-implementation-goes-to-architect).
+A resume/patch run stays on the tier its first run used. In parallel mode
 issue every prompt in the batch **in one message** — spawned one after another
 they run one after another, which is the whole thing this mode exists to
 avoid.
@@ -109,7 +110,7 @@ mode at step 4. `/code-review --fix` writes to the session's own working
 tree, which in parallel mode is the main checkout sitting on the default branch
 — the wrong tree — so the review runs read-only and the writing is delegated
 here instead. See [SKILL.md step 4](../SKILL.md#4-review-the-branch).
-Zero accepted findings → no spawn. Spawn one **`opus`** sub-agent per branch
+Zero accepted findings → no spawn. Spawn one **`executor`** sub-agent per branch
 that has any.
 
 Prompt body: [references/agents/review-fix.md](agents/review-fix.md).
@@ -118,7 +119,7 @@ Prompt body: [references/agents/review-fix.md](agents/review-fix.md).
 
 Only when this session's host will not let it launch `/code-review`
 directly — see [SKILL.md step 4](../SKILL.md#4-review-the-branch).
-Spawn one independent, **read-only** `opus` sub-agent against the branch.
+Spawn one independent, **read-only** `architect` sub-agent against the branch.
 
 Prompt body: [references/agents/review-fallback.md](agents/review-fallback.md).
 
@@ -128,7 +129,7 @@ Only after `ci_watch.sh` returns `FAIL`. Write the failing log to a file
 **outside** the working directory first (`<runstate>/ci/<pr>.log`) — a stray
 untracked file inside it makes cleanup skip the directory as dirty, and a
 commit convention that stages everything would land the log in the change.
-Spawn an **`opus`** sub-agent (escalate to **`fable`** once the same failure
+Spawn an **`executor`** sub-agent (escalate to **`architect`** once the same failure
 has survived two attempts in a row), one PR at a time.
 
 Prompt body: [references/agents/ci-repair.md](agents/ci-repair.md).
@@ -136,7 +137,7 @@ Prompt body: [references/agents/ci-repair.md](agents/ci-repair.md).
 ## Design decision (step 8b)
 
 Spawned at [SKILL.md step 8b](../SKILL.md#8b-unblock-held-designs-in-the-background),
-one **`fable`** sub-agent per design-blocked issue, **in the background** — this
+one **`architect`** sub-agent per design-blocked issue, **in the background** — this
 session spawns a round in one message and goes straight back to shipping.
 
 This is the only sub-agent in this skill that writes to GitHub, and only two

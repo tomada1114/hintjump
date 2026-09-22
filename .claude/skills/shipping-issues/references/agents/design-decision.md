@@ -1,7 +1,7 @@
 # Design decision (sub-agent prompt)
 
 Spawned at [SKILL.md step 8b](../../SKILL.md#8b-unblock-held-designs-in-the-background),
-one **`fable`** sub-agent per design-blocked issue, **in the background** — this
+one **`architect`** sub-agent per design-blocked issue, **in the background** — this
 session spawns a round in one message and goes straight back to shipping.
 
 This is the only sub-agent in this skill that writes to GitHub, and only two

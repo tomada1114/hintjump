@@ -109,7 +109,7 @@ verified defect with an obvious fix merely because it is large or touches many
 files — size is not the test, an undecided approach is.
 
 Treat the label as temporary, and write the body accordingly. Every issue filed
-this way gets a background `fable` sub-agent sent after it at
+this way gets a background `architect` sub-agent sent after it at
 [SKILL.md step 8b](../SKILL.md#8b-unblock-held-designs-in-the-background), which
 decides the approach from the repo and the issue thread, records it as a
 comment, and clears the block — often within this same run. So name the open

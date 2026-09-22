@@ -54,7 +54,7 @@ running it in the wrong directory reports on the wrong branch — plus the
 sub-agent's own `CHANGED` / `SCOPE-NOTES` / `UNRESOLVED`. Open the hunks only in
 the files the spec actually touches, not the whole diff by default.
 
-Missing part of the spec, or quietly widened: send a new run — on the same model
+Missing part of the spec, or quietly widened: send a new run — on the same tier
 as the first — naming only what is left. Don't re-run the whole task. Up to **2**
 resume/patch runs on top of the first; a third miss means the issue itself is
 underspecified, so record `--event blocked` and report `NEEDS-CLARIFICATION`
@@ -71,14 +71,14 @@ branch's repairs into the main checkout and leave it dirty — the exact state
 
 The review itself reads `<base>...<branch>` from the shared object store and is
 safe from anywhere; only the writing half is not. So in parallel mode: review
-each branch without `--fix`, triage the whole batch, then spawn one `opus` fix
+each branch without `--fix`, triage the whole batch, then spawn one `executor` fix
 run per branch with accepted findings, scoped to that branch's worktree, using
 [agents/review-fix.md](agents/review-fix.md).
 
 ## `/code-review` cannot be launched
 
 Host won't let this session run the slash command → one independent,
-**read-only** `opus` sub-agent against the branch, using
+**read-only** `architect` sub-agent against the branch, using
 [agents/review-fallback.md](agents/review-fallback.md),
 triaged the same way. Never re-read your own diff and call that a review.
 
@@ -91,7 +91,7 @@ actually appear among the branch's CI runs before starting `ci_watch.sh`.
 
 ## CI fails
 
-Fill and spawn an **`opus`** sub-agent — `fable` once the same failure has
+Fill and spawn an **`executor`** sub-agent — `architect` once the same failure has
 survived two attempts in a row — with
 [agents/ci-repair.md](agents/ci-repair.md),
 its work directory set to whichever checkout holds the branch: the main checkout

@@ -1,12 +1,13 @@
 # Implementation (sub-agent prompt)
 
 Spawned at [SKILL.md step 3](../../SKILL.md#3-implement), one issue at a time.
-**`opus` is the default; `fable` when the issue is foundational** —
+**`executor` is the default; `architect` when the issue is foundational** —
 architecture or a skeleton, an interface/port/schema, or a skill, instruction
-file, or gate whose shape the rest of the backlog copies. The test is blast
-radius, not difficulty:
-[cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on](../cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on).
-A resume/patch run stays on the model its first run used.
+file, or gate whose shape the rest of the backlog copies — **or hard to carry
+out** — edits across modules that must agree, non-trivial logic, choices the
+body leaves open:
+[cost-discipline.md#when-implementation-goes-to-architect](../cost-discipline.md#when-implementation-goes-to-architect).
+A resume/patch run stays on the tier its first run used.
 
 ```
 Implement GitHub issue #{n} in {owner}/{repo}. Once you return, your branch is

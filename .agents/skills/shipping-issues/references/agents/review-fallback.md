@@ -2,7 +2,7 @@
 
 Spawned at [SKILL.md step 4](../../SKILL.md#4-review-the-branch), only when
 this session's host will not let it launch `/code-review` directly.
-One independent, **read-only** `opus` sub-agent against the branch.
+One independent, **read-only** `architect` sub-agent against the branch.
 
 ```
 Read-only review only — do not edit, create, or delete any file (no `rm`, no
