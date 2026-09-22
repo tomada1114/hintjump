@@ -172,9 +172,23 @@ public enum AccessibilityReadError: Error, Equatable, Sendable {
 /// app that wants to follow changes adds an observing port rather than turning this one
 /// into a publisher.
 public protocol AccessibilityTreeReading: Sendable {
-    /// Reads the tree under `scope` of the process `pid`, walked with `strategy`.
+    /// Reads the tree under `scope` of the process `pid`, walked with `strategy`, no
+    /// deeper than `maxDepth`.
+    ///
+    /// `maxDepth` is how many levels below the root the walk descends: an element at
+    /// `depth >= maxDepth` is recorded but its children are not read, so `0` reads the
+    /// root alone and `nil` reads everything. It is independent of `scope` — "how deep"
+    /// is a separate question from "where to start" — which is why it is a parameter
+    /// rather than another ``ReadScope`` case. The app-menus entry point asks for `1`:
+    /// every closed menu under a menu bar title still publishes its items, so the whole
+    /// bar is hundreds of elements when only its dozen titles are wanted.
     @MainActor
-    func readTree(pid: pid_t, scope: ReadScope, strategy: ReadStrategy) throws -> TreeSnapshot
+    func readTree(
+        pid: pid_t,
+        scope: ReadScope,
+        strategy: ReadStrategy,
+        maxDepth: Int?,
+    ) throws -> TreeSnapshot
 
     /// Asks the application to build its accessibility tree even though no assistive
     /// client has been detected: sets `AXManualAccessibility` on the application element.

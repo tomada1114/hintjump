@@ -30,12 +30,21 @@ public final class ManualAccessibilityWaker {
     /// waking (the attribute has no meaning for it) — the pid is still remembered so no
     /// retry is attempted, and the first snapshot is returned since a second read has
     /// nothing new to find.
+    ///
+    /// Both reads go no deeper than `maxDepth`
+    /// (``AccessibilityTreeReading/readTree(pid:scope:strategy:maxDepth:)``).
     public func readTree(
         pid: pid_t,
         scope: ReadScope,
         strategy: ReadStrategy,
+        maxDepth: Int?,
     ) throws -> TreeSnapshot {
-        let snapshot = try reader.readTree(pid: pid, scope: scope, strategy: strategy)
+        let snapshot = try reader.readTree(
+            pid: pid,
+            scope: scope,
+            strategy: strategy,
+            maxDepth: maxDepth,
+        )
         guard EmptyWebAreaRule.matches(snapshot), !wokenPIDs.contains(pid) else {
             return snapshot
         }
@@ -45,6 +54,15 @@ public final class ManualAccessibilityWaker {
         } catch AccessibilityReadError.attributeUnsupported {
             return snapshot
         }
-        return try reader.readTree(pid: pid, scope: scope, strategy: strategy)
+        return try reader.readTree(pid: pid, scope: scope, strategy: strategy, maxDepth: maxDepth)
+    }
+
+    /// ``readTree(pid:scope:strategy:maxDepth:)`` with no depth limit.
+    public func readTree(
+        pid: pid_t,
+        scope: ReadScope,
+        strategy: ReadStrategy,
+    ) throws -> TreeSnapshot {
+        try readTree(pid: pid, scope: scope, strategy: strategy, maxDepth: nil)
     }
 }
