@@ -1,6 +1,6 @@
 # Priority research and labeling (sub-agent prompt)
 
-Filled and handed to a `sonnet` worker (or read and run inline where the
+Filled and handed to an `opus` worker (or read and run inline where the
 runtime exposes no delegation) from `references/delegation-templates.md`'s
 "Priority research and labeling" section — the spawn condition, the return
 contract, and what the caller does with each section live there. This file

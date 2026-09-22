@@ -71,7 +71,7 @@ branch's repairs into the main checkout and leave it dirty — the exact state
 
 The review itself reads `<base>...<branch>` from the shared object store and is
 safe from anywhere; only the writing half is not. So in parallel mode: review
-each branch without `--fix`, triage the whole batch, then spawn one `sonnet` fix
+each branch without `--fix`, triage the whole batch, then spawn one `opus` fix
 run per branch with accepted findings, scoped to that branch's worktree, using
 [agents/review-fix.md](agents/review-fix.md).
 
@@ -91,7 +91,7 @@ actually appear among the branch's CI runs before starting `ci_watch.sh`.
 
 ## CI fails
 
-Fill and spawn a **`sonnet`** sub-agent — `opus` once the same failure has
+Fill and spawn an **`opus`** sub-agent — `fable` once the same failure has
 survived two attempts in a row — with
 [agents/ci-repair.md](agents/ci-repair.md),
 its work directory set to whichever checkout holds the branch: the main checkout
