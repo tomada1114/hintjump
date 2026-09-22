@@ -88,9 +88,10 @@ public final class HintSession {
     ///
     /// With hints up, the press closes them (reason `retrigger`); the same trigger stops
     /// there, a different one goes on to show its own. Nothing is shown — and why is
-    /// logged — when there is no frontmost app to read, the frontmost app is this one or
-    /// a disabled one, the entry point has no collector, the read fails, or no target
-    /// gets a label.
+    /// logged — when the entry point has no collector, there is no frontmost app with a
+    /// process identifier, the frontmost app is a disabled one or — for a collector that
+    /// reads it (``HintTargetCollecting/readsFrontmostApp``) — this one, the read fails,
+    /// or no target gets a label.
     public func trigger(_ entryPoint: EntryPoint) {
         let clock = ContinuousClock()
         let start = clock.now
@@ -100,8 +101,8 @@ public final class HintSession {
                 return
             }
         }
-        guard let app = readableFrontmostApp(),
-              let collector = collector(for: entryPoint),
+        guard let collector = collector(for: entryPoint),
+              let app = appToCollect(for: collector),
               let set = collect(with: collector, from: app),
               present(set, for: entryPoint)
         else {
@@ -155,8 +156,9 @@ public final class HintSession {
         return collector
     }
 
-    /// The frontmost app, when it is another process whose tree can be read.
-    private func readableFrontmostApp() -> FrontmostApp? {
+    /// The frontmost app to hand `collector`: one with a process identifier that is not
+    /// disabled, and — when `collector` reads it — another process than this one.
+    private func appToCollect(for collector: any HintTargetCollecting) -> FrontmostApp? {
         guard let app = frontmostApp.currentFrontmostApp() else {
             AppLog.hints.info("trigger ignored: no frontmost app")
             return nil
@@ -165,7 +167,8 @@ public final class HintSession {
             AppLog.hints.info("trigger ignored: frontmost app has no process identifier")
             return nil
         }
-        guard pid != ProcessInfo.processInfo.processIdentifier else {
+        guard pid != ProcessInfo.processInfo.processIdentifier || !collector.readsFrontmostApp
+        else {
             AppLog.hints.info("trigger ignored: Hintjump itself is frontmost")
             return nil
         }
