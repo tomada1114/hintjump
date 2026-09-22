@@ -11,6 +11,20 @@ import Testing
 /// `~/.config/hintjump/config.toml`. What it checks is the half a Core test with a fake
 /// cannot: that the path resolves where the decision log says, that the directory is
 /// created, and that the bytes survive a round trip.
+/// A login item that is never registered and records what it was asked, so driving a
+/// whole ``ConfigStore`` here can never add the test runner to the developer's Login
+/// Items — this suite is about the file, and `SMAppServiceLoginItemTests` is about the
+/// real service.
+@MainActor
+private final class UnregisteredLoginItem: LoginItemRegistering {
+    let isRegistered = false
+    private(set) var setCalls: [Bool] = []
+
+    func setRegistered(_ enabled: Bool) {
+        setCalls.append(enabled)
+    }
+}
+
 @Suite("UserConfigFile against the real file system", .requiresLocalMachine)
 struct UserConfigFileTests {
     /// A temporary directory that stands in for `HOME` for the duration of one test.
@@ -85,7 +99,8 @@ struct UserConfigFileTests {
             let file = UserConfigFile(url: UserConfigFile.defaultURL(
                 environment: ["HOME": home.path],
             ))
-            let store = ConfigStore(file: file)
+            let loginItem = UnregisteredLoginItem()
+            let store = ConfigStore(file: file, loginItem: loginItem)
 
             let loaded = try store.load()
             #expect(loaded == HintjumpConfig.default)
@@ -103,6 +118,8 @@ struct UserConfigFileTests {
             )
             let reloaded = try store.reload()
             #expect(reloaded.disabledApps == ["com.apple.Finder"])
+            // The default leaves launch at login off, which already matches.
+            #expect(loginItem.setCalls.isEmpty)
         }
     }
 }

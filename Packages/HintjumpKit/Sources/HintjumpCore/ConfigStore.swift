@@ -10,6 +10,10 @@ import Foundation
 /// Reload is explicit — the status menu's "Reload Config" — and there is no file
 /// watching: a user editing a file half-way through a save would otherwise be read
 /// mid-edit and told their file is broken.
+///
+/// Every successful load also makes the login item match `[startup] launch_at_login`
+/// (``LoginItemSync``), so editing the key and reloading is how a user turns launch at
+/// login on or off.
 @MainActor
 public final class ConfigStore {
     /// What the last ``load()`` or ``reload()`` produced, and when.
@@ -34,6 +38,7 @@ public final class ConfigStore {
     public private(set) var lastLoad: LoadRecord?
 
     private let file: ConfigFileAccessing
+    private let loginItem: LoginItemSync
     private let now: @Sendable () -> Date
 
     /// Where the file is, for the Status window and for an error message.
@@ -43,30 +48,47 @@ public final class ConfigStore {
 
     /// Takes the clock as a parameter so a test can assert on ``lastLoad``'s date
     /// without waiting for one.
-    public init(file: ConfigFileAccessing, now: @escaping @Sendable () -> Date) {
+    ///
+    /// `loginItem` is required rather than optional: a store that could be built
+    /// without one is a store the composition root could forget to wire, and then
+    /// `launch_at_login` would silently do nothing.
+    public init(
+        file: ConfigFileAccessing,
+        loginItem: any LoginItemRegistering,
+        now: @escaping @Sendable () -> Date,
+    ) {
         self.file = file
+        self.loginItem = LoginItemSync(loginItem: loginItem)
         self.now = now
     }
 
     /// The clock every caller outside a test wants.
-    public convenience init(file: ConfigFileAccessing) {
-        self.init(file: file) { Date() }
+    public convenience init(file: ConfigFileAccessing, loginItem: any LoginItemRegistering) {
+        self.init(file: file, loginItem: loginItem) { Date() }
     }
 
-    /// Reads the file, writing the commented default first when there is none.
+    /// Reads the file, writing the commented default first when there is none, then
+    /// makes the login item match what it says.
     ///
     /// The write happens before the parse, and the default's own text is what gets
     /// parsed, so a fresh machine and an untouched file take exactly the same path.
+    ///
+    /// A failure is logged before it is thrown, so a caller with nowhere to show it —
+    /// the load at launch — loses nothing by discarding it. The login item is applied
+    /// only after a successful parse, and its own failure is logged, never thrown: the
+    /// file was read fine, so the load succeeded.
     @discardableResult
     public func load() throws -> HintjumpConfig {
-        let text: String
-        if let existing = try file.read() {
-            text = existing
-        } else {
-            text = HintjumpConfig.defaultFileContents
-            try file.write(text)
+        let parsed: HintjumpConfig
+        do {
+            parsed = try adopt(readOrCreate())
+        } catch {
+            let failure = String(describing: error)
+            AppLog.config.error("config load failed: \(failure, privacy: .private)")
+            throw error
         }
-        return try adopt(text)
+        loginItem.apply(launchAtLogin: parsed.launchAtLogin)
+        return parsed
     }
 
     /// Re-reads the file on request. Identical to ``load()`` — including writing the
@@ -98,6 +120,16 @@ public final class ConfigStore {
         }
         try file.write(DisabledAppsRewriter.rewrite(text, disabled: bundleIDs))
         config.disabledApps = bundleIDs
+    }
+
+    /// The file's text, or the default's after writing it when there is no file.
+    private func readOrCreate() throws -> String {
+        if let existing = try file.read() {
+            return existing
+        }
+        let text = HintjumpConfig.defaultFileContents
+        try file.write(text)
+        return text
     }
 
     /// Parses `text`, records the attempt, and keeps the result when it is a success.
