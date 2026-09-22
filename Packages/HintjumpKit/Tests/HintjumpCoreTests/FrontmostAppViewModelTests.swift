@@ -3,8 +3,10 @@ import Testing
 
 /// A fake, not a mock (`.claude/rules/testing.md` › Fakes, not mocks): it is a real
 /// conforming implementation whose answers are data, and whose calls are recorded in a
-/// value the test reads afterwards. No expectations are declared up front.
-private final class FakeFrontmostAppProvider: FrontmostAppProviding, @unchecked Sendable {
+/// value the test reads afterwards. No expectations are declared up front. Internal
+/// rather than private because it is this port's one fake: `HintSessionTests` asks it
+/// too.
+final class FakeFrontmostAppProvider: FrontmostAppProviding, @unchecked Sendable {
     /// Safe without a lock: every test below drives it from the `@MainActor` suite, so
     /// the mutations and the reads happen on one actor. `@unchecked` is what lets a
     /// recording fake satisfy a `Sendable` port without a lock it does not need.
@@ -82,5 +84,27 @@ struct FrontmostAppViewModelTests {
         #expect(app.bundleIdentifier == nil)
         #expect(app == FrontmostApp(name: "Some Helper", bundleIdentifier: nil))
         #expect(app != FrontmostApp(name: "Some Helper", bundleIdentifier: "x"))
+    }
+
+    @Test
+    func `a process identifier is carried as a value and takes part in equality`() {
+        let app = FrontmostApp(
+            name: "Finder",
+            bundleIdentifier: "com.apple.finder",
+            processIdentifier: 42,
+        )
+        #expect(app.processIdentifier == 42)
+        #expect(app == FrontmostApp(
+            name: "Finder",
+            bundleIdentifier: "com.apple.finder",
+            processIdentifier: 42,
+        ))
+        #expect(app != FrontmostApp(
+            name: "Finder",
+            bundleIdentifier: "com.apple.finder",
+            processIdentifier: 43,
+        ))
+        #expect(app != FrontmostApp(name: "Finder", bundleIdentifier: "com.apple.finder"))
+        #expect(FrontmostApp(name: "Finder").processIdentifier == nil)
     }
 }

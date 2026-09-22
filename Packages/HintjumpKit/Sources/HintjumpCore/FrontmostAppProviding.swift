@@ -1,3 +1,5 @@
+import Foundation
+
 /// The frontmost application, as a value Core can reason about.
 ///
 /// A port answers in types Core owns, never in the OS type the adapter used
@@ -8,10 +10,16 @@ public struct FrontmostApp: Equatable, Sendable {
     public let name: String
     /// Its bundle identifier, when it has one — some processes do not.
     public let bundleIdentifier: String?
+    /// Its process identifier, when the adapter knows it — what a read of its
+    /// accessibility tree is addressed to (``AccessibilityTreeReading``). Optional so a
+    /// value built without one (a test, a caller that only shows a name) stays valid;
+    /// the hint session treats a missing pid as nothing to read.
+    public let processIdentifier: pid_t?
 
-    public init(name: String, bundleIdentifier: String? = nil) {
+    public init(name: String, bundleIdentifier: String? = nil, processIdentifier: pid_t? = nil) {
         self.name = name
         self.bundleIdentifier = bundleIdentifier
+        self.processIdentifier = processIdentifier
     }
 }
 

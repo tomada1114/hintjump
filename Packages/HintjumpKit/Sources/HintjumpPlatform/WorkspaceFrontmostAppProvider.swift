@@ -32,6 +32,10 @@ public struct WorkspaceFrontmostAppProvider: FrontmostAppProviding {
         else {
             return nil
         }
-        return FrontmostApp(name: name, bundleIdentifier: application.bundleIdentifier)
+        return FrontmostApp(
+            name: name,
+            bundleIdentifier: application.bundleIdentifier,
+            processIdentifier: application.processIdentifier,
+        )
     }
 }
