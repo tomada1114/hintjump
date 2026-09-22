@@ -269,6 +269,28 @@ file is their public record.
   takes Chrome to 52 / 110 ms (`docs/research/read-latency.md` › After the Chromium
   fixes).
 
+## 2026-09-22 N = 16 and the first-cut tiers, pending #37's measurement
+
+- Decision: provisional. The label assigner gives single-character labels to
+  the first 16 ranked targets (`LabelAssigner.defaultSingleCount`), and the
+  ranker keeps its first-cut tiers (`FirstCutTiers`) unchanged. With the
+  default 26 characters that leaves 10 prefixes, so 16 + 10 × 26 = 276
+  targets can be labeled; each prefix runs through the whole set, in set
+  order, before the next prefix starts (`ia`, `is`, … `im`, `oa`, …). Targets
+  past the supply are not hinted and are counted so the overlay can log how
+  many were dropped. Typing matches by prefix: a single selects at once, a
+  prefix narrows to its pairs, Backspace undoes the narrowing, Esc cancels,
+  and any other key is ignored without closing the hints.
+- Why: the measurement this rule was to be chosen on (`docs/research/target-counts.md`)
+  was split out of #10 into #37 and does not exist yet, so the fallback stated
+  when the label work was planned applies: keep the first cut and N = 16. No
+  hit rate backs either number yet. Prefix-major pair order keeps a narrowing
+  small when only a few pairs are in use: 20 targets need only the prefix `i`.
+- Open: #37 measures how often the wanted element ranks within the singles
+  and revisits both the tier rule and N; changing either is a new entry that
+  supersedes this one. Neither change alters `RankedTarget` or the assigner's
+  output shape.
+
 ## 2026-09-22 Clicks are synthesized mouse events at the element's visible center; the pointer stays there
 
 - Decision: a hint clicks by posting a synthesized mouse press and release —
