@@ -35,7 +35,9 @@ credential_category() {
     while IFS="$(printf '\t')" read -r category pattern; do
         [ -n "${category}" ] || continue
         status=0
-        LC_ALL=C grep -a -E -q -e "${pattern}" -- "${file}" || status=$?
+        # Through env, not a bare LC_ALL=C prefix: Homebrew bash re-inits its locale
+        # for a prefixed command in the forked child, which can SIGSEGV on macOS.
+        env LC_ALL=C grep -a -E -q -e "${pattern}" -- "${file}" || status=$?
         case "${status}" in
             0)
                 echo "${category}"

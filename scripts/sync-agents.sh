@@ -121,7 +121,9 @@ if [ ! -d "${MIRROR}" ]; then
 fi
 
 DIFF_STATUS=0
-DIFF_OUTPUT=$(LC_ALL=C diff -r -q -x .DS_Store "${SOURCE}" "${MIRROR}" 2>&1) || DIFF_STATUS=$?
+# Through env, not a bare LC_ALL=C prefix: Homebrew bash re-inits its locale for a
+# prefixed command in the forked child, which can SIGSEGV on macOS (exit 139).
+DIFF_OUTPUT=$(env LC_ALL=C diff -r -q -x .DS_Store "${SOURCE}" "${MIRROR}" 2>&1) || DIFF_STATUS=$?
 
 if [ "${DIFF_STATUS}" = 0 ]; then
     echo "agents:check: ${MIRROR_REL}/ is in sync."
