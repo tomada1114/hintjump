@@ -16,7 +16,8 @@ public struct HintjumpConfig: Equatable, Sendable {
     public var hintCharacters: [Character]
     /// `[apps] disabled`: bundle identifiers where Hintjump stays off.
     public var disabledApps: [String]
-    /// `[startup] launch_at_login`. Applying it is #18's job, not this type's.
+    /// `[startup] launch_at_login`. ``ConfigStore`` applies it after every successful
+    /// load, through ``LoginItemRegistering``.
     public var launchAtLogin: Bool
 
     /// The four triggers with the key each is written under, in file order — what the

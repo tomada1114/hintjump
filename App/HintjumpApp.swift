@@ -25,11 +25,21 @@ struct HintjumpApp: App {
     @State private var accessibilityGate =
         AccessibilityGateViewModel(trust: SystemAccessibilityTrust())
 
+    /// Composed once, for the same reason, and loaded before the first scene exists:
+    /// the load at launch is what applies `launch_at_login` without a Reload.
+    @State private var configStore = Self.loadedConfigStore()
+
     var body: some Scene {
         MenuBarExtra {
-            // The only item for now, so a local run can be quit: an agent has no app
-            // menu and no ⌘Q of its own. The real items (Open Config File, Reload
-            // Config, Disable in <App>, Status…) come with the status-menu feature.
+            // Re-reads the config file and applies it, `launch_at_login` included.
+            // A failure is logged and recorded by the store, as at launch.
+            Button("Reload Config") {
+                _ = try? configStore.reload()
+            }
+            Divider()
+            // An agent has no app menu and no ⌘Q of its own, so this is how a local run
+            // quits. The other items (Open Config File, Disable in <App>, Status…) come
+            // with the status-menu feature.
             Button("Quit Hintjump") {
                 NSApplication.shared.terminate(nil)
             }
@@ -42,5 +52,15 @@ struct HintjumpApp: App {
                 .accessibilityGate(accessibilityGate)
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    /// The config store over the real file and the real login item, loaded once.
+    ///
+    /// `load()` logs a failure itself and records it in `lastLoad`, and a failed load
+    /// leaves the default configuration in force, so launch carries on either way.
+    private static func loadedConfigStore() -> ConfigStore {
+        let store = ConfigStore(file: UserConfigFile(), loginItem: SMAppServiceLoginItem())
+        _ = try? store.load()
+        return store
     }
 }

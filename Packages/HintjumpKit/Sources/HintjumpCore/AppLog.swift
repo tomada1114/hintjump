@@ -53,4 +53,13 @@ public enum AppLog {
     /// another app's tree cost — and because it is the stream #13's verification reads:
     /// `log stream --predicate 'category == "permissions"'`.
     public static let permissions = Logger(subsystem: subsystem, category: "permissions")
+
+    /// The configuration concern: ``ConfigStore``'s loads and what applying them did —
+    /// today, whether `launch_at_login` registered or unregistered the login item.
+    ///
+    /// Its own category because it is the stream a "my config edit did nothing"
+    /// investigation watches: `log stream --predicate 'category == "config"'`. The
+    /// outcome words (`registered`, `unregistered`, `failed`) are `.public`; anything
+    /// read from the user's file or from an OS error message is `.private`.
+    public static let config = Logger(subsystem: subsystem, category: "config")
 }
