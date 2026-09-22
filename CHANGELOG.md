@@ -99,9 +99,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new app keeps, including its labels and branch ruleset)
 - `just fix` formats and auto-fixes SwiftLint violations, then runs `just lint`;
   `just test-fast <filter>` runs only the matching tests, without the coverage floor
+- `just logs` streams this app's unified-log output — the records whose subsystem is
+  the bundle identifier `project.yml` declares, read by the new
+  `scripts/bundle-id.sh`, so both recipes that need it survive
+  `scripts/bootstrap.sh`
 
 ### Changed
 
+- `just run` relaunches the build it just made instead of activating an old process:
+  `scripts/run-app.sh` quits every running instance of this app — matched by bundle
+  identifier, never by process name — and waits for it to exit, bounded, reporting a
+  process that outlives the wait rather than forcing it
 - `MyAppCore`'s import ban list now also rejects `ApplicationServices`, `Carbon`, and
   `ServiceManagement`, in both `.swiftlint.yml`'s `no_ui_import_in_core` and
   `ArchitectureBoundaryTests`: an adapter that needs one belongs in `MyAppPlatform`

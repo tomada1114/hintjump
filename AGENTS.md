@@ -22,7 +22,8 @@ just check-harness # Re-assert the harness's claims about itself (scripts/checks
 just test      # Run tests with the 80% coverage floor on MyAppCore
 just test-fast CounterTests  # Run only the matching tests, no coverage floor (iteration only)
 just build     # Build the app (Debug)
-just run       # Build (Debug) and launch the app, left running until you quit it
+just run       # Build (Debug), quit any running instance, and launch the fresh build
+just logs      # Stream this app's unified-log output (Ctrl-C to stop)
 just uitest    # Run the XCUITest launch test
 just smoke     # Build Release and assert the app launches
 just check     # Run all checks: verify-hooks → fmt → lint → test-scripts → check-harness → test → build

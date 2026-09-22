@@ -61,9 +61,15 @@ build:
     mise exec -- xcodegen generate
     set -o pipefail && xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedDataPath build/dev-derived-data build | mise exec -- xcbeautify --quiet
 
-# Build (Debug) and launch the app, left running until you quit it
+# Build (Debug), quit any running instance of this app, and launch the fresh
+# build, left running until you quit it (scripts/run-app.sh)
 run: build
-    open build/dev-derived-data/Build/Products/Debug/MyApp.app
+    scripts/run-app.sh
+
+# Stream this app's unified-log output (subsystem == the bundle identifier
+# project.yml declares), until you stop it with Ctrl-C
+logs:
+    bundle_id="$(scripts/bundle-id.sh)" && log stream --predicate "subsystem == \"${bundle_id}\"" --level debug
 
 # Run the XCUITest launch test (may prompt for Accessibility permission on first local run)
 uitest:
