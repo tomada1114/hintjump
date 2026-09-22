@@ -44,4 +44,13 @@ public enum AppLog {
     /// description that could reach a message is `.private`: they are the contents of
     /// someone else's screen.
     public static let accessibility = Logger(subsystem: subsystem, category: "accessibility")
+
+    /// The permissions concern: ``AccessibilityTrustChecking`` and
+    /// ``AccessibilityGateViewModel``.
+    ///
+    /// Its own category, separate from `accessibility` above, because it tells a
+    /// different story — whether this process holds a TCC grant, not what a read of
+    /// another app's tree cost — and because it is the stream #13's verification reads:
+    /// `log stream --predicate 'category == "permissions"'`.
+    public static let permissions = Logger(subsystem: subsystem, category: "permissions")
 }
