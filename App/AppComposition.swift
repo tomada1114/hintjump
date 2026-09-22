@@ -1,5 +1,7 @@
 import HintjumpCore
 import HintjumpPlatform
+import HintjumpUI
+import SwiftUI
 
 /// The composition root: the one place that knows both halves of every port.
 ///
@@ -21,6 +23,8 @@ final class AppComposition {
     /// What the status menu's "Open Config File", "Reload Config", and
     /// "Disable in <App>" do.
     let statusMenu: StatusMenuModel
+    /// The hint session every trigger press is handed to.
+    let hints: HintSession
 
     init() {
         let configStore = ConfigStore(file: UserConfigFile(), loginItem: SMAppServiceLoginItem())
@@ -31,13 +35,42 @@ final class AppComposition {
             observer: WorkspaceFrontmostAppObserver(),
         ) { configStore.config }
         statusMenu = StatusMenuModel(
-            store: store,
+            store: configStore,
             controller: triggers,
             opener: WorkspaceConfigFileOpener(),
             policy: disabledApps,
         )
-        // `triggers.onTrigger` stays nil until the hint session exists: the controller
-        // logs every press on its own, so a trigger is observable before it does anything.
+        hints = Self.makeHintSession { configStore.config }
+        // The controller logs every press before handing it on, so a press stays
+        // observable even when the session shows nothing for it.
+        triggers.onTrigger = { [hints] entryPoint in
+            hints.trigger(entryPoint)
+        }
+    }
+
+    /// The hint session over the real adapters, with the overlay panel's content — the
+    /// view that renders the session — installed.
+    ///
+    /// One `WindowTargetCollector` serves both frontmost-window entry points, so they
+    /// share its memory of which apps needed waking. The menu-bar entry points have no
+    /// collector yet, and the session logs a press of one as not available.
+    private static func makeHintSession(
+        configuration: @escaping @MainActor () -> HintjumpConfig,
+    ) -> HintSession {
+        let presenter = PanelHintOverlayPresenter()
+        let windowCollector = WindowTargetCollector(reader: AXUIElementTreeReader())
+        let session = HintSession(
+            frontmostApp: WorkspaceFrontmostAppProvider(),
+            collectors: [.clickInWindow: windowCollector, .rightClickInWindow: windowCollector],
+            presenter: presenter,
+            clicker: CGEventClickPerformer(),
+            configuration: configuration,
+        )
+        let hostingView = NSHostingView(rootView: HintOverlayView(session: session))
+        // The panel's frame is the canvas the session chose; the view must never resize it.
+        hostingView.sizingOptions = []
+        presenter.install(contentView: hostingView)
+        return session
     }
 
     /// Loads the config file, registers the triggers it names, then starts following

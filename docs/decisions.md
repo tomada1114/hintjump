@@ -330,6 +330,34 @@ file is their public record.
   way out); re-reading and re-labeling on a repeated press of the same trigger
   (a toggle is what a repeated shortcut means everywhere else).
 
+## 2026-09-22 The overlay is a key, non-activating panel that reads typed characters
+
+- Decision: the hint overlay is a borderless, transparent, click-through
+  `NSPanel` with `.nonactivatingPanel`, at the `.popUpMenu` level, covering the
+  one screen that holds the target window's center. It becomes the key window
+  without Hintjump ever calling `NSApp.activate`, and reads each key-down's
+  `charactersIgnoringModifiers` — never its key code — as the typed key: Esc and
+  backspace are control keys, any other single character is handed to the
+  session. Losing key status (an app switch) closes the hints, and so does any
+  mouse press while they are shown, seen through a global mouse-down monitor
+  (which needs no permission): a click in the target app, which is already
+  active, takes keyboard focus back without the panel ever being told it
+  resigned key. The adapter is `PanelHintOverlayPresenter` in `HintjumpPlatform`; the
+  view it hosts, `HintOverlayView`, is in `HintjumpUI` and is installed by the
+  composition root.
+- Why: a key window receives its keystrokes from the window server, so the
+  overlay takes the typed label without the Input Monitoring permission a
+  global key tap needs, and a non-activating panel is key without making
+  Hintjump the active app, so the app being clicked keeps its focus and its menu
+  bar — typing after Esc goes where it went before the trigger. Reading
+  characters rather than key codes is what "Labels are ASCII letters; the user
+  types with an ABC input source" requires.
+- Rejected: a `CGEventTap` (costs Input Monitoring); temporary Carbon hotkeys
+  for each hint letter (key codes, which the ABC decision rules out, and a
+  registration per letter per session); activating Hintjump while hints are
+  shown (steals focus from the app being clicked and closes an open menu in it).
+- Supersedes: nothing.
+
 ## 2026-09-22 A disabled app gets every trigger key back
 
 - Decision: while an app listed in `[apps] disabled` is frontmost, all four

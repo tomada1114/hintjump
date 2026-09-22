@@ -15,6 +15,39 @@ Dependabot, or pinned actions. This template starts with all of them.
 **Starting your own app from this template?** Jump to
 [Using This Template](#using-this-template).
 
+## Using Hintjump
+
+Hintjump lives in the menu bar and needs Accessibility access (System Settings ›
+Privacy & Security › Accessibility), which it asks for at launch.
+
+- **⌃⇧Space** puts short labels on the clickable elements of the frontmost window.
+  Type a label and that element is left-clicked; the labels go away.
+- **⌃⌥⇧Space** does the same with a right click: the labels are outlined and a
+  "Right click" chip names the action.
+- **Esc** closes the labels without clicking, and so does pressing the same shortcut
+  again or clicking anywhere with the mouse. Backspace undoes a typed character.
+
+Labels are lowercase ASCII letters, read as the characters you type. Type them with an
+ABC (US-layout) input source: with another layout or an input method active, a key
+may produce a different character, or none, and the label will not match. This is a
+documented limitation, not something Hintjump works around.
+
+The shortcuts and the label characters are set in `~/.config/hintjump/config.toml`
+(status menu › Open Config File, then Reload Config).
+
+### The status menu
+
+Its status menu holds:
+
+- **Open Config File** — opens `~/.config/hintjump/config.toml` in your plain-text editor.
+- **Reload Config** — re-reads that file; a file with a mistake is reported in the log
+  and the previous settings stay in force.
+- **`Disable in <App>`** — turns Hintjump off in the last app you used before opening the
+  menu, by adding its bundle identifier to `[apps] disabled` (nothing else in the file
+  changes). While that app is frontmost, none of Hintjump's four shortcuts are
+  registered, so those key combinations reach the app instead. The item then reads
+  **`Enable in <App>`**, which turns Hintjump back on there.
+
 ## Quickstart
 
 Prerequisites: Xcode 26.5+, [mise](https://mise.jdx.dev/), and
@@ -28,19 +61,6 @@ just install   # pinned tools via mise + git hooks + xcodegen generate
 just check     # format → lint → script tests → test (80% floor) → build
 open Hintjump.xcodeproj
 ```
-
-## Using Hintjump
-
-Hintjump lives in the menu bar. Its status menu holds:
-
-- **Open Config File** — opens `~/.config/hintjump/config.toml` in your plain-text editor.
-- **Reload Config** — re-reads that file; a file with a mistake is reported in the log
-  and the previous settings stay in force.
-- **`Disable in <App>`** — turns Hintjump off in the last app you used before opening the
-  menu, by adding its bundle identifier to `[apps] disabled` (nothing else in the file
-  changes). While that app is frontmost, none of Hintjump's four shortcuts are
-  registered, so those key combinations reach the app instead. The item then reads
-  **`Enable in <App>`**, which turns Hintjump back on there.
 
 ## Design Philosophy
 
