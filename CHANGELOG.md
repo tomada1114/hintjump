@@ -27,5 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its `SystemAccessibilityTrust` adapter, a `SystemSettingsOpening` port for the Status
   window's future "Open System Settings…" button, and an `AccessibilityGateViewModel` that
   refreshes on launch and on becoming active and prompts at most once per process
+- The app is not sandboxed: it needs Accessibility access to read and click other apps' controls
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
