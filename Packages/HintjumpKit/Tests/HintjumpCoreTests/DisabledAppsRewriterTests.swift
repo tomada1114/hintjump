@@ -103,6 +103,15 @@ struct DisabledAppsRewriterTests {
     }
 
     @Test
+    func `adds the key after the section's last line, keeping its trailing comment`() throws {
+        let text = "[apps]\nfuture = \"x\" # keep\n"
+
+        let rewritten = try DisabledAppsRewriter.rewrite(text, disabled: ["one"])
+
+        #expect(rewritten == "[apps]\nfuture = \"x\" # keep\ndisabled = [\"one\"]\n")
+    }
+
+    @Test
     func `adds the section to a file that does not have it`() throws {
         let text = "[startup]\nlaunch_at_login = true\n"
 

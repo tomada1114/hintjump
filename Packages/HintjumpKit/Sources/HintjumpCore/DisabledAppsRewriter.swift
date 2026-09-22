@@ -54,14 +54,18 @@ enum DisabledAppsRewriter {
             + "\(ConfigSchema.disabled) = \(rendered)\n"
     }
 
-    /// Inserts the key at the end of an existing `[apps]` section.
+    /// Inserts the key at the end of an existing `[apps]` section: after the whole
+    /// line its last entry ends on, so a trailing comment stays with that entry.
     private static func appendingKey(
         source: TOMLSource,
         table: TOMLTable,
         rendered: String,
     ) -> String {
-        let insertion = table.entries.last.map(\.valueRange.upperBound)
-            ?? source.lines[table.line - 1].upperBound
+        let valueEnd = table.entries.last?.valueRange.upperBound
+        let lastLine = valueEnd.flatMap { end in
+            source.lines.first { $0.lowerBound <= end && end <= $0.upperBound }
+        }
+        let insertion = (lastLine ?? source.lines[table.line - 1]).upperBound
         return source.text(in: 0 ..< insertion)
             + "\n\(ConfigSchema.disabled) = \(rendered)"
             + source.text(in: insertion ..< source.characters.count)
