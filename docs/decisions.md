@@ -264,4 +264,7 @@ file is their public record.
 - Rejected: `batched` alone (Finder stays at 10 s); `naive` (over budget on every
   browser page); a per-application strategy table (the two Chromium fixes are
   adapter-side translation and need no table).
-- Open: the Chromium fixes are the follow-up filed from #8.
+- Open: none. The Chromium fixes (#27) landed the same day: the visible subsets ride
+  in the batched call and a frame clipped to 2 pt or less counts as out of view, which
+  takes Chrome to 52 / 110 ms (`docs/research/read-latency.md` › After the Chromium
+  fixes).

@@ -64,6 +64,8 @@ container's own bookkeeping, not lost targets.)
 - **The only miss is Chrome, at p95 243 ms** with `batchedPruned` (202 ms with plain
   `batched`, which is the same 1,381 elements without the wasted visible-children
   calls). Safari, Slack, Finder, and System Settings all clear 200 ms with room.
+  (Closed by the two adapter changes measured in the last section: Chrome now reads at
+  52 / 110 ms.)
 
 ### The strategy
 
@@ -93,3 +95,36 @@ take Chrome under the target, and neither is a product decision:
 
 Both are translation: "where does the application say this element is, and does that
 intersect the window" — the same question the rectangle prune already asks.
+
+## After the Chromium fixes (#27)
+
+Both moves above landed in `AXUIElementTreeReader+Attributes.swift`: a pruning read now
+asks for `AXVisibleRows` and `AXVisibleChildren` inside the one batched call, and a frame
+no wider or no taller than 2 pt (`clippedExtent`) is treated as out of view, its subtree
+skipped and the element itself still recorded. Re-measured the same day, same machine,
+same method (`just probe time --strategy batchedPruned --runs 10`, every app brought to
+the front right before its runs, nothing else building). The windows are the ones above;
+the unpruned count was re-taken first with `batched` (`pruned` for Finder) to confirm the
+window had not moved — Chrome's page now reports 1,397 elements and Slack's channel 287,
+both live content that changed between the sessions, the other three are unchanged.
+
+| Window | batchedPruned before | batchedPruned after | n unpruned → after |
+|---|---|---|---|
+| Safari | 54 / 126 (n 336) | **43 / 123** | 1070 → 284 |
+| Chrome | 185 / 243 (n 1381) | **52 / 110** | 1397 → 414 |
+| Slack | 37 / 99 (n 342) | **20 / 72** | 287 → 207 |
+| Finder | 54 / 113 (n 308) | **50 / 102** | 308 → 308 |
+| System Settings | 48 / 121 (n 209) | **44 / 114** | 242 → 201 |
+
+Every window is now under the 200 ms p95 target, Chrome with 90 ms to spare. The
+sliver rule is what did it there: 1,397 → 414 elements, the cut the rectangle already
+made on Safari.
+
+The count drops on Safari, Slack, and System Settings are the sliver rule pruning
+subtrees the rectangle test kept, so the dumps were checked for lost targets: every
+element with an `AXPress` action and an on-screen frame (inside the window, wider and
+taller than 2 pt) in the unpruned `batched` dump is present in the `batchedPruned` dump
+— Safari 60 of 60, Chrome 112 of 112, none lost. The pruned dumps hold a few *more*
+pressables (Safari 63, Chrome 124): the clipped elements themselves, recorded before
+their subtree is skipped, such as a 1×1 pt "Jump to content" link. Whether such an
+element deserves a hint is Core's decision over the frame, not the adapter's.
