@@ -166,8 +166,10 @@ tool that sees the generated copy rather than the authored one:
   a linked directory into its subdirectories and registers a nested
   `references/SKILL.md` as a skill of its own. `.gitattributes` marks it
   `linguist-generated`, so GitHub collapses it in pull request diffs.
-- `.claude/rules/` and `.claude/settings.json` are Claude Code-only and stay where they
-  are; they are not mirrored.
+- `.claude/rules/`, `.claude/settings.json`, and `.claude/agents/` are Claude Code-only
+  and stay where they are; they are not mirrored. `.claude/agents/` holds the two
+  sub-agent tiers skills spawn by `subagent_type` — `executor` (Opus 5.5 low) and
+  `architect` (Opus 5.5 high).
 
 | Skill | Load it when you are working on |
 |---|---|

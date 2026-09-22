@@ -1,8 +1,8 @@
 # CI repair (sub-agent prompt)
 
 Spawned at [SKILL.md step 6](../../SKILL.md#6-ci-to-green), only after
-`ci_watch.sh` returns `FAIL`, one PR at a time. **`opus` by default,
-escalating to `fable` once the same failure has survived two attempts in a
+`ci_watch.sh` returns `FAIL`, one PR at a time. **`executor` by default,
+escalating to `architect` once the same failure has survived two attempts in a
 row.**
 
 Write the failing log to a file **outside** the working directory first
