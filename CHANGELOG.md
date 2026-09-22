@@ -65,5 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   left click; macOS's own menu keys take over from there. The accessibility reader
   gains a depth limit, so reading the bar costs its titles and not every item of every
   closed menu under them
+- Hints on the menu bar's status items: ⌃⇧S labels every visible status item — other
+  apps', Control Center's (Wi-Fi, the clock, and the rest), and Hintjump's own — left
+  to right, and typing a label left-clicks it. The items come from the on-screen window
+  list in one call, with no new permission; one hidden behind the camera housing gets
+  no label. It works even while Hintjump's own window is frontmost
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
