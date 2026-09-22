@@ -99,6 +99,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new app keeps, including its labels and branch ruleset)
 - `just fix` formats and auto-fixes SwiftLint violations, then runs `just lint`;
   `just test-fast <filter>` runs only the matching tests, without the coverage floor
+- `starting-an-app` gains an app-shapes reference
+  (`.agents/skills/starting-an-app/references/app-shapes.md`, linked from
+  `docs/architecture.md`): the `project.yml` key, `App/` entry point, and `LaunchTests`
+  assertion a menu-bar agent (`LSUIElement`, `MenuBarExtra`) needs instead of the
+  shipped windowed shape, proven against `just build`, `just uitest`, and `just smoke`,
+  plus where an `NSStatusItem` delegate lives and what XCUITest can see of a status item
 - `just logs` streams this app's unified-log output — the records whose subsystem is
   the bundle identifier `project.yml` declares, read by the new
   `scripts/bundle-id.sh`, so both recipes that need it survive

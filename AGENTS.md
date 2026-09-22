@@ -131,7 +131,7 @@ tool that sees the generated copy rather than the authored one:
 | `authoring-skills` | adding, editing, or reviewing a skill: authoring under `.agents/skills/`, the `just agents-sync` mirror, frontmatter, layout, and size limits |
 | `updating-docs` | deciding whether a change owes a documentation update and which surface it lands on: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/*.md`, a skill, or a `///` comment |
 | `writing-repo-scripts` | writing or testing a shell script under `scripts/`, `.githooks/pre-commit`, or `scripts/tests/`: why bash, refusing or skipping outside a git checkout, the stderr contract by example, and `scripts/tests/lib.sh` |
-| `starting-an-app` | turning this template into a new app: `scripts/bootstrap.sh`'s rename, what the new repository keeps, and its `just labels` and `just ruleset` setup |
+| `starting-an-app` | turning this template into a new app: `scripts/bootstrap.sh`'s rename, what the new repository keeps, its `just labels` and `just ruleset` setup, and choosing the app shape (windowed or menu-bar agent) |
 
 ### Rules
 

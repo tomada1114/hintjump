@@ -74,6 +74,15 @@ sees it.
 | OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/MyAppKit/Sources/MyAppPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (the adapter itself is outside the coverage floor) |
 | App lifecycle, scenes, menus, wiring an adapter to a view model | `App/` | `LaunchUITests` + `just smoke` |
 
+That last row carries one decision the table cannot: the app's *shape*. The template
+ships a regular windowed app — `WindowGroup`, a Dock tile, a launch test that waits for
+a window. A menu-bar agent (`LSUIElement`, `MenuBarExtra`, a launch test that waits for
+a status item) changes `project.yml`, `App/MyAppApp.swift`, and
+`LaunchUITests/LaunchTests.swift`, and nothing below them.
+`.agents/skills/starting-an-app/references/app-shapes.md` gives both shapes as proven
+code, including where an `NSApplicationDelegateAdaptor`'s delegate lives when
+`MenuBarExtra` is not enough (`MyAppPlatform`, never `App/`).
+
 Keeping logic out of views is what makes the coverage floor honest: the gate
 measures the code that can regress silently, not SwiftUI layout. The same reasoning
 keeps decisions out of adapters — see "Ports and adapters" above.
