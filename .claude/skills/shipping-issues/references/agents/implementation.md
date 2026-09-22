@@ -1,11 +1,11 @@
 # Implementation (sub-agent prompt)
 
 Spawned at [SKILL.md step 3](../../SKILL.md#3-implement), one issue at a time.
-**`sonnet` is the default; `opus` when the issue is foundational** —
+**`opus` is the default; `fable` when the issue is foundational** —
 architecture or a skeleton, an interface/port/schema, or a skill, instruction
 file, or gate whose shape the rest of the backlog copies. The test is blast
 radius, not difficulty:
-[cost-discipline.md#the-foundation-exception-opus-for-what-the-backlog-builds-on](../cost-discipline.md#the-foundation-exception-opus-for-what-the-backlog-builds-on).
+[cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on](../cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on).
 A resume/patch run stays on the model its first run used.
 
 ```

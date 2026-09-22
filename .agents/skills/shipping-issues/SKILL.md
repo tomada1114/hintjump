@@ -151,7 +151,7 @@ writes exit 2, so rank from `~P<n>` suggestions and report findings instead.
   ```
 - **more, tangled edges, or a close top-two** — hand
   [agents/priority-research.md](references/agents/priority-research.md) to an
-  independent `sonnet` sub-agent, filled per
+  independent `opus` sub-agent, filled per
   [delegation-templates.md](references/delegation-templates.md). Returns the pick
   with evidence, the order after it, and blocked/unclear lists — never raw issue
   prose.
@@ -220,9 +220,9 @@ from costing three dependency installs instead of one. Judging the four
 log tails, never full output; what the smoke run turns up goes to step 8.
 
 Fill and spawn a sub-agent per issue with
-[agents/implementation.md](references/agents/implementation.md). **`sonnet` by
-default; `opus` when the issue is foundational** — blast radius, not difficulty
-([the foundation exception](references/cost-discipline.md#the-foundation-exception-opus-for-what-the-backlog-builds-on));
+[agents/implementation.md](references/agents/implementation.md). **`opus` by
+default; `fable` when the issue is foundational** — blast radius, not difficulty
+([the foundation exception](references/cost-discipline.md#the-foundation-exception-fable-for-what-the-backlog-builds-on));
 a change small enough that the handoff costs more than the work is implemented
 here rather than spawned
 ([the floor](references/cost-discipline.md#the-floor-too-small-to-delegate)). In
@@ -270,7 +270,7 @@ escalate:
 
 **`--fix` is serial-mode only** — in parallel mode it would write one branch's
 repairs into the main checkout. Parallel mode reviews without `--fix` and spawns
-one `sonnet` fix run per branch from
+one `opus` fix run per branch from
 [agents/review-fix.md](references/agents/review-fix.md), all in one message; a
 branch with zero accepted findings gets no spawn
 ([why](references/recovery.md#--fix-and-why-it-is-serial-mode-only)). Host won't
@@ -405,13 +405,13 @@ it lands; record (`--event followup`), and pass `--refresh` on the next plan.
 ### 8b. Unblock held designs in the background
 
 Everything filed `--needs-design`, plus the design-blocked issues already in the
-backlog (step 1's `needs-design:`), gets one **`opus`** sub-agent each, from
+backlog (step 1's `needs-design:`), gets one **`fable`** sub-agent each, from
 [agents/design-decision.md](references/agents/design-decision.md).
 
 **Spawn and move on — never block on one.** They run while this session keeps
 shipping, and the Agent tool notifies this session as each returns.
 
-- One agent per issue, always `opus`, all of a round issued **in one message**.
+- One agent per issue, always `fable`, all of a round issued **in one message**.
   Cap **3 in flight**; queue the rest — this run's own filings first, then
   backlog issues highest tier first.
 - **The queue drains on notification, not at a step.** When one returns, record

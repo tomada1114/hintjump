@@ -11,7 +11,8 @@ to delegate a step, before changing a run count, or before picking a
 - [What the startup costs](#what-the-startup-costs)
 - [Run budget](#run-budget)
 - [Model and effort assignment](#model-and-effort-assignment)
-  - [The foundation exception: `opus` for what the backlog builds on](#the-foundation-exception-opus-for-what-the-backlog-builds-on)
+  - [Effort is inherited, not set](#effort-is-inherited-not-set)
+  - [The foundation exception: `fable` for what the backlog builds on](#the-foundation-exception-fable-for-what-the-backlog-builds-on)
   - [The floor: too small to delegate](#the-floor-too-small-to-delegate)
 - [What parallel mode costs](#what-parallel-mode-costs)
 
@@ -121,7 +122,7 @@ couple of targeted reads.
 Two things scale that count beyond the issue list itself, both deliberately
 bounded:
 
-- **Background design agents (step 8b)** — one `opus` run per design-blocked
+- **Background design agents (step 8b)** — one `fable` run per design-blocked
   issue, capped at 3 in flight. They cost nothing in wall-clock on the shipping
   path (nothing ever waits on one) and almost nothing in this context: what
   comes back is a verdict and a two-line approach, while the design itself goes
@@ -136,25 +137,47 @@ bounded:
 
 ## Model and effort assignment
 
-Implementation and priority research run on `sonnet` — fully specified work
-with a clear pass/fail — with one standing exception below. CI repair starts
-on `sonnet` and escalates to `opus`
-once the same failure survives two attempts in a row — persistent failure is
-a sign the spec (or the fix) needs more judgment, not more mechanical retries.
-The `/code-review` fallback runs on `opus`, since review and bug-finding is
-Opus-class work with genuinely unresolved spec. Design decisions (step 8b) run
-on `opus` for the same reason and more so — deciding an approach nobody has
-decided is the least mechanical work this skill delegates, and a bad decision
-recorded on an issue outlives the run that made it. It is also the only
+Two models, two tiers. **`opus` is the floor** — implementation, priority
+research, the review fix run, the `/code-review` fallback, and the first two
+CI repair attempts all run on it. **`fable` is for what outlives the run** —
+the foundation exception below, design decisions (step 8b), and a CI failure
+that has already survived two `opus` attempts, since persistent failure is a
+sign the spec (or the fix) needs more judgment, not more mechanical retries.
+Design decisions earn `fable` most clearly: deciding an approach nobody has
+decided is the least mechanical work this skill delegates, a bad decision
+recorded on an issue outlives the run that made it, and it is the only
 sub-agent here that writes to GitHub (one comment, one label) and the only one
 that writes no code at all.
 
-### The foundation exception: `opus` for what the backlog builds on
+`sonnet` is not used. At the efforts these spawns actually run at (next
+section), Opus low costs about the same as Sonnet medium and is much smarter —
+on Artificial Analysis's Intelligence Index snapshot of 2026-09 (v4.3.2, Cost
+per Task): Sonnet medium 28 at $1.00, Opus low 39 at $1.10, Fable medium 49 at
+$2.98. The one-tenth-of-a-dollar saving buys nothing worth a weaker
+implementer. Fable has its own, separate weekly limit on the Max plan, which is
+why it is reserved for the two tiers above rather than used everywhere it
+would win on the Index alone; in a week that limit is exhausted, every `fable`
+spawn here falls back to `opus`.
+
+### Effort is inherited, not set
+
+The Agent tool used for these spawns takes a `model` but not a per-spawn
+`effort`. A sub-agent's reasoning effort follows the session's own
+configuration, and every model choice in this skill assumes **Opus at `low`
+and Fable at `medium`** — pin them per model under `modelSettings` in
+`settings.json` so the session's own effort does not leak into the spawns. They are the cheap end of each model's Pareto-optimal range;
+the tiers this skill avoids are the ones that lose to a cheaper option (Opus
+high 48 at $3.61 loses to Fable medium 49 at $2.98; Fable max loses to Fable
+xhigh). If a session runs with a higher effort, the `opus` spawns here become
+the expensive Opus rather than the cheap one — lower the session effort before
+starting a run rather than swapping models.
+
+### The foundation exception: `fable` for what the backlog builds on
 
 Some issues are not "fully specified work with a clear pass/fail" even when
 their body is excellent, because what they produce is a **shape other issues
 copy** rather than a behavior a test pins down. Spawn the step 3 implementation
-on **`opus`** when the issue is any of:
+on **`fable`** when the issue is any of:
 
 - **Architecture or a skeleton** — the directory layout, the app/router
   skeleton, the composition root, a zone or module boundary.
@@ -168,26 +191,22 @@ on **`opus`** when the issue is any of:
 
 The test is not difficulty, it is **blast radius**: would a wrong call here be
 cheap to correct in its own follow-up, or would it be copied by every issue
-after it? Only the second earns `opus`.
+after it? Only the second earns `fable`.
 
 Signals visible before spawning, straight off `issue_digest.py`: an
 `unblocks×N` of 2 or more, a `foundation`/`schema`/`interface` signal, or a
 Done-means written as a structure to establish rather than a behavior to
 observe. Any one of those is a reason to look; the blast-radius test decides.
 
-Everything else stays on `sonnet`, which is most of a backlog: bug fixes,
+Everything else stays on `opus`, which is most of a backlog: bug fixes,
 removals, mechanical rewrites, config edits, documentation that follows a shape
 already settled, and any issue whose Done-means is a command that passes. A
-removal-only issue is `sonnet` even when it is `P0` and unblocks the whole
+removal-only issue is `opus` even when it is `P0` and unblocks the whole
 chain — deleting what a decision already condemned carries no design in it.
 
 The same escalation applies to a resume/patch run: it inherits the model the
 first run used, because a foundation the first run got half-right is exactly
 where the remaining judgment sits.
-
-The Agent tool used for these spawns takes a `model` but not a per-spawn
-`effort` — a sub-agent's reasoning effort follows this session's own
-configuration, there is no separate dial to set here.
 
 Implementation stays delegated even when the main model is Opus — a
 deliberate exception to the Opus-main "do it yourself" default, bought for
@@ -231,7 +250,7 @@ set up first.
 **Added, per issue in a parallel batch:** one dependency install and one
 baseline verify (`worktree_setup.sh`), both outside this context — the parent
 reads one `verdict:` line each. Plus, per branch with accepted review
-findings, one `sonnet` fix run that serial mode gets for free from
+findings, one `opus` fix run that serial mode gets for free from
 `/code-review --fix`.
 
 **Saved:** the implementations overlap instead of queueing, which is the
