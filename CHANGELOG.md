@@ -36,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `project.yml` names the template's app-name placeholder, and no `TODO` may survive
   once the rename has removed it, so a new app cannot ship agent instructions with no
   product context. CI's `bootstrap-smoke` asserts the check fires on the renamed clone
+- A `running-the-app` skill: how to see a change working in the real app — `just run`
+  and confirming the running process is the build you just made, reading `just logs`
+  (and why `log show --last` does not show a `.debug` line), screenshotting a window or
+  the screen with `screencapture`, driving a flow with a throwaway XCUITest and
+  exporting its screenshot from the result bundle, starting the app in a known state
+  with launch arguments or environment variables, the human hand-off for a first TCC
+  prompt or a System Settings step — asked for once, up front — and the evidence a pull
+  request carries when no CI job can assert the behavior
 - `just release-prep <version>` (`scripts/release-prep.sh`): the edits a release needs
   before its tag exists, in one checked step — `MARKETING_VERSION` set,
   `CURRENT_PROJECT_VERSION` incremented, and `CHANGELOG.md`'s `[Unreleased]` entries
