@@ -87,6 +87,35 @@ case_ds_store_ignored() {
     assert_stdout_contains "is in sync."
 }
 
+# Python writes __pycache__/ beside a skill script run from either tree; a cache on
+# one side only, nested or at the top, is not drift.
+case_pycache_ignored() {
+    local root
+    root=$(make_synced_root)
+    mkdir -p "${root}/.claude/skills/alpha/references/__pycache__" "${root}/.agents/skills/__pycache__"
+    echo "bytecode" >"${root}/.claude/skills/alpha/references/__pycache__/notes.cpython-313.pyc"
+    echo "bytecode" >"${root}/.agents/skills/__pycache__/top.cpython-313.pyc"
+    capture "${BASH}" "${SYNC}" --check --root "${root}"
+    assert_exit 0
+    assert_stdout_contains "is in sync."
+}
+
+# Sync never copies a source cache into the mirror, and leaves one already there.
+case_sync_skips_pycache() {
+    local root
+    root=$(make_synced_root)
+    mkdir -p "${root}/.agents/skills/beta/__pycache__" "${root}/.claude/skills/alpha/__pycache__"
+    echo "bytecode" >"${root}/.agents/skills/beta/__pycache__/source.cpython-313.pyc"
+    echo "bytecode" >"${root}/.claude/skills/alpha/__pycache__/mirror.cpython-313.pyc"
+    watch_file "${root}/.claude/skills/alpha/__pycache__/mirror.cpython-313.pyc"
+    capture "${BASH}" "${SYNC}" --root "${root}"
+    assert_exit 0
+    [ ! -e "${root}/.claude/skills/beta/__pycache__" ] || _fail "sync copied a __pycache__ into the mirror"
+    assert_file_unchanged "${root}/.claude/skills/alpha/__pycache__/mirror.cpython-313.pyc"
+    capture "${BASH}" "${SYNC}" --check --root "${root}"
+    assert_exit 0
+}
+
 case_source_missing() {
     local root
     root=$(make_temp_dir)
@@ -241,6 +270,8 @@ run_case "an extra file in the mirror is ERR_AGENTS_DRIFT naming it" case_extra_
 run_case "a differing file is ERR_AGENTS_DRIFT naming it" case_differing_file
 run_case "every kind of drift is named in one run" case_every_drift_named
 run_case "a .DS_Store on one side only is still in sync" case_ds_store_ignored
+run_case "a __pycache__ on one side only is still in sync" case_pycache_ignored
+run_case "sync neither copies a __pycache__ into the mirror nor deletes one there" case_sync_skips_pycache
 run_case "no .agents/skills fails ERR_AGENTS_SOURCE_MISSING" case_source_missing
 run_case "sync removes a stale mirror file and writes nothing outside .claude/skills/" case_sync_repairs_and_stays_inside_mirror
 run_case "sync creates an absent mirror byte-identical to the source" case_sync_creates_absent_mirror
