@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `.template-origin`: `scripts/bootstrap.sh` records the template commit and repository
+  an app was created from, so listing the template changes the app does not have yet is
+  one command — `git log --oneline "$(sed -n 1p .template-origin)"..template/main`
+  (`README.md` › Keeping up with template updates)
+
 - `MyAppPlatformTests`, an opt-in test target for the adapter tests CI cannot run: every
   suite carries the `.requiresLocalMachine` trait, so they are reported as *skipped*
   under `just test` and in CI and run only with `RUN_LOCAL_MACHINE_TESTS=1`, which the

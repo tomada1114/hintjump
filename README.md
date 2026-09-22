@@ -141,14 +141,26 @@ rg -i "my.?app|com\.example|your.username|Your.Name|you@example"
 ### Keeping up with template updates
 
 A repository generated from a GitHub template has no upstream link — the files
-are copied once. To pull later template improvements (CI hardening, lint-rule
-bumps, workflow fixes) into your app:
+are copied once. The bootstrap script therefore writes `.template-origin`: the
+template commit your app was created from on line 1, the template repository on
+line 2. To pull later template improvements (CI hardening, lint-rule bumps,
+workflow fixes) into your app:
 
 ```bash
 git remote add template https://github.com/tomada1114/macos-app-template.git
 git fetch template
+git log --oneline "$(sed -n 1p .template-origin)"..template/main   # what you don't have yet
 git cherry-pick <sha>    # or: git merge template/main --allow-unrelated-histories
 ```
+
+Both lines read `unknown` when the script could not know them honestly: it records
+`HEAD` only when the history's root commit is the template's own first commit.
+GitHub's "Use this template" gives the new repository a fresh root instead, so its
+`HEAD` is not a template commit and its `origin` is your app rather than the template.
+The file then names the file tree to look for, so one `git log --format='%H %T'`
+over `template/main` finds the commit — fill the two lines in and the command
+above works from then on. Update line 1 yourself whenever you adopt template
+changes; the script never rewrites an existing file.
 
 Cherry-picking narrowly scoped commits is usually cleaner than a full merge:
 the bootstrap rename means most template commits touch files whose names and

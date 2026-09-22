@@ -136,6 +136,25 @@ jobs:
             exit 1
           fi
 
+      - name: Assert the template origin was recorded
+        run: |
+          cd "$RUNNER_TEMP/bootstrap-smoke"
+          test -f .template-origin || {
+            echo "::error::bootstrap did not write .template-origin"
+            exit 1
+          }
+          # This clone has the template's own history, so line 1 must be a real commit
+          # (the "unknown" fallback is for a repository created from a fresh history).
+          sed -n 1p .template-origin | grep -qE '^[0-9a-f]{40}$' || {
+            echo "::error::.template-origin line 1 is not a 40-hex template commit SHA"
+            sed -n 1,2p .template-origin
+            exit 1
+          }
+          test -n "$(sed -n 2p .template-origin)" || {
+            echo "::error::.template-origin line 2 (the template repository) is empty"
+            exit 1
+          }
+
       - name: Assert the template-only job was retired
         run: |
           cd "$RUNNER_TEMP/bootstrap-smoke"

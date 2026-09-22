@@ -57,6 +57,16 @@ scripts/bootstrap.sh CoolApp --bundle-id-prefix io.example --github-user janedoe
   outside a git checkout (see `writing-repo-scripts`).
 - **Paths** named after the app (`MyAppKit`, `MyAppCore`, …) are renamed deepest-first,
   skipping `.git/` and build output, and the Xcode project is regenerated.
+- **`.template-origin`** records where the app was cut from: the template commit on
+  line 1, its repository on line 2, then comment lines. It is written only when the
+  file is absent — a re-run, and any hand-edit made after adopting template changes,
+  survives — and `replace()` skips it so the rename cannot rewrite the URL. `HEAD` is
+  recorded only when the history's root commit is the template's first commit (the
+  script carries that SHA); otherwise — a "Use this template" repository, whose fresh
+  root the template has never seen, or a shallow clone — both values are `unknown` and
+  the file names the tree to search for rather than a SHA `git log <sha>..template/main`
+  would reject. `README.md`'s
+  "Keeping up with template updates" is the reader-facing half.
 - **`CHANGELOG.md`** is reset to a one-entry history for the new project, guarded by a
   marker line so a re-run never wipes the new app's own entries.
 - **Template-only CI job:** `bootstrap-smoke` and its `Template Bootstrap Smoke`
@@ -73,6 +83,7 @@ for the same reason the script quote-splits them.
 
 Changing the script means keeping `bootstrap-smoke` green: it bootstraps a clone as
 `DemoApp`, asserts no placeholder survives, asserts the `CHANGELOG.md` reset, asserts
+`.template-origin` holds a 40-hex commit SHA and a repository line, asserts
 the template-only job was retired (and re-runs `scripts/tests/apply-ruleset_test.sh`
 in the clone), then runs `swift test` and an `xcodebuild` on the renamed tree. Its
 leftover grep is case-insensitive and allows a missing hyphen, so a new mention of the
