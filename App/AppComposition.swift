@@ -52,8 +52,9 @@ final class AppComposition {
     /// view that renders the session — installed.
     ///
     /// One `WindowTargetCollector` serves both frontmost-window entry points, so they
-    /// share its memory of which apps needed waking. The menu-bar entry points have no
-    /// collector yet, and the session logs a press of one as not available.
+    /// share its memory of which apps needed waking. The status items come from the
+    /// window list instead (`WindowListStatusItems`). An entry point with no collector
+    /// yet is logged by the session as not available.
     private static func makeHintSession(
         configuration: @escaping @MainActor () -> HintjumpConfig,
     ) -> HintSession {
@@ -61,7 +62,11 @@ final class AppComposition {
         let windowCollector = WindowTargetCollector(reader: AXUIElementTreeReader())
         let session = HintSession(
             frontmostApp: WorkspaceFrontmostAppProvider(),
-            collectors: [.clickInWindow: windowCollector, .rightClickInWindow: windowCollector],
+            collectors: [
+                .clickInWindow: windowCollector,
+                .rightClickInWindow: windowCollector,
+                .statusIcons: StatusItemTargetCollector(listing: WindowListStatusItems()),
+            ],
             presenter: presenter,
             clicker: CGEventClickPerformer(),
             configuration: configuration,

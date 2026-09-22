@@ -377,3 +377,29 @@ file is their public record.
   own menu from making Hintjump the subject.
 - Rejected: ignoring presses in a disabled app (the app still never receives
   the key); disabling only the two window triggers.
+
+## 2026-09-22 Status items are found in the on-screen window list
+
+- Decision: the status-items trigger finds its targets with one
+  `CGWindowListCopyWindowInfo` call — the on-screen windows at the status-item
+  level, read for their layer, bounds, and owner pid only — behind the
+  `StatusItemListing` port and its `WindowListStatusItems` adapter.
+  `StatusItemTargetCollector` in `HintjumpCore` keeps a window only when it is
+  more than 2 pt wide and tall and lies wholly inside one visible part of the
+  primary screen's menu bar (the two sides of a camera housing, or the whole bar),
+  drops a frame reported twice, and orders the rest left to right, like every
+  other reading-order rule in the app. Each is left-clicked at its center.
+  Hintjump's own status item is a target like any other, and because this
+  collector reads nothing of the frontmost app, `HintSession` runs it even while
+  Hintjump itself is frontmost; a disabled app, or no frontmost app with a
+  process identifier, still shows nothing.
+- Why: one call with no TCC grant finds every process's items — third-party
+  apps', Control Center's, and Hintjump's — and none of its fields is the one
+  Screen Recording gates (`kCGWindowName`). On the macOS 26 Mac this was built on,
+  every status-level window in the list is owned by Control Center, so the owner
+  pid can name a host process rather than the item's app; it is carried, never
+  decided on.
+- Rejected: `AXExtrasMenuBar` of every running process (one Accessibility round
+  trip per process, and one hung process stalls the trigger past the 300 ms
+  budget). If a real run shows an item the window list misses, that item's
+  process's `AXExtrasMenuBar` is added as a second source then, not before.

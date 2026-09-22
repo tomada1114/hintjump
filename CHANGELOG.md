@@ -60,5 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   While a disabled app is frontmost all four triggers are unregistered, so their key
   combinations reach that app, and they come back as soon as another app is in front.
   A reload that adds or removes the frontmost app takes effect at once
+- Hints on the menu bar's status items: ⌃⇧S labels every visible status item — other
+  apps', Control Center's (Wi-Fi, the clock, and the rest), and Hintjump's own — left
+  to right, and typing a label left-clicks it. The items come from the on-screen window
+  list in one call, with no new permission; one hidden behind the camera housing gets
+  no label. It works even while Hintjump's own window is frontmost
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
