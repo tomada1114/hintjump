@@ -11,10 +11,9 @@ import SwiftUI
 /// renders the content as an `NSMenu`, which is the shape the status menu has (a list of
 /// items) and the one XCUITest can reach by title (`app.menuItems[...]`).
 ///
-/// This is also the composition root: the one place that knows both halves of a port.
-/// It constructs the `HintjumpPlatform` adapters and hands them to `HintjumpCore` view
-/// models, so nothing below `App/` — not the view model, not the view — depends on which
-/// implementation answers (`docs/architecture.md` › Layers).
+/// `App/` is the composition root — the one place that knows both halves of a port — and
+/// ``AppComposition`` holds most of it, so this struct stays scenes and wiring
+/// (`docs/architecture.md` › Layers).
 @main
 struct HintjumpApp: App {
     /// The temporary status-item image, until the real template image lands.
@@ -25,21 +24,24 @@ struct HintjumpApp: App {
     @State private var accessibilityGate =
         AccessibilityGateViewModel(trust: SystemAccessibilityTrust())
 
-    /// Composed once, for the same reason, and loaded before the first scene exists:
-    /// the load at launch is what applies `launch_at_login` without a Reload.
-    @State private var configStore = Self.loadedConfigStore()
+    /// The config store, the triggers, and the status menu's model, composed once for
+    /// the same reason and started from the label's `.onAppear` below.
+    @State private var composition = AppComposition()
 
     var body: some Scene {
         MenuBarExtra {
-            // Re-reads the config file and applies it, `launch_at_login` included.
-            // A failure is logged and recorded by the store, as at launch.
+            Button("Open Config File") {
+                composition.statusMenu.openConfigFile()
+            }
+            // Re-reads the config file and applies it: `launch_at_login`, then the
+            // triggers. A failure is logged and the triggers stay as they were.
             Button("Reload Config") {
-                _ = try? configStore.reload()
+                composition.statusMenu.reloadConfig()
             }
             Divider()
             // An agent has no app menu and no ⌘Q of its own, so this is how a local run
-            // quits. The other items (Open Config File, Disable in <App>, Status…) come
-            // with the status-menu feature.
+            // quits. The other items (Disable in <App>, Status…) come with later
+            // status-menu features.
             Button("Quit Hintjump") {
                 NSApplication.shared.terminate(nil)
             }
@@ -47,20 +49,15 @@ struct HintjumpApp: App {
         } label: {
             // The label is the one view a menu-bar agent renders at launch — the
             // `.menu` content is built only when the menu opens — so the gate that
-            // has to run at launch and on activation is attached here.
+            // has to run at launch and on activation is attached here, and so is the
+            // start that loads the config (applying `launch_at_login`) and registers
+            // the triggers.
             Image(systemName: Self.statusItemImage)
                 .accessibilityGate(accessibilityGate)
+                .onAppear {
+                    composition.start()
+                }
         }
         .menuBarExtraStyle(.menu)
-    }
-
-    /// The config store over the real file and the real login item, loaded once.
-    ///
-    /// `load()` logs a failure itself and records it in `lastLoad`, and a failed load
-    /// leaves the default configuration in force, so launch carries on either way.
-    private static func loadedConfigStore() -> ConfigStore {
-        let store = ConfigStore(file: UserConfigFile(), loginItem: SMAppServiceLoginItem())
-        _ = try? store.load()
-        return store
     }
 }

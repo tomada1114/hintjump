@@ -34,5 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LoginItemRegistering` port and its `SMAppServiceLoginItem` adapter. A login item the
   system refuses to change is logged and does not fail the reload; one switched off in
   System Settings is left off
+- The four triggers in the config file are registered as global shortcuts (Carbon
+  `RegisterEventHotKey`, no permission needed) at launch and again on every successful
+  "Reload Config", through the `TriggerRegistering` port and its `CarbonTriggerRegistrar`
+  adapter. A press is logged as `trigger pressed: <trigger>` until the hint session
+  lands; a combination another app already holds is logged with its status, and the
+  other triggers still register. A reload that fails leaves the registered triggers as
+  they were
+- The status menu gains "Open Config File", which opens `~/.config/hintjump/config.toml`
+  in the default plain-text editor, next to "Reload Config"
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
