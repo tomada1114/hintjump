@@ -19,8 +19,13 @@ private struct AccessibilityGateModifier: ViewModifier {
             // first render, matching `ContentView`'s frontmost-app refresh. Refreshing
             // is how the app notices a grant given in System Settings, since macOS
             // reports one through no callback at all.
-            .onChange(of: scenePhase, initial: true) { _, phase in
-                guard phase == .active else {
+            .onChange(of: scenePhase, initial: true) { previous, phase in
+                // The initial call reports the same phase twice. It runs regardless
+                // of that phase: an agent app with no window is not `.active` at
+                // launch, and launch is when the first check and the one prompt
+                // are due. Every later call is a real transition and only
+                // becoming active counts.
+                guard phase == .active || previous == phase else {
                     return
                 }
                 gate.refresh()
