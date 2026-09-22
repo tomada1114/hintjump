@@ -122,6 +122,7 @@ Fill each item based on verification results from Steps 2-3:
 |------|----------|
 | All checks pass | `just check` passed (fmt, lint, test + coverage floor, build) |
 | New logic lives in MyAppCore and is covered | Verified in Step 3; no-logic changes = checked |
+| Adapter change: `just test-local` output in the Test Plan | Required only when `Sources/MyAppPlatform` changed — CI reports those tests as skipped, so the run is yours. No adapter change = checked |
 | Documentation updated | Required only when public API or behavior changed. No change = checked |
 | No breaking changes | No breaking changes, or documented in Summary = checked |
 | PR title follows Conventional Commits | Guaranteed by Step 4 |

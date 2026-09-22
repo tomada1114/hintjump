@@ -11,6 +11,7 @@
 
 - [ ] All checks pass (`just check`)
 - [ ] New logic lives in MyAppCore and is covered by Swift Testing tests
+- [ ] Adapter change: `just test-local` was run and its output is in the Test Plan (CI cannot run it)
 - [ ] Documentation updated (if applicable)
 - [ ] No breaking changes (or documented in description)
 - [ ] PR title follows Conventional Commits

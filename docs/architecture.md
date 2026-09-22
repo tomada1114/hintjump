@@ -42,7 +42,7 @@ Apple-only frameworks such as Combine stay allowed, and so does Foundation — a
 
 Code that talks to the OS — `NSWorkspace`, accessibility, a Carbon hotkey, an event tap,
 an `NSPanel` overlay, a login item — lives in `MyAppPlatform`, never in Core, a view, or
-the shell. It is always the same three pieces, and the template ships one worked example
+the shell. It is always the same four pieces, and the template ships one worked example
 of them to copy:
 
 1. **The port**, in Core — a `Sendable` protocol taking and returning value types Core
@@ -55,6 +55,16 @@ of them to copy:
    hands it, used by the Core tests of whatever consumes the port
    (`.claude/rules/testing.md` › Fakes, not mocks): `FakeFrontmostAppProvider` in
    `Packages/MyAppKit/Tests/MyAppCoreTests/FrontmostAppViewModelTests.swift`.
+4. **The local-machine test**, in `Packages/MyAppKit/Tests/MyAppPlatformTests` — the
+   adapter against the *real* OS, which the fake by construction cannot check:
+   `WorkspaceFrontmostAppProviderTests` asks the live `NSWorkspace`. Every suite there
+   carries the `.requiresLocalMachine` trait, so it runs only with
+   `RUN_LOCAL_MACHINE_TESTS=1` — what `just test-local` sets — and is reported as
+   *skipped* under `just test` and in CI. It has to be: a runner has no logged-in GUI
+   session and cannot be granted Accessibility, Input Monitoring, or Screen Recording,
+   so such a test could only ever fail there. A skip is the honest outcome, and a human
+   runs `just test-local` when an adapter changes and puts the output in the pull
+   request (`.claude/rules/testing.md` › Where a Test Goes).
 
 `App/` is the composition root: the only place that constructs an adapter and hands it
 to a Core view model, so nothing below it knows which implementation answered. A test
@@ -64,7 +74,8 @@ substitutes the fake at that same seam.
 measures `Sources/MyAppCore` only. That is a constraint on adapters rather than a
 licence: an adapter carries translation, so it has no branch worth a test. The moment
 one needs a decision, the decision moves into Core behind the port, where the floor
-sees it.
+sees it. What the floor cannot hold is the translation itself — whether the OS really
+answers what the adapter assumes — and that is what the fourth piece is for.
 
 ## Logging
 
@@ -101,7 +112,7 @@ example: it logs that a refresh happened `.public` and the other application's n
 |---|---|---|
 | Domain logic, state, view models | `Packages/MyAppKit/Sources/MyAppCore` | Swift Testing in `Tests/MyAppCoreTests` (coverage-gated) |
 | Views, view modifiers | `Packages/MyAppKit/Sources/MyAppUI` | Core view-model tests + the launch UI test |
-| OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/MyAppKit/Sources/MyAppPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (the adapter itself is outside the coverage floor) |
+| OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/MyAppKit/Sources/MyAppPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (coverage-gated), plus an opt-in local-machine test of the adapter in `Tests/MyAppPlatformTests` — `just test-local` |
 | App lifecycle, scenes, menus, wiring an adapter to a view model | `App/` | `LaunchUITests` + `just smoke` |
 
 That last row carries one decision the table cannot: the app's *shape*. The template

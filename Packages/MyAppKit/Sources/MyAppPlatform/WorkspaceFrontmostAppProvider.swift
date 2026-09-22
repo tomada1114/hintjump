@@ -7,7 +7,10 @@ import MyAppCore
 /// it imports the OS framework Core may not, translates the OS type into Core's value
 /// type, and holds no branching domain logic of its own. That is why `MyAppPlatform`
 /// sits outside the coverage floor (`scripts/coverage.sh` measures `MyAppCore` only) —
-/// a decision that would need a test belongs in Core, behind the port.
+/// a decision that would need a test belongs in Core, behind the port. What is checked
+/// here instead is the translation, by the local-machine test
+/// `WorkspaceFrontmostAppProviderTests`: opt-in, human-run (`just test-local`), and
+/// reported as skipped under `just test` and in CI.
 public struct WorkspaceFrontmostAppProvider: FrontmostAppProviding {
     public init() {
         // Stateless: NSWorkspace.shared is the whole dependency.

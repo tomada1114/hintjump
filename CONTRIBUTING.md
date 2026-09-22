@@ -44,6 +44,10 @@ just test
 # While iterating: run only the matching tests, with no coverage floor
 just test-fast CounterTests
 
+# The adapter tests CI cannot run (real OS, local machine only) — run these by hand
+# whenever you change something under Sources/MyAppPlatform, and put the output in the PR
+just test-local
+
 # Build the app
 just build
 
@@ -73,6 +77,7 @@ mise exec -- scripts/tests/run.sh
 mise exec -- scripts/checks/run-all.sh
 scripts/coverage.sh
 (cd Packages/MyAppKit && swift test --filter CounterTests)   # just test-fast CounterTests
+(cd Packages/MyAppKit && RUN_LOCAL_MACHINE_TESTS=1 swift test --filter MyAppPlatformTests)  # just test-local
 mise exec -- xcodegen generate
 xcodebuild -project MyApp.xcodeproj -scheme MyApp -configuration Debug -derivedDataPath build/dev-derived-data build
 scripts/run-app.sh               # just run — quits the running instance, then launches

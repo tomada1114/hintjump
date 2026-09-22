@@ -133,10 +133,14 @@ silently. The Xcode pin lives in `.xcode-version`, not here.
 
 ## `scripts/coverage.sh`
 
-It gates on line coverage of `Sources/MyAppCore/` only. `MyAppUI` and `MyAppPlatform`
-are not measured: no test target links them, so llvm-cov has no data for them, and an
-adapter holds translation rather than a decision (`docs/architecture.md` › Ports and
-adapters). The floor is
+It gates on line coverage of `Sources/MyAppCore/` only, by filtering llvm-cov's report
+to that path. `MyAppUI` and `MyAppPlatform` are outside it because an adapter or a view
+holds translation rather than a decision (`docs/architecture.md` › Ports and adapters) —
+not because nothing links them: `MyAppPlatformTests` links `MyAppPlatform`, and its
+tests are skipped unless `RUN_LOCAL_MACHINE_TESTS=1` (`just test-local`), so they add no
+coverage under `just test` either way. Measuring Platform would therefore gate on
+whether a human opted in, which is why the filter is a path and not a target list. The
+floor is
 `readonly COVERAGE_FLOOR=80` in the script and nothing else — no environment variable or
 flag moves it, so every change to it is a reviewed diff of this file, and a change is
 only ever a raise. The script rejects the environment override it used to read with
@@ -218,8 +222,9 @@ Nothing boots the app and asserts behavior beyond two checks: `scripts/smoke_lau
 asserts only that the process stays alive; `LaunchUITests/LaunchTests.swift`
 (`just uitest`) asserts that a window appears and one increment click updates the
 counter. Any other UI behavior, `MyAppUI` and `MyAppPlatform` code paths (both outside
-the coverage floor — an adapter's real OS call is exercised by no gate at all), the
-signed and notarized release (built only on a tag push by `release.yml`), and
+the coverage floor — an adapter's real OS call is exercised by no *gate*: it has a test,
+in `Tests/MyAppPlatformTests`, that only a human runs with `just test-local`, because a
+runner has no GUI session and no TCC grants), the signed and notarized release (built only on a tag push by `release.yml`), and
 entitlements or signing settings are places a change can be wrong while every gate
 passes. A gate proposed to close such a gap is a real gate change and belongs in the PR
 as one.

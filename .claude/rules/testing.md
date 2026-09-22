@@ -4,6 +4,32 @@ paths:
   - "LaunchUITests/**"
 ---
 
+## Where a Test Goes
+
+Two kinds of test, split by what is under test:
+
+- **A decision → a Core test with a fake.** Anything that branches, clamps, formats, or
+  remembers lives in `MyAppCore` and is tested in `Tests/MyAppCoreTests` against a fake
+  of the port (see "Fakes, not mocks" below). These run in CI on every push and are what
+  the 80% line-coverage floor measures. This is the default: if an adapter looks like it
+  needs a test for a decision, move the decision into Core instead.
+- **Translation to or from the OS → a local-machine test.** Whether `NSWorkspace`, an
+  event tap, or the accessibility API really answers what the adapter assumes can only
+  be checked against the real OS. Those tests live in `Tests/MyAppPlatformTests`, every
+  suite carries the `.requiresLocalMachine` trait, and a human runs them with
+  `just test-local`. CI cannot: a runner has no logged-in GUI session and cannot be
+  granted Accessibility, Input Monitoring, or Screen Recording. So they are reported as
+  **skipped** on every other run rather than quietly absent, and a pull request that
+  changes an adapter pastes its `just test-local` output as the evidence no gate can
+  produce.
+
+A local-machine test never becomes the only test of a decision: it is human-run, so it
+proves nothing about the pull request nobody ran it for. Adapters stay translation-only,
+and outside the coverage floor, precisely so that stays true. When macOS withholds an
+answer for lack of a grant it reports nothing rather than an error, so unwrap through
+`LocalMachineTests.require(_:requires:)` — its failure names the grant instead of
+reading as a broken adapter.
+
 ## Framework and Structure
 
 - Swift Testing only (`@Test`, `#expect`, `#require`, `@Suite`); XCTest is reserved for the

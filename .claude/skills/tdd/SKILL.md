@@ -23,7 +23,11 @@ Never write implementation before a failing test exists.
   in `Packages/MyAppKit/Sources/MyAppPlatform`. Test the Core side against a fake of
   the port (`.claude/rules/testing.md` › Fakes, not mocks); the adapter itself is
   translation only and sits outside the coverage floor, so anything it would need a
-  test for belongs in Core instead.
+  test for belongs in Core instead. Whether the OS really answers what the adapter
+  assumes is a separate, opt-in test in
+  `Packages/MyAppKit/Tests/MyAppPlatformTests` that you run by hand with
+  `just test-local` — it is evidence for the PR, never the red test this loop starts
+  from (`.claude/rules/testing.md` › Where a Test Goes).
 - If you are about to put logic in `MyAppUI`, `MyAppPlatform`, or `App/`, stop and move
   it to Core.
 

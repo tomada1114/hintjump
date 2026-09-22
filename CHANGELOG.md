@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `MyAppPlatformTests`, an opt-in test target for the adapter tests CI cannot run: every
+  suite carries the `.requiresLocalMachine` trait, so they are reported as *skipped*
+  under `just test` and in CI and run only with `RUN_LOCAL_MACHINE_TESTS=1`, which the
+  new `just test-local` recipe sets. `WorkspaceFrontmostAppProvider` against the real
+  `NSWorkspace` is the worked example; `.claude/rules/testing.md` › Where a Test Goes
+  states the split between a Core test with a fake and a local-machine test
 - A logging convention: `os.Logger` through `MyAppCore`'s new `AppLog`, whose
   `subsystem` is the app's bundle identifier (the one `just logs` streams) and whose
   categories name one concern each. `MyAppCore` may `import os` — it is neither a UI nor

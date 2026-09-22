@@ -29,5 +29,17 @@ let package = Package(
             dependencies: ["MyAppCore"],
             swiftSettings: strictSettings,
         ),
+        // Local-machine tests for the adapters: they talk to the real OS, which a CI
+        // runner cannot (no logged-in GUI session, and no way to grant Accessibility,
+        // Input Monitoring, or Screen Recording). Every suite here carries the
+        // `.requiresLocalMachine` trait, so the tests are reported as skipped unless
+        // RUN_LOCAL_MACHINE_TESTS=1 is set — `just test-local` sets it. Linking
+        // MyAppPlatform does not put it inside the coverage floor: scripts/coverage.sh
+        // measures Sources/MyAppCore and nothing else.
+        .testTarget(
+            name: "MyAppPlatformTests",
+            dependencies: ["MyAppPlatform", "MyAppCore"],
+            swiftSettings: strictSettings,
+        ),
     ],
 )

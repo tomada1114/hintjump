@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Run the MyAppKit test suite with code coverage and enforce a line-coverage
-# floor on Sources/MyAppCore. MyAppUI and MyAppPlatform are not measured: no test
-# target links them, so llvm-cov has no data for them — they are outside the report,
-# not measured and waived. The floor is honest because all logic lives in Core:
-# views render it and MyAppPlatform adapters only translate for it, so neither holds
-# a decision a test could catch (AGENTS.md > Architecture).
+# floor on Sources/MyAppCore. The report below is filtered to that path, so MyAppUI
+# and MyAppPlatform are outside it rather than measured and waived. The floor is
+# honest because all logic lives in Core: views render it and MyAppPlatform adapters
+# only translate for it, so neither holds a decision a test could catch
+# (AGENTS.md > Architecture). MyAppPlatformTests does link MyAppPlatform, but its
+# tests are skipped unless RUN_LOCAL_MACHINE_TESTS=1 (`just test-local`) — so they
+# contribute nothing here, and measuring Platform would gate the build on whether a
+# human opted in.
 #
 # Swift's llvm-cov has no dependable branch metric, so this gates on LINE
 # coverage (uv-template gates on branch coverage; documented divergence).
