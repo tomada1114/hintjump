@@ -47,5 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   they were
 - The status menu gains "Open Config File", which opens `~/.config/hintjump/config.toml`
   in the default plain-text editor, next to "Reload Config"
+- Per-app disable from the status menu: `Disable in <App>` names the last app that was
+  frontmost other than Hintjump and adds its bundle identifier to `[apps] disabled`
+  (rewriting only that list, comments intact); `Enable in <App>` takes it out again.
+  While a disabled app is frontmost all four triggers are unregistered, so their key
+  combinations reach that app, and they come back as soon as another app is in front.
+  A reload that adds or removes the frontmost app takes effect at once
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

@@ -29,6 +29,19 @@ just check     # format → lint → script tests → test (80% floor) → build
 open Hintjump.xcodeproj
 ```
 
+## Using Hintjump
+
+Hintjump lives in the menu bar. Its status menu holds:
+
+- **Open Config File** — opens `~/.config/hintjump/config.toml` in your plain-text editor.
+- **Reload Config** — re-reads that file; a file with a mistake is reported in the log
+  and the previous settings stay in force.
+- **`Disable in <App>`** — turns Hintjump off in the last app you used before opening the
+  menu, by adding its bundle identifier to `[apps] disabled` (nothing else in the file
+  changes). While that app is frontmost, none of Hintjump's four shortcuts are
+  registered, so those key combinations reach the app instead. The item then reads
+  **`Enable in <App>`**, which turns Hintjump back on there.
+
 ## Design Philosophy
 
 Every choice in this template has a reason. If you disagree with a decision,

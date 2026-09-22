@@ -329,3 +329,23 @@ file is their public record.
 - Rejected: ignoring a trigger while hints are shown (leaves Esc as the only
   way out); re-reading and re-labeling on a repeated press of the same trigger
   (a toggle is what a repeated shortcut means everywhere else).
+
+## 2026-09-22 A disabled app gets every trigger key back
+
+- Decision: while an app listed in `[apps] disabled` is frontmost, all four
+  triggers are unregistered — the two menu-bar triggers included — so their
+  key combinations reach that app; they are registered again when an app
+  that is not disabled comes forward (Hintjump's own activation changes
+  nothing). The status menu's per-app item names the last app
+  activated other than Hintjump: `Disable in <App>` adds it to the list,
+  `Enable in <App>` removes it, and either takes effect at once.
+  `DisabledAppsPolicy` in `HintjumpCore` decides, following app switches
+  through the `FrontmostAppObserving` port; `HintSession` also ignores a
+  press that lands in a disabled app before the switch is noticed.
+- Why: a Carbon hotkey consumes its combination for every app, so a hotkey
+  that is swallowed but ignored is not disabled. The usual reason to disable
+  Hintjump in an app is a shortcut collision, and that applies to all four
+  triggers. Naming the last app other than Hintjump keeps opening Hintjump's
+  own menu from making Hintjump the subject.
+- Rejected: ignoring presses in a disabled app (the app still never receives
+  the key); disabling only the two window triggers.
