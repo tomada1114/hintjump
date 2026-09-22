@@ -11,10 +11,10 @@ func formatted(_ milliseconds: Double) -> String {
 /// Every field is `name=value` rather than a fixed-width column, so `grep actions=` and
 /// `grep 'role=AXButton'` both work and a long title cannot push a later column out of
 /// alignment. `-` means the application answered nothing for that attribute. The depth
-/// is a column rather than indentation, for the same reason.
-func row(index: Int, element: ElementSnapshot) -> String {
-    let fields = [
-        "#\(index)",
+/// is a column rather than indentation, for the same reason. `extra` fields — the rank,
+/// under `--rank` — go right after the index, so they stay on the row's first line.
+func row(index: Int, element: ElementSnapshot, extra: [String]) -> String {
+    let fields = ["#\(index)"] + extra + [
         "depth=\(element.depth)",
         "parent=\(element.parentIndex.map(String.init) ?? "-")",
         "role=\(element.role ?? "-")",

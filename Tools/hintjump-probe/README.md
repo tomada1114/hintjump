@@ -16,7 +16,14 @@ Run it with `just probe <command> …`, or `swift run --package-path Tools/hintj
 hintjump-probe <command> …`:
 
 - `dump` — every element of the tree as one line each, then the count and the read
-  duration: `just probe dump --app com.apple.finder --scope focusedWindow --strategy naive`
+  duration: `just probe dump --app com.apple.finder --scope focusedWindow --strategy naive`.
+  With `--rank` (also accepted by `wake`), each row also carries `HintjumpCore`'s
+  `TargetRanker` verdict right after its index — `rank=N tier=T` for a target, or
+  `rank=- excluded=<reason>` (`notClickable`, `disabled`, `noFrame`, `tooSmall`,
+  `outsideWindow`) — and a last line counts the targets per tier:
+  `just probe dump --app com.apple.finder --rank`. The root of the read bounds the
+  targets, so rank a `focusedWindow` read; an `application` read's root has no frame and
+  ranks nothing
 - `time` — the same read repeated, reported as p50 and p95:
   `just probe time --app com.apple.finder --strategy batched --runs 10`
 - `front` — the application's direct children (its windows, panels, and menu bar) and

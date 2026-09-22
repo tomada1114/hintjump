@@ -64,10 +64,15 @@ func processIdentifier(for bundleIdentifier: String) throws -> pid_t {
 @MainActor
 func dump(with reader: AXUIElementTreeReader, pid: pid_t, options: Options) throws {
     let tree = try reader.readTree(pid: pid, scope: options.scope, strategy: options.strategy)
+    let ranking = options.rank ? Ranking(tree.elements) : nil
     for (index, element) in tree.elements.enumerated() {
-        print(row(index: index, element: element))
+        let extra = ranking?.fields(forElementAt: index) ?? []
+        print(row(index: index, element: element, extra: extra))
     }
     print(summary(of: tree))
+    if let ranking {
+        print(ranking.summary)
+    }
 }
 
 /// The baseline for "what does the adapter call the topmost container?".
@@ -79,7 +84,7 @@ func dump(with reader: AXUIElementTreeReader, pid: pid_t, options: Options) thro
 func front(with reader: AXUIElementTreeReader, pid: pid_t) throws {
     let tree = try reader.readTree(pid: pid, scope: .application, strategy: .naive)
     for (index, element) in tree.elements.enumerated() where element.depth == 1 {
-        print(row(index: index, element: element))
+        print(row(index: index, element: element, extra: []))
     }
     print(summary(of: tree))
 
@@ -89,7 +94,7 @@ func front(with reader: AXUIElementTreeReader, pid: pid_t) throws {
             print("no focused window")
             return
         }
-        print("focusedWindow " + row(index: 0, element: root))
+        print("focusedWindow " + row(index: 0, element: root, extra: []))
     } catch let error as AccessibilityReadError {
         guard case .attributeUnsupported = error else { throw error }
         print("no focused window")
