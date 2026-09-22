@@ -38,6 +38,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.tomada1114.Hintjump
         GENERATE_INFOPLIST_FILE: YES
+        # A menu-bar agent: no Dock tile, no app-switcher entry, the status item is
+        # the whole surface (docs/decisions.md › "The app is a menu-bar agent with
+        # the App Sandbox off"). The Info.plist is generated, so the key goes here.
+        INFOPLIST_KEY_LSUIElement: YES
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_ENTITLEMENTS: App/Hintjump.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
