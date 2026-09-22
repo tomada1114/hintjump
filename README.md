@@ -37,7 +37,7 @@ The shortcuts and the label characters are set in `~/.config/hintjump/config.tom
 
 ### The status menu
 
-Its status menu holds:
+The status menu holds:
 
 - **Open Config File** — opens `~/.config/hintjump/config.toml` in your plain-text editor.
 - **Reload Config** — re-reads that file; a file with a mistake is reported in the log
