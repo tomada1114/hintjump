@@ -1,0 +1,229 @@
+# Decisions
+
+The product decisions behind Hintjump, with the reason for each and the
+alternatives that were rejected. Append-only: a later entry supersedes an
+earlier one rather than rewriting it. `AGENTS.md` › Product is the summary;
+this file holds the reasons. Anything still open is a GitHub issue.
+
+The entries dated 2026-09-21 were made while planning, before this repository
+existed; the planning notes themselves stay outside the repository, so this
+file is their public record.
+
+## 2026-09-21 Free, open source, and its own design
+
+- Decision: Hintjump is free and open source. Its look, vocabulary, and
+  config layout are its own, and the README credits the tools that came
+  before it.
+- Why: putting hint labels on screen elements and typing them is a genre
+  that predates every current tool; adopting the idea is fine, copying a
+  product is not.
+- Rejected: free but closed source; paid or donation-based.
+
+## 2026-09-21 Four entry points, each its own shortcut, never more
+
+- Decision: four triggers, each a separate global shortcut: (1) left click in
+  the frontmost window, (2) right click in the frontmost window, (3) the menu
+  bar's app menus, (4) the menu bar's status items. The count stays at four.
+- Why: narrowing the target set per entry point is what keeps labels short.
+  "Press one fixed shortcut, then type" is the simplest model to hold; a
+  choice made after the hints appear costs a keystroke and a judgment every
+  time.
+- Rejected: {left, right} × {window, whole screen}, because the whole-screen
+  set is exactly the too-many-labels state; a fixed shortcut per element;
+  switching the action with a modifier key; narrowing by screen region; an
+  entry point per element kind (exceeds four).
+
+## 2026-09-21 The actions are left click and right click, nothing else
+
+- Decision: a hint does a left click or a right click. Not in scope:
+  scrolling, text search, chained or repeated clicks, modifier clicks
+  (⌘-click and the like), drag, hover, copy, Mission Control, the Dock,
+  multi-monitor support, link detection inside terminals or editors.
+- Why: the first user's daily need is a left click; each extra action is
+  surface for the kind of defect this genre is known for.
+
+## 2026-09-21 The frontmost entry point targets whatever is on top; after a click, macOS takes over
+
+- Decision: the frontmost-window triggers target the topmost thing — an open
+  menu, popover, or panel if there is one, otherwise the window. Once a menu
+  or a status item has been clicked open, macOS's own keyboard handling
+  (arrows, type-ahead, Return) takes over; Hintjump does not re-label what
+  opened. To click inside an opened panel, press a trigger again.
+- Why: re-labeling on open needs chained-click machinery and a termination
+  rule nobody can state; the standard keys already work.
+- Rejected: automatic re-labeling of an opened menu.
+- Open: whether the topmost thing can be identified reliably is a
+  verification issue.
+
+## 2026-09-21 Labels are ASCII letters; the user types with an ABC input source
+
+- Decision: hint labels use ASCII letters only. The app assumes an ABC input
+  source, reads no key codes, and never switches the input source. If a
+  trigger is pressed while an IME is on, hints appear as usual, keys that
+  match no hint are swallowed, and Esc closes the overlay. The limitation is
+  documented rather than worked around.
+- Why: fewer moving parts. Input-source switching and key-code reading are
+  where this genre's input bugs come from (layouts, IMEs).
+- Rejected: reading key codes (layout handling); forcing the ABC source; a
+  "switch to ABC" notice (needs input-source detection code).
+
+## 2026-09-21 Single-character labels go to the likeliest targets first
+
+- Decision: in a window, the elements most likely to be clicked get the
+  single-character labels; the rest get two characters. A letter used as a
+  single never starts a two-character label, so 16 singles leave 10 × 26 =
+  260 two-character labels. The ranking rule and the number of singles are
+  settled by measurement, not by guess.
+- Why: a wrong guess only costs one more keystroke, and the user learns
+  nothing new. This is the product's distinguishing feature together with the
+  separate entry points.
+- Rejected: narrowing by screen region.
+
+## 2026-09-21 The menu-bar entry points stay
+
+- Decision: keep the app-menus and status-items triggers.
+- Why: they are separate entry points, so removing them would not reduce the
+  labels in a window, and they are where single characters are guaranteed.
+
+## 2026-09-21 Per-app disable, and a text config file
+
+- Decision: the app can be disabled per application. Configuration is one
+  text file holding the triggers, the hint characters, and the disabled apps.
+- Why: a text file is easy to share and to diff.
+
+## 2026-09-21 No analytics; no promise of zero network; updates are announced
+
+- Decision: the app sends no analytics. It does not promise zero network
+  traffic, because checking for updates is traffic and users should be told
+  when an update exists and what changed. No usage counters or statistics.
+- Rejected: a zero-network promise (incompatible with update checks); a
+  usage counter (withdrawn by the first user).
+
+## 2026-09-21 Quality: avoid the defect classes this genre is known for
+
+- Decision: reliable per-app disable, no analytics, no input-source
+  switching, and Homebrew from the first release are commitments, chosen
+  because each is a recurring complaint against existing tools.
+
+## 2026-09-21 Speed budget and what would make the app unusable
+
+- Decision: hints must be visible within 300 ms of the trigger keydown;
+  500 ms is felt as slow. The two decisive failures are hints appearing late
+  and the wanted element getting no hint. Legibility matters but ranks below
+  both.
+
+## 2026-09-21 Name, distribution, and foundation
+
+- Decision: the app is called Hintjump. Distribution is Homebrew plus a
+  notarized direct download; the Mac App Store is out because the app cannot
+  be sandboxed. The foundation is macos-app-template: logic in
+  `HintjumpCore`, accessibility reading and click synthesis as
+  `HintjumpPlatform` adapters behind Core ports. No LLM anywhere: rules and
+  OS APIs cover every need.
+- Why: the name was free on GitHub, Homebrew, npm, and the .com/.app/.dev
+  domains when checked; 19 other candidates were taken or unsearchable.
+
+## 2026-09-21 Electron support is decided on a real machine
+
+- Decision: whether Chromium-based apps (Slack, Claude Desktop) are in the
+  first release's scope is decided by reading their accessibility trees on a
+  real machine, as one of the first tasks in this repository.
+- Why: desk research cannot separate "the technique exists" from "it works
+  in this app".
+
+## 2026-09-21 Design: signpost hints, one accent, system controls everywhere else
+
+- Decision: hints are opaque near-black tags with white text; only
+  single-character hints are filled with a single red-orange accent. 4 pt
+  corner radius, no speech-bubble tail, a 1 pt light halo to cut the tag out
+  of dark backgrounds. The right-click entry point uses an outlined variant
+  of the same tags plus a "Right click" chip. A hint straddles its target's
+  left edge, vertically centered; typing the first character removes every
+  non-matching hint at once and dims the typed character. Nothing animates.
+  The overlay palette is fixed regardless of system appearance. Settings are
+  a status-item menu plus one Status window (which doubles as the first-run
+  permission guide), built from system controls and system colors only. An
+  available update shows as a dot on the status icon, a menu row, and the
+  Status window's About section.
+- Why: the overlay sits over other apps' content, where light and dark
+  regions coexist, so a fixed high-contrast palette reads faster than one
+  that follows appearance. One accent keeps "is this a single character?"
+  answerable at a glance. System controls for the settings surface cost
+  nothing and inherit appearance, scaling, and assistive support.
+- Rejected: keycap-style tags (pale surfaces sink into light backgrounds);
+  translucent system materials (contrast depends on the background); blue,
+  green, or neutral-only accents; hints at the top-left corner or centered
+  over the target; a persistent help panel; notification banners; a tabbed
+  standard Settings window; themes.
+- The measured values and the screen-by-screen spec live in `docs/design/`
+  once ported (a tracked issue).
+
+## 2026-09-22 Planning notes stay outside the repository
+
+- Decision: the pre-implementation planning notes are not copied here. What
+  they settled is recorded in this file and in issues, rewritten for a public
+  repository.
+
+## 2026-09-22 Apple Developer Program enrollment is deferred
+
+- Decision: enrollment happens later. Everything that needs a real signing
+  identity — checking that the Accessibility grant survives rebuilds and
+  updates, notarization, the Homebrew cask — waits for it.
+
+## 2026-09-22 The app is a menu-bar agent with the App Sandbox off
+
+- Decision: no Dock tile, no app switcher entry; the status item is the whole
+  surface (`LSUIElement`). The App Sandbox entitlement is turned off.
+- Why: reading other applications' UI through the Accessibility API and
+  posting synthesized clicks are never granted to a sandboxed process
+  (`docs/distribution.md` › Sandboxed or not).
+
+## 2026-09-22 Config file: a hand-written TOML subset, one path, one write-back
+
+- Decision: the config file is `~/.config/hintjump/config.toml`, parsed by a
+  hand-written reader in `HintjumpCore` that accepts a documented subset of
+  TOML: `#` comments, `[section]` headers, `key = "string"`,
+  `key = ["a", "b"]` (multi-line allowed), and `key = true|false`. Every
+  error names its line (`Line N: <reason>`); an unknown key is an error. The
+  app writes the commented default file once when none exists, reloads only
+  on request, and writes back only the disabled-apps list, leaving every
+  other line — comments included — untouched.
+- Why: the Status window shows line-numbered errors, and "Disable in <App>"
+  has to edit the file without destroying the user's comments; a
+  hand-written subset gives both with no dependency, and it lives under the
+  coverage floor. A dotfile path is the convention for hand-edited, shareable
+  configuration; Application Support is for data the app manages.
+- Rejected: a TOML decoding dependency (decode-only, error line numbers not
+  guaranteed, a dependency to vet); JSON (no comments, hard to edit by
+  hand).
+
+## 2026-09-22 Default triggers and default hint characters
+
+- Decision: defaults are ⌃⇧Space (click in window), ⌃⌥⇧Space (right-click
+  in window: the same key with ⌥ added), ⌃⇧M (app menus), ⌃⇧S (status
+  icons). The hint character set is the 26 letters in the order
+  `asdfghjklqwertyuiopzxcvbnm`, home row first; no digits.
+- Why: ⌃⇧ is nearly unused by macOS's own defaults, and it avoids the Space
+  combinations launchers, input-source switching, password managers, and
+  window managers already claim. The check was made from knowledge of common
+  tools, not exhaustively on a machine; the defaults are one config line to
+  change if a collision turns up.
+
+## 2026-09-22 Updates: a standard update framework with a static appcast, alongside Homebrew
+
+- Decision: in-app update checks use Sparkle reading a static appcast
+  published with the GitHub release, so no server or API is involved, and
+  the Homebrew cask is kept in step. Implemented after the first release;
+  adding the dependency goes through the dependency checklist and needs
+  human approval because it ships a binary target.
+- Rejected: Homebrew only with an in-app changelog (no update prompt);
+  deciding later (the About section's layout depends on it).
+
+## 2026-09-22 Four small questions closed for the first release
+
+- Decision: hint size is fixed, with no setting. The config file is reloaded
+  only on request, with no file watching. Launch at login is a config key,
+  `launch_at_login`, default `false`, applied through a `ServiceManagement`
+  adapter. The overlay stays visible in screen sharing, with no setting.
+- Why: the first release is the minimum; each of these is added when real
+  use shows it is missing.

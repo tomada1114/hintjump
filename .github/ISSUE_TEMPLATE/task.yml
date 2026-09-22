@@ -6,8 +6,10 @@ body:
     attributes:
       value: |
         Triage assigns a `priority: P0`–`P3` label; leave it unset when filing.
-        A task whose approach is not settled yet gets `blocked: design` and is
-        not picked up automatically until that is cleared.
+        A task whose approach is not settled yet gets `blocked: design`, and one
+        that waits on an owner-only action outside the repository (an account, a
+        purchase, a signing identity) gets `blocked: external`; neither is picked
+        up automatically until the label is cleared.
 
   - type: textarea
     id: problem
