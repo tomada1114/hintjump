@@ -84,6 +84,14 @@ struct AccessibilityTreeReadingTests {
     }
 
     @Test
+    func `a duration written with a grouped literal is the same duration`() {
+        // The literal is the point. `.swiftformat`'s `--decimalgrouping 3,4` keeps the
+        // separator `.swiftlint.yml`'s `number_separator` demands, and if either gate
+        // drifts, `just check` fails on this line rather than on the next contributor's.
+        #expect(Duration.milliseconds(1_000) == .seconds(1))
+    }
+
+    @Test
     func `errors compare by case and payload`() {
         #expect(AccessibilityReadError.noSuchProcess(1) == .noSuchProcess(1))
         #expect(AccessibilityReadError.noSuchProcess(1) != .noSuchProcess(2))
