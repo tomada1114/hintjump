@@ -33,4 +33,15 @@ public enum AppLog {
     /// `log stream --predicate 'category == "frontmost-app"'` narrows the stream to one
     /// story. A new concern adds a `Logger` here instead of building one inline.
     public static let frontmostApp = Logger(subsystem: subsystem, category: "frontmost-app")
+
+    /// The accessibility concern: ``AccessibilityTreeReading`` and the adapter that
+    /// reads another application's tree.
+    ///
+    /// Its own category because the story it tells is a different one — a read of a
+    /// foreign process, its size, and what it cost — and because that stream is the one
+    /// a read-latency investigation watches: `log stream --predicate 'category ==
+    /// "accessibility"'`. Nothing element-level is logged, and every title or
+    /// description that could reach a message is `.private`: they are the contents of
+    /// someone else's screen.
+    public static let accessibility = Logger(subsystem: subsystem, category: "accessibility")
 }
