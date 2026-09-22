@@ -268,3 +268,45 @@ file is their public record.
   in the batched call and a frame clipped to 2 pt or less counts as out of view, which
   takes Chrome to 52 / 110 ms (`docs/research/read-latency.md` › After the Chromium
   fixes).
+
+## 2026-09-22 N = 16 and the first-cut tiers, pending #37's measurement
+
+- Decision: provisional. The label assigner gives single-character labels to
+  the first 16 ranked targets (`LabelAssigner.defaultSingleCount`), and the
+  ranker keeps its first-cut tiers (`FirstCutTiers`) unchanged. With the
+  default 26 characters that leaves 10 prefixes, so 16 + 10 × 26 = 276
+  targets can be labeled; each prefix runs through the whole set, in set
+  order, before the next prefix starts (`ia`, `is`, … `im`, `oa`, …). Targets
+  past the supply are not hinted and are counted so the overlay can log how
+  many were dropped. Typing matches by prefix: a single selects at once, a
+  prefix narrows to its pairs, Backspace undoes the narrowing, Esc cancels,
+  and any other key is ignored without closing the hints.
+- Why: the measurement this rule was to be chosen on (`docs/research/target-counts.md`)
+  was split out of #10 into #37 and does not exist yet, so the fallback stated
+  when the label work was planned applies: keep the first cut and N = 16. No
+  hit rate backs either number yet. Prefix-major pair order keeps a narrowing
+  small when only a few pairs are in use: 20 targets need only the prefix `i`.
+- Open: #37 measures how often the wanted element ranks within the singles
+  and revisits both the tier rule and N; changing either is a new entry that
+  supersedes this one. Neither change alters `RankedTarget` or the assigner's
+  output shape.
+
+## 2026-09-22 Clicks are synthesized mouse events at the element's visible center; the pointer stays there
+
+- Decision: a hint clicks by posting a synthesized mouse press and release —
+  `CGEvent` at the HID event tap, left or right button, click state forced to 1 —
+  at the element's visible center, through the `ClickPerforming` port and its
+  `CGEventClickPerformer` adapter. The pointer is left at the click point. Which
+  point is the visible center is Core's decision, not the adapter's.
+- Why: a synthesized event is the only mechanism that clicks every element kind
+  the same way — text fields, rows, web content — right clicks included, where
+  `AXPress` and `AXShowMenu` are each supported only by some roles. The pointer
+  stays because moving it back races the target app's own handling of the click.
+  Posting needs no grant beyond the Accessibility one the app already asks for;
+  without it the OS drops the event silently, so the adapter checks the grant
+  first and reports it as its own error.
+- Rejected: `AXPress` for left clicks (not every clickable element publishes it —
+  `docs/research/electron-accessibility.md` shows many do, not all); warping the
+  pointer back after the click.
+- Supersedes: nothing; it names the API and the pointer behaviour that "Name,
+  distribution, and foundation" left as "click synthesis".

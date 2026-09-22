@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LoginItemRegistering` port and its `SMAppServiceLoginItem` adapter. A login item the
   system refuses to change is logged and does not fail the reload; one switched off in
   System Settings is left off
+- Click synthesis: the `ClickPerforming` port and its `CGEventClickPerformer` adapter post a
+  left or right click at a screen point as a synthesized mouse press and release, leaving
+  the pointer where it clicked; without the Accessibility grant they refuse rather than
+  post a click the system would drop. Nothing calls it yet; typing a hint will
 - The four triggers in the config file are registered as global shortcuts (Carbon
   `RegisterEventHotKey`, no permission needed) at launch and again on every successful
   "Reload Config", through the `TriggerRegistering` port and its `CarbonTriggerRegistrar`
