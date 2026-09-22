@@ -40,7 +40,8 @@ jobs:
 
       - name: Harness checks (scripts/checks/run-all.sh)
         # The same runner `just check-harness` calls: recipe names in AGENTS.md,
-        # workflow pins and permissions, skill frontmatter, and the Skills index.
+        # workflow pins and permissions, skill frontmatter, the Skills index, and
+        # AGENTS.md's Product section.
         run: scripts/checks/run-all.sh
 
   # Already the single spelling: this job calls scripts/coverage.sh (what `just test` runs),
@@ -164,6 +165,24 @@ jobs:
           fi
           # Every remaining required context still names a job (parses main.json too).
           bash scripts/tests/apply-ruleset_test.sh
+
+      - name: Assert the Product section check now fires
+        run: |
+          cd "$RUNNER_TEMP/bootstrap-smoke"
+          # The rename cannot write the new app's product intent, and this check is the
+          # only thing that makes a new repository write it: on a renamed tree whose
+          # AGENTS.md still holds the template's TODO skeleton it must fail. Asserting
+          # that it fires keeps the smoke honest without inventing a product here.
+          if out=$(bash scripts/checks/product-section-filled.sh 2>&1); then
+            echo "::error::product-section-filled.sh passed on the bootstrapped clone"
+            echo "$out"
+            exit 1
+          fi
+          echo "$out" | grep -q '^ERR_CHECK_PRODUCT_SECTION: ' || {
+            echo "::error::product-section-filled.sh failed, but not as ERR_CHECK_PRODUCT_SECTION"
+            echo "$out"
+            exit 1
+          }
 
       - name: Test the renamed package
         run: |

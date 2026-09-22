@@ -43,7 +43,8 @@ test-scripts:
     mise exec -- scripts/tests/run.sh
 
 # Re-assert the harness's claims about itself: recipe names in AGENTS.md, workflow
-# pins and permissions, skill frontmatter, and the Skills index (scripts/checks/)
+# pins and permissions, skill frontmatter, the Skills index, and the Product section
+# (scripts/checks/)
 check-harness:
     mise exec -- scripts/checks/run-all.sh
 

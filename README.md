@@ -117,17 +117,22 @@ secrets — no workflow edits. See docs/distribution.md.
    `com.example`, `your-username`, `Your Name`, and `you@example.com` across
    all tracked files, renames the matching paths, and regenerates the Xcode
    project. Omitted optional arguments leave their placeholders as-is.
-3. Verify the rename: `just install && just check`
-4. Create the label set on the new repository: `just labels`
+3. Fill in `AGENTS.md`'s `## Product` section: what the app is and who it is
+   for, the core interaction, and the **Non-goals** it must not grow — the
+   agent instructions have no other in-repo answer to "is this in scope?".
+   Delete every `TODO:` marker as you go; `just check` fails while one is left
+   (`scripts/checks/product-section-filled.sh`)
+4. Verify the rename: `just install && just check`
+5. Create the label set on the new repository: `just labels`
    (`.github/labels.yml`; issue forms rely on these labels existing)
-5. Update `README.md` (this file), `SECURITY.md`, `AGENTS.md`, and
+6. Update `README.md` (this file), `SECURITY.md`, the rest of `AGENTS.md`, and
    `CODE_OF_CONDUCT.md` for your app (the conduct-reporting contact stays
    `you@example.com` if `--email` was omitted, so check it), and review
    `LICENSE`'s copyright line (`CHANGELOG.md` is reset automatically)
-6. Replace the counter placeholder in `Packages/<YourApp>Kit` with real code —
+7. Replace the counter placeholder in `Packages/<YourApp>Kit` with real code —
    keep the Core/UI split and the tests
-7. For signed releases, add the secrets listed in docs/distribution.md
-8. Optional, repository admin only: once the bootstrap commit is on `main`,
+8. For signed releases, add the secrets listed in docs/distribution.md
+9. Optional, repository admin only: once the bootstrap commit is on `main`,
    protect it with `just ruleset` (`.github/rulesets/main.json`; it requires
    pull requests from then on, and needs a paid plan on a private repository)
 

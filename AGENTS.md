@@ -8,6 +8,28 @@ Xcode project from `project.yml`, all real code lives in a local Swift package
 language mode, an 80% line-coverage floor on the Core module) are enforced from
 day one.
 
+## Product
+
+**TODO: in the template this section is a placeholder.** It is the one part of this
+file about the application rather than the harness, so every repository cut from the
+template writes its own: without it an agent implementing an issue here has no in-repo
+answer to "is this in scope?". Fill in every `TODO:` below right after the rename
+(`README.md`'s "Using This Template", step 3) — once `scripts/bootstrap.sh` has run,
+`just check-harness` fails while one is left
+(`scripts/checks/product-section-filled.sh`).
+
+- **What it is, and who it is for** — TODO: one paragraph. The problem it solves, and
+  whose problem that is.
+- **The core interaction** — TODO: the one thing a user does most. If the app does not
+  do this well, nothing else about it matters.
+- **Non-goals** — TODO: what this app deliberately does not do, even where it would be
+  easy. A first version's cut list is longer than its feature list, and this is the
+  line an eager implementer crosses first: moving anything from here to a goal is a
+  human's decision, not an implementer's.
+- **Where these decisions are recorded** — TODO: where the reasoning behind the three
+  entries above lives (a `docs/` file, a design issue, a decision log), so a reader can
+  find why and not only what.
+
 ## Quick Reference
 
 ```bash
@@ -61,7 +83,7 @@ job call.
 | A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
 | A harness check under `scripts/checks/` (including the sourced `scripts/checks/lib.sh`) | `just lint`, then `just test-scripts`; `just check-harness` for the checks themselves |
-| A `just` recipe name, a workflow's `uses:` or `permissions:`, a skill's frontmatter, or the Skills table | `just check-harness` |
+| A `just` recipe name, a workflow's `uses:` or `permissions:`, a skill's frontmatter, the Skills table, or the `## Product` section | `just check-harness` |
 | A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` and `just check-harness` |
 | A workflow under `.github/workflows/` | `just lint`, then `just check-harness` |
 | Markdown | `just lint` (its `typos` spell-check) |
@@ -252,7 +274,7 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
-| `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, and the Skills table matches `.agents/skills/` |
+| `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, the Skills table matches `.agents/skills/`, and the `## Product` section above stays a `TODO:` skeleton here while `project.yml` still names the template's app-name placeholder and holds no `TODO:` marker once `scripts/bootstrap.sh` has renamed this into an app |
 | CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), the harness checks (`scripts/checks/run-all.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 

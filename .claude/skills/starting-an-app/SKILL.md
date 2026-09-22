@@ -7,7 +7,9 @@ description: >
   the app's shape — a windowed app or a menu-bar agent (LSUIElement, MenuBarExtra, a
   launch test with no window) — and whether it can stay sandboxed. Use when starting an
   app from this repository, running or editing scripts/bootstrap.sh, a rename left a
-  placeholder behind, deciding whether the new app lives in the Dock or the menu bar,
+  placeholder behind, filling in AGENTS.md's Product section (what the app is, its
+  non-goals) or product-section-filled.sh failing,
+  deciding whether the new app lives in the Dock or the menu bar,
   whether it must drop the App Sandbox for Accessibility, event taps, or global file
   access, CI's bootstrap-smoke job fails, or setting up a new repository's labels
   (just labels) and branch ruleset (just ruleset).
@@ -32,8 +34,9 @@ runs it on a pristine clone on every push, so it cannot silently rot.
 ## The order
 
 Rename first, so nothing downstream is written against the template's identity. Then
-verify, then hand-edit what a literal replace cannot decide, then set up the new
-repository on GitHub. `README.md`'s "Using This Template" section is the reader-facing
+write the one thing no literal replace can write — `AGENTS.md`'s `## Product` section —
+then verify, then hand-edit the rest of what a replace cannot decide, then set up the
+new repository on GitHub. `README.md`'s "Using This Template" section is the reader-facing
 list of those steps; the script prints the same list when it finishes.
 
 ## The rename
@@ -85,10 +88,29 @@ Changing the script means keeping `bootstrap-smoke` green: it bootstraps a clone
 `DemoApp`, asserts no placeholder survives, asserts the `CHANGELOG.md` reset, asserts
 `.template-origin` holds a 40-hex commit SHA and a repository line, asserts
 the template-only job was retired (and re-runs `scripts/tests/apply-ruleset_test.sh`
-in the clone), then runs `swift test` and an `xcodebuild` on the renamed tree. Its
+in the clone), asserts `product-section-filled.sh` now *fails* on the renamed tree —
+the smoke proves the check fires rather than inventing a product for the clone — then
+runs `swift test` and an `xcodebuild` on the renamed tree. Its
 leftover grep is case-insensitive and allows a missing hyphen, so a new mention of the
 app name in a spelling the literal replace does not cover (all lowercase, say) fails
 that job.
+
+## Filling in the Product section
+
+`AGENTS.md`'s `## Product` section is the one part of that file about the application
+rather than the harness: what the app is and who it is for, the core interaction, the
+**Non-goals**, and where those decisions are recorded. Write it immediately after the
+rename, before `just check` and before the first feature — an agent picking up an issue
+here has no other in-repo answer to "is this in scope?", and a non-goal nobody wrote
+down is one an eager implementer reads as a feature.
+
+`scripts/checks/product-section-filled.sh` (`just check-harness`, so `just check` too)
+holds both directions off one signal. While `project.yml` still names the app-name
+placeholder this is the template, where the section must stay a `TODO:` skeleton —
+filling it in here would hand every app cut afterwards a product description that is
+not its own. Once the rename has removed that placeholder, no `TODO:` marker may survive in the
+section, and it must still name its non-goals. No check can judge the prose that
+replaces a marker; that stays with the person who wrote it.
 
 ## Choosing the app shape
 

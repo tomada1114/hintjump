@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AGENTS.md` gains a `## Product` section — what the app is and who for, the core
+  interaction, its **Non-goals**, and where those decisions are recorded — shipped here
+  as a `TODO` skeleton and filled in right after the rename (`README.md` › Using This
+  Template, step 3; the `starting-an-app` skill). `scripts/checks/product-section-filled.sh`
+  (`just check-harness`) holds both directions off one signal: the skeleton stays while
+  `project.yml` names the template's app-name placeholder, and no `TODO` may survive
+  once the rename has removed it, so a new app cannot ship agent instructions with no
+  product context. CI's `bootstrap-smoke` asserts the check fires on the renamed clone
 - `just release-prep <version>` (`scripts/release-prep.sh`): the edits a release needs
   before its tag exists, in one checked step — `MARKETING_VERSION` set,
   `CURRENT_PROJECT_VERSION` incremented, and `CHANGELOG.md`'s `[Unreleased]` entries
