@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import HintjumpCore
+@testable import HintjumpCore
 import Testing
 
 extension HintSessionTests {
@@ -123,6 +123,47 @@ extension HintSessionTests {
             #expect(fixture.collector.collectedApps == [HintSessionTests.app])
         }
 
+        @Test(arguments: [EntryPoint.clickInWindow, .rightClickInWindow])
+        func `a window trigger with no focused window shows nothing and says so`(
+            entryPoint: EntryPoint,
+        ) {
+            let fixture = Fixture(
+                app: HintSessionTests.app,
+                collector: FakeHintTargetCollector(
+                    throwing: .attributeUnsupported("AXFocusedWindow"),
+                ),
+                screen: HintSessionTests.screen,
+            )
+
+            fixture.session.trigger(entryPoint)
+
+            #expect(fixture.session.overlay == nil)
+            #expect(fixture.presenter.shows.isEmpty)
+            #expect(fixture.collector.collectedApps == [HintSessionTests.app])
+            #expect(HintSession.unsupportedAttributeReason(for: entryPoint) == "no focused window")
+        }
+
+        @Test
+        func `the app-menus trigger with no menu bar shows nothing and says so`() {
+            let fixture = Fixture(
+                app: HintSessionTests.app,
+                collector: FakeHintTargetCollector(throwing: .attributeUnsupported("AXMenuBar")),
+                screen: HintSessionTests.screen,
+                entryPoints: [.appMenus],
+            )
+
+            fixture.session.trigger(.appMenus)
+
+            #expect(fixture.session.overlay == nil)
+            #expect(fixture.presenter.shows.isEmpty)
+            #expect(fixture.collector.collectedApps == [HintSessionTests.app])
+            #expect(HintSession.unsupportedAttributeReason(for: .appMenus) == "no menu bar")
+            #expect(
+                HintSession.unsupportedAttributeReason(for: .appMenus)
+                    != HintSession.unsupportedAttributeReason(for: .clickInWindow),
+            )
+        }
+
         @Test(arguments: [
             nil,
             FrontmostApp(name: "Helper", bundleIdentifier: nil),
@@ -148,9 +189,14 @@ extension HintSessionTests {
             #expect(fixture.presenter.shows.isEmpty)
         }
 
-        @Test(arguments: [EntryPoint.appMenus, .statusIcons])
-        func `an entry point with no collector yet shows nothing`(entryPoint: EntryPoint) {
-            let fixture = Fixture(targetCount: 3)
+        @Test(arguments: [EntryPoint.rightClickInWindow, .appMenus, .statusIcons])
+        func `an entry point with no collector shows nothing`(entryPoint: EntryPoint) {
+            let fixture = Fixture(
+                app: HintSessionTests.app,
+                collector: FakeHintTargetCollector(answering: HintSessionTests.targetSet(count: 3)),
+                screen: HintSessionTests.screen,
+                entryPoints: [.clickInWindow],
+            )
 
             fixture.session.trigger(entryPoint)
 
