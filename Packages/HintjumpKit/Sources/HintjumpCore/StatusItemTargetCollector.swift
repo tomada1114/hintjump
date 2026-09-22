@@ -11,6 +11,11 @@ import CoreGraphics
 public struct StatusItemTargetCollector: HintTargetCollecting {
     /// A window this thin, or thinner, either way is not something a person clicks.
     private static let minimumSide: CGFloat = 2
+    /// How far an item may reach past its visible segment and still count as inside it.
+    /// macOS 26 draws the clock 2 pt past the screen's right edge (x 1569 + 143 on a
+    /// 1710 pt screen), and it is fully visible; an item behind the camera housing or
+    /// off the screen is hidden by far more than this.
+    private static let overhangTolerance: CGFloat = 4
 
     private let listing: any StatusItemListing
 
@@ -25,12 +30,14 @@ public struct StatusItemTargetCollector: HintTargetCollecting {
     }
 
     /// Whether `frame` is a status item a hint can be put on: more than 2 pt wide and
-    /// tall, and wholly inside one visible part of the bar — so an item hidden behind a
-    /// camera housing, or pushed off the screen, gets no hint.
+    /// tall, and inside one visible part of the bar give or take ``overhangTolerance`` —
+    /// so an item hidden behind a camera housing, or pushed off the screen, gets no hint.
     private static func isVisibleItem(_ frame: CGRect, in scan: StatusItemScan) -> Bool {
         frame.width > minimumSide
             && frame.height > minimumSide
-            && scan.visibleSegments.contains { $0.contains(frame) }
+            && scan.visibleSegments.contains { segment in
+                segment.insetBy(dx: -overhangTolerance, dy: -overhangTolerance).contains(frame)
+            }
     }
 
     /// The visible items, left to right, each clicked at its center; an empty set rooted

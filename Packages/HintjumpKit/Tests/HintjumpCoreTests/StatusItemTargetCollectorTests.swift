@@ -102,6 +102,15 @@ struct StatusItemTargetCollectorTests {
     }
 
     @Test
+    func `an item reaching 2 pt past the screen edge, like macOS 26's clock, is kept`() {
+        let clock = CGRect(x: 1_300, y: 0, width: 142, height: 24)
+
+        let set = Self.collect(Self.scan([StatusItemWindow(pid: 99, frame: clock)]))
+
+        #expect(set.targets.map(\.frame) == [clock])
+    }
+
+    @Test
     func `an item filling its segment exactly is kept`() {
         let set = Self.collect(Self.scan([StatusItemWindow(pid: 99, frame: Self.rightOfNotch)]))
 
