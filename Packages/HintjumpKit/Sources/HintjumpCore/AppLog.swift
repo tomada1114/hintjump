@@ -60,6 +60,18 @@ public enum AppLog {
     /// Its own category because it is the stream a "my config edit did nothing"
     /// investigation watches: `log stream --predicate 'category == "config"'`. The
     /// outcome words (`registered`, `unregistered`, `failed`) are `.public`; anything
-    /// read from the user's file or from an OS error message is `.private`.
+    /// read from the user's file or from an OS error message is `.private` — with one
+    /// exception, ``ConfigError/message`` on a failed reload, which is `.public` because
+    /// a line number and a key name are what that investigation has to read
+    /// (``StatusMenuModel/reloadConfig()``).
     public static let config = Logger(subsystem: subsystem, category: "config")
+
+    /// The triggers concern: ``TriggerController`` registering the four global shortcuts
+    /// through ``TriggerRegistering``, and every press it hears.
+    ///
+    /// Its own category because it is the stream a "my shortcut does nothing"
+    /// investigation watches: `log stream --predicate 'category == "triggers"'`. Entry
+    /// point names, key combinations, and OS status codes are `.public` — a shortcut is
+    /// configuration vocabulary, not user data.
+    public static let triggers = Logger(subsystem: subsystem, category: "triggers")
 }

@@ -38,5 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   left or right click at a screen point as a synthesized mouse press and release, leaving
   the pointer where it clicked; without the Accessibility grant they refuse rather than
   post a click the system would drop. Nothing calls it yet; typing a hint will
+- The four triggers in the config file are registered as global shortcuts (Carbon
+  `RegisterEventHotKey`, no permission needed) at launch and again on every successful
+  "Reload Config", through the `TriggerRegistering` port and its `CarbonTriggerRegistrar`
+  adapter. A press is logged as `trigger pressed: <trigger>` until the hint session
+  lands; a combination another app already holds is logged with its status, and the
+  other triggers still register. A reload that fails leaves the registered triggers as
+  they were
+- The status menu gains "Open Config File", which opens `~/.config/hintjump/config.toml`
+  in the default plain-text editor, next to "Reload Config"
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

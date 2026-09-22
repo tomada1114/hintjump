@@ -48,4 +48,25 @@ public struct HintjumpConfig: Equatable, Sendable {
         self.disabledApps = disabledApps
         self.launchAtLogin = launchAtLogin
     }
+
+    /// The combination configured for `entryPoint`.
+    ///
+    /// A switch over the stored properties rather than a lookup in ``triggers``, so a
+    /// fifth case added to ``EntryPoint`` fails to compile here instead of answering a
+    /// wrong combination at run time.
+    public func combination(for entryPoint: EntryPoint) -> KeyCombination {
+        switch entryPoint {
+        case .clickInWindow:
+            clickInWindow
+
+        case .rightClickInWindow:
+            rightClickInWindow
+
+        case .appMenus:
+            appMenus
+
+        case .statusIcons:
+            statusIcons
+        }
+    }
 }
