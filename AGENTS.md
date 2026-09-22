@@ -85,7 +85,7 @@ job call.
 | A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
 | A harness check under `scripts/checks/` (including the sourced `scripts/checks/lib.sh`) | `just lint`, then `just test-scripts`; `just check-harness` for the checks themselves |
-| A `just` recipe name, a workflow's `uses:` or `permissions:`, a skill's frontmatter, the Skills table, or the `## Product` section | `just check-harness` |
+| A `just` recipe name, a workflow's `uses:` or `permissions:`, a skill's frontmatter, the Skills table, the `## Product` section, or `.claude/settings.json`'s `permissions` rules | `just check-harness` |
 | A skill under `.agents/skills/` | `just agents-sync`, then `just agents-check` and `just check-harness` |
 | A workflow under `.github/workflows/` | `just lint`, then `just check-harness` |
 | Markdown | `just lint` (its `typos` spell-check) |
@@ -283,16 +283,20 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material, `Config/Local.xcconfig`) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
-| `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, the Skills table matches `.agents/skills/`, and the `## Product` section above stays a `TODO:` skeleton here while `project.yml` still names the template's app-name placeholder and holds no `TODO:` marker once `scripts/bootstrap.sh` has renamed this into an app |
+| `scripts/checks/run-all.sh` (`just check-harness`, part of `just check` before `just test`) | `just check-harness`, `just check`, and CI's `lint` job | every author | the harness's claims about itself stay true — every `just <recipe>` in this file exists, every workflow has a top-level `permissions:` and every non-local `uses:` (workflows and composite actions) is pinned to a full SHA with a `# v…` comment, every skill's frontmatter is exactly a matching `name` and a `description`, the Skills table matches `.agents/skills/`, every `Bash(just <recipe>…)` rule in `.claude/settings.json` names a recipe the justfile defines, and the `## Product` section above stays a `TODO:` skeleton here while `project.yml` still names the template's app-name placeholder and holds no `TODO:` marker once `scripts/bootstrap.sh` has renamed this into an app |
+| `.claude/settings.json`'s `permissions` block | every tool call Claude Code makes in this checkout | Claude Code only — Codex CLI and a human read nothing here | the routine local loop runs without a prompt: the `just` recipes that read, build, or test, `swift build`/`swift test`, and read-only `gh` (`gh issue view`/`list`, `gh pr view`/`list`/`checks`/`diff`, `gh run view`/`list`). Everything that writes beyond the working tree is deliberately absent from `allow` — `just labels`, `just ruleset`, `just release-prep`, `just reset-permissions`, `just install` (it writes `core.hooksPath` and installs tools), `just clean` (it deletes the generated project and the build artifacts), `git push`, `gh pr create`, `gh pr merge`, `gh issue create` — so it still stops for the sign-off "Security and human approval" asks for; `just logs` is absent for a different reason, that it streams until Ctrl-C and would hang an unattended call. `deny` refuses `git commit --no-verify`/`-n`, a force push, and an edit to `App/*.entitlements`; JSON carries no comments, so read the deny list as five groups — `--no-verify`, `-n`, `--force`/`-f`, `--force-with-lease` with and without `=<ref>`, and a `+refspec` push, each written in the leading, trailing, and mid-command position. It is a prompt policy, not a boundary: a deny rule matches the command text Claude Code writes, so another spelling — `git -C . push --force`, `bash -c '…'`, or a bundled short flag such as `git commit -anm "…"`, which no text rule can decompose — is not stopped by it, and none of this constrains a human at a shell |
 | CI's `lint`, `test`, and `app` jobs (`.github/workflows/ci.yml`) | push to `main` and every pull request | everyone | the full gate: `scripts/lint.sh` (format, lint, shellcheck, actionlint, typos, the skills-mirror check), the script tests (`scripts/tests/run.sh`), the harness checks (`scripts/checks/run-all.sh`), tests with the coverage floor, build, UI test, and Release smoke |
 | This file | read at session start | every agent | everything else — the reasons behind the rules above |
 
 These gaps are deliberate and stay open until their tracking issue closes them:
 
-- **`git commit --no-verify` bypasses the hook**, and nothing in this repository
-  blocks it. "Never bypass the hooks" holds as an instruction, and CI is the backstop —
-  except for the staged guard, which no CI job reruns over a pull request's diff:
-  GitHub push protection and secret scanning are the server-side layer for secrets.
+- **`git commit --no-verify` bypasses the hook**, and nothing in this repository blocks
+  it for every author. `.claude/settings.json`'s `deny` list refuses the usual spellings
+  on Claude Code alone, and only as written — `git -C . commit --no-verify` or the same
+  command inside `bash -c` is not matched. "Never bypass the hooks" therefore still holds
+  as an instruction, and CI is the backstop — except for the staged guard, which no CI
+  job reruns over a pull request's diff: GitHub push protection and secret scanning are
+  the server-side layer for secrets.
 - **Hooks are absent on a bare clone until `just install` runs**, because
   `core.hooksPath` is set by that recipe. `scripts/verify-hooks.sh` narrows this: it
   fails loudly at `just install` and `just check` time when git does not resolve the
@@ -311,9 +315,12 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   `gh api repos/{owner}/{repo}/rulesets`, never from a git checkout. "Use this
   template" does not copy rulesets, so every repository created from this template
   still needs its own admin to run `just ruleset` once.
-- **The `PostToolUse` swiftformat hook in `.claude/settings.json` applies to Claude
-  Code only.** It formats after an agent's edit on that one host; the git hook, not
-  this hook, is the real gate.
+- **Everything in `.claude/settings.json` applies to Claude Code only.** The
+  `PostToolUse` swiftformat hook formats after an agent's edit on that one host; the git
+  hook, not this hook, is the real gate. The `permissions` block decides which commands
+  that host runs without stopping to ask, so it shapes where a human is consulted rather
+  than what is possible: Codex CLI, another agent, and a human at a shell are bound by
+  the instructions in this file and by the gates above, not by that file.
 - **Nothing runs `Tests/MyAppPlatformTests` for you.** A CI runner has no logged-in GUI
   session and cannot be granted Accessibility, Input Monitoring, or Screen Recording, so
   those tests carry `.requiresLocalMachine` and are reported as skipped in `just test`

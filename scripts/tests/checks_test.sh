@@ -102,6 +102,22 @@ Run `just --list` to see recipes, then `just generate && just build`. A
 |---|---|
 | `gamma` | never |
 EOF
+    mkdir -p "${root}/.claude"
+    cat >"${root}/.claude/settings.json" <<'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(just check)",
+      "Bash(just build)",
+      "Bash(just generate:*)",
+      "Bash(swift test:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)"
+    ]
+  }
+}
+EOF
     write_skill "${root}" alpha
     write_skill "${root}" beta
     cat >"${root}/project.yml" <<EOF
@@ -266,6 +282,36 @@ case_recipes_bogus_in_fenced_block() {
     assert_exit 1
     assert_contract ERR_CHECK_RECIPE_MISSING
     assert_stderr_contains "no recipe named 'release'"
+}
+
+case_recipes_bogus_permission_rule() {
+    local root
+    root=$(make_fixture)
+    cat >"${root}/.claude/settings.json" <<'EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(just check)",
+      "Bash(just deploy:*)"
+    ]
+  }
+}
+EOF
+    capture "${BASH}" "${CHECKS}/just-recipes-exist.sh" --root "${root}"
+    assert_exit 1
+    assert_contract ERR_CHECK_PERMISSION_RECIPE_MISSING
+    assert_stderr_contains ".claude/settings.json:$(grep -n 'just deploy' "${root}/.claude/settings.json" | cut -d: -f1):"
+    assert_stderr_contains "no recipe named 'deploy'"
+    assert_stderr_not_contains "no recipe named 'check'" "an existing recipe reported missing"
+}
+
+case_recipes_pass_without_settings() {
+    local root
+    root=$(make_fixture)
+    mv "${root}/.claude" "${CASE_DIR}/claude-dir"
+    capture "${BASH}" "${CHECKS}/just-recipes-exist.sh" --root "${root}"
+    assert_exit 0
+    assert_stdout_contains "there is no .claude/settings.json to check"
 }
 
 case_recipes_just_missing() {
@@ -558,6 +604,8 @@ run_case "recipes: passes on a conforming tree" case_recipes_pass
 run_case "recipes: a bogus inline recipe fails" case_recipes_bogus_inline
 run_case "recipes: a bogus second recipe in a chain fails" case_recipes_bogus_second_in_chain
 run_case "recipes: a bogus recipe in a fenced block fails" case_recipes_bogus_in_fenced_block
+run_case "recipes: a permission rule for a bogus recipe fails" case_recipes_bogus_permission_rule
+run_case "recipes: passes with no .claude/settings.json" case_recipes_pass_without_settings
 run_case "recipes: just missing from PATH fails" case_recipes_just_missing
 run_case "workflows: passes on a conforming tree" case_workflows_pass
 run_case "workflows: passes with no .github/actions/" case_workflows_pass_without_actions_dir

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Every `just <recipe>` that AGENTS.md names must be a recipe the justfile defines,
-# so a renamed or removed recipe cannot leave the agent guide pointing at nothing.
+# Every `just <recipe>` that AGENTS.md names, and every `Bash(just <recipe>…)`
+# permission rule in .claude/settings.json, must be a recipe the justfile defines, so
+# a renamed or removed recipe cannot leave the agent guide pointing at nothing or the
+# Claude Code permission list holding a rule that can never match.
 #
 #   scripts/checks/just-recipes-exist.sh [--root DIR]
 #
@@ -13,9 +15,22 @@
 #     or `-` (just's own recipe-name rule), so `just --list` or a placeholder like
 #     `just <recipe>` names no recipe, and `just` must not be the tail of a longer
 #     word (`adjust x` is not a token). Prose outside backticks is never read.
+# Tokens, read from <root>/.claude/settings.json (Claude Code's permission rules):
+#   - every permission rule of the form `Bash(just <name>…)`, wherever it appears in
+#     the file, so the `allow`, `ask`, and `deny` lists are all covered. The literal
+#     `Bash(` prefix is required, so a `just` call written into a hook's `"command"`
+#     string is not a token and is not checked;
+#   - <name> follows the same rule-name shape as above, so `Bash(just test-fast:*)`
+#     yields `test-fast` and `Bash(just check)` yields `check`.
+#   The file is optional: a checkout without it has no permission rule to check, and
+#   the AGENTS.md half of this check still runs.
 # The recipes are the names `just --summary --justfile <root>/justfile` prints
-# (public recipes; `[private]` and `_`-prefixed ones are not listed). Only
-# AGENTS.md is read — CONTRIBUTING.md and README.md are not covered.
+# (public recipes; `[private]` and `_`-prefixed ones are not listed). A rule or a
+# reference naming a private recipe is therefore reported as missing, which is the
+# intended answer for AGENTS.md and means a private recipe cannot be permitted by
+# name — make the recipe public, or drop the rule. Only AGENTS.md and
+# .claude/settings.json are read — CONTRIBUTING.md, README.md, and
+# .claude/settings.local.json are not covered.
 #
 # Requires `just` on PATH (a mise tool: `mise exec -- …` locally, jdx/mise-action
 # in CI). Git work tree: not required — the check reads files under --root, which
@@ -27,6 +42,9 @@
 #   ERR_CHECK_TOOL_MISSING    `just` is not on PATH
 #   ERR_CHECK_JUST_FAILED     `just --summary` could not read the justfile
 #   ERR_CHECK_RECIPE_MISSING  AGENTS.md names a recipe the justfile does not define
+#   ERR_CHECK_PERMISSION_RECIPE_MISSING
+#                             .claude/settings.json holds a `Bash(just <recipe>…)`
+#                             rule for a recipe the justfile does not define
 set -euo pipefail
 
 # shellcheck source=scripts/checks/lib.sh
@@ -81,4 +99,38 @@ EOF
 check_report ERR_CHECK_RECIPE_MISSING "AGENTS.md names a just recipe the justfile does not define" \
     "every \`just <recipe>\` in AGENTS.md to be listed by \`just --summary\`" \
     "rename the reference in AGENTS.md to an existing recipe, or add the recipe to the justfile"
-check_finish "just-recipes-exist: every just recipe AGENTS.md names exists."
+
+SETTINGS=".claude/settings.json"
+SETTINGS_SCOPE="there is no ${SETTINGS} to check"
+if [ -f "${CHECK_ROOT}/${SETTINGS}" ]; then
+    SETTINGS_SCOPE="so does every recipe ${SETTINGS} permits"
+    # Prints one `<line>\t<recipe>` per `Bash(just <recipe>` rule, in file order.
+    RULE_TOKENS=$(awk '
+        {
+            s = $0
+            while (match(s, /Bash\(just[ \t]+[A-Za-z_][A-Za-z0-9_-]*/)) {
+                tok = substr(s, RSTART, RLENGTH)
+                sub(/^Bash\(just[ \t]+/, "", tok)
+                print NR "\t" tok
+                s = substr(s, RSTART + RLENGTH)
+            }
+        }
+    ' "${CHECK_ROOT}/${SETTINGS}")
+
+    while IFS="$(printf '\t')" read -r line recipe; do
+        [ -n "${recipe}" ] || continue
+        case "${RECIPES}" in
+            *" ${recipe} "*) ;;
+            *) check_problem "${SETTINGS}:${line}: \`Bash(just ${recipe}…)\` — no recipe named '${recipe}'" ;;
+        esac
+    done <<EOF
+${RULE_TOKENS}
+EOF
+
+    check_report ERR_CHECK_PERMISSION_RECIPE_MISSING \
+        "${SETTINGS} permits a just recipe the justfile does not define" \
+        "every \`Bash(just <recipe>…)\` rule in ${SETTINGS} to name a recipe \`just --summary\` lists" \
+        "drop the dead permission rule, rename it to an existing recipe, or add the recipe to the justfile"
+fi
+
+check_finish "just-recipes-exist: every just recipe AGENTS.md names exists; ${SETTINGS_SCOPE}."
