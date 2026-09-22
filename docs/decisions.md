@@ -244,3 +244,24 @@ file is their public record.
   to a foreign process); `AXEnhancedUserInterface` (changes window-manager
   behaviour, and was never needed); declaring the chat apps unsupported.
 - Supersedes: the open item in "Electron support is decided on a real machine".
+
+## 2026-09-22 The reader's strategy is batchedPruned; the read alone gets 200 ms
+
+- Decision: the accessibility reader walks a tree with `ReadStrategy.batchedPruned`
+  — every attribute of an element in one `AXUIElementCopyMultipleAttributeValues`
+  call, subtrees outside the visible rectangle skipped, tables and outlines read
+  through `AXVisibleRows`. Of the 300 ms trigger-to-hints budget, the read alone
+  gets p95 ≤ 200 ms; the remaining 100 ms is for ranking, labels, layout, and one
+  frame of drawing. Latency is always measured with the target app frontmost.
+- Why: `docs/research/read-latency.md`. Batching halves every read; pruning is what
+  turns Finder's 9,408-element list view (10 s batched) into 308 elements in 54 ms.
+  Four of the five windows clear 200 ms with `batchedPruned`; Chrome misses at
+  243 ms p95 because Chromium clips scrolled-away content to 0–2 pt slivers instead
+  of placing it off screen, so the rectangle prune keeps everything, and the
+  per-element visible-children query costs a round trip Chromium never answers.
+  The frontmost rule is empirical: an occluded app is App-Napped and answers five
+  times slower, which is a measurement artefact, not a product case.
+- Rejected: `batched` alone (Finder stays at 10 s); `naive` (over budget on every
+  browser page); a per-application strategy table (the two Chromium fixes are
+  adapter-side translation and need no table).
+- Open: the Chromium fixes are the follow-up filed from #8.
