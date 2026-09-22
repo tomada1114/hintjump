@@ -227,3 +227,20 @@ file is their public record.
   adapter. The overlay stays visible in screen sharing, with no setting.
 - Why: the first release is the minimum; each of these is added when real
   use shows it is missing.
+
+## 2026-09-22 Chromium-based apps are in the first release's scope; no wake by default
+
+- Decision: Slack, Claude Desktop, and other Electron or Chromium apps get hints
+  like any native app. The reader does not set `AXManualAccessibility` on every
+  read; it sets it once per process only when a read comes back with an
+  `AXWebArea` that has no children, as insurance for a Mac with no other
+  Accessibility client. No per-app exceptions.
+- Why: `docs/research/electron-accessibility.md` — all three apps expose their
+  chat areas, composers, sidebars, and buttons with `AXPress` on the first read
+  of a freshly launched process, with the attribute unset; setting it succeeds
+  and changes nothing observable. The one thing this machine could not prove is
+  behaviour with no other client present, which is what the fallback covers.
+- Rejected: setting the attribute on every read (unnecessary, and it is written
+  to a foreign process); `AXEnhancedUserInterface` (changes window-manager
+  behaviour, and was never needed); declaring the chat apps unsupported.
+- Supersedes: the open item in "Electron support is decided on a real machine".
