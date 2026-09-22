@@ -119,19 +119,16 @@ private struct ChipTag: View {
     }
 }
 
-/// The hint overlay: renders ``HintjumpCore/HintSession/overlay`` and nothing else.
+/// What the overlay draws for one ``HintjumpCore/HintOverlayState``, or nothing for `nil`.
 ///
-/// Every position and size was decided in Core (``HintjumpCore/HintLayout``), relative to
-/// the canvas's top-left corner — the same corner SwiftUI measures from, so a center is
-/// used as given. Nothing animates (`docs/decisions.md` › "Design: signpost hints, one
-/// accent, system controls everywhere else"): the whole tree runs with animations
-/// disabled, so narrowing removes tags at once.
-public struct HintOverlayView: View {
-    private let session: HintSession
+/// Split from ``HintOverlayView`` so that a test can render a state it built by hand, off
+/// screen, without a ``HintjumpCore/HintSession`` to drive there.
+struct HintOverlayCanvas: View {
+    let overlay: HintOverlayState?
 
-    public var body: some View {
+    var body: some View {
         ZStack(alignment: .topLeading) {
-            if let overlay = session.overlay {
+            if let overlay {
                 ForEach(overlay.hints, id: \.label) { hint in
                     HintTag(hint: hint, style: overlay.style)
                         .position(hint.center)
@@ -143,12 +140,27 @@ public struct HintOverlayView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        // The canvas is the whole screen, menu bar and notch included: a safe-area inset
-        // would shift every tag off its target.
-        .ignoresSafeArea()
-        .transaction { transaction in
-            transaction.disablesAnimations = true
-        }
+    }
+}
+
+/// The hint overlay: renders ``HintjumpCore/HintSession/overlay`` and nothing else.
+///
+/// Every position and size was decided in Core (``HintjumpCore/HintLayout``), relative to
+/// the canvas's top-left corner — the same corner SwiftUI measures from, so a center is
+/// used as given. Nothing animates (`docs/decisions.md` › "Design: signpost hints, one
+/// accent, system controls everywhere else"): the whole tree runs with animations
+/// disabled, so narrowing removes tags at once.
+public struct HintOverlayView: View {
+    private let session: HintSession
+
+    public var body: some View {
+        HintOverlayCanvas(overlay: session.overlay)
+            // The canvas is the whole screen, menu bar and notch included: a safe-area
+            // inset would shift every tag off its target.
+            .ignoresSafeArea()
+            .transaction { transaction in
+                transaction.disablesAnimations = true
+            }
     }
 
     /// The view over `session`, whose ``HintjumpCore/HintSession/overlay`` it observes.

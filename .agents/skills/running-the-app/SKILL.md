@@ -40,6 +40,9 @@ verification goes", and the rungs below it are climbed first:
 - **The change touches a feature its unit tests already cover** → `just test` is the
   verification. Stop there, and say so in the pull request; that is a normal outcome,
   not a gap.
+- **The change is how a view draws** → the rendering tests under `just test`; after an
+  intended change, `just record-snapshots`, and the new reference PNG files in the pull
+  request are the screenshot.
 - **The change is an adapter's translation** → `just test-local`, which is quiet.
 - **Only a running app can show it** → first ask whether the decision can move into
   Core, where a test sees it. If it truly cannot, announce the run — what it does, how

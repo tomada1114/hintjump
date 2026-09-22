@@ -113,7 +113,7 @@ example: it logs that a refresh happened `.public` and the other application's n
 | You are adding… | It goes in… | Tested by… |
 |---|---|---|
 | Domain logic, state, view models | `Packages/HintjumpKit/Sources/HintjumpCore` | Swift Testing in `Tests/HintjumpCoreTests` (coverage-gated) |
-| Views, view modifiers | `Packages/HintjumpKit/Sources/HintjumpUI` | Core view-model tests + the launch UI test |
+| Views, view modifiers | `Packages/HintjumpKit/Sources/HintjumpUI` | Core view-model tests, off-screen rendering compared with reference images in `Tests/HintjumpUITests` (`just record-snapshots` to re-record), and the launch UI test |
 | OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/HintjumpKit/Sources/HintjumpPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (coverage-gated), plus an opt-in local-machine test of the adapter in `Tests/HintjumpPlatformTests` — `just test-local` |
 | App lifecycle, scenes, menus, wiring an adapter to a view model | `App/` | `LaunchUITests` + `just smoke` |
 

@@ -10,6 +10,7 @@
       "Bash(just test)",
       "Bash(just test-fast:*)",
       "Bash(just test-local)",
+      "Bash(just record-snapshots)",
       "Bash(just test-scripts)",
       "Bash(just build)",
       "Bash(just run)",

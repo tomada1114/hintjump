@@ -15,9 +15,9 @@ import Testing
 /// click-through, and built unable to become key, and key events are handed to the panel
 /// directly rather than typed. So nothing the developer types or clicks meanwhile reaches
 /// it, and no assertion here counts anything the developer could cause. That a real
-/// panel does become key without activating Hintjump is the one part this cannot see; the
-/// end-to-end check covers it, where no one is working. Serialized: every case shares the
-/// one screen.
+/// panel does become key without activating Hintjump is the one part this cannot see; it
+/// is left to the last rung of `AGENTS.md`'s "How far verification goes": the developer's
+/// Mac, announced first. Serialized: every case shares the one screen.
 @Suite(
     "PanelHintOverlayPresenter against the real window server",
     .requiresLocalMachine,

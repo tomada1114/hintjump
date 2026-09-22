@@ -40,6 +40,16 @@ let package = Package(
         // RUN_LOCAL_MACHINE_TESTS=1 is set — `just test-local` sets it. Linking
         // HintjumpPlatform does not put it inside the coverage floor: scripts/coverage.sh
         // measures Sources/HintjumpCore and nothing else.
+        // Off-screen rendering of the HintjumpUI views, compared with committed reference
+        // images under References/ (excluded here: they are read and written by path, not
+        // bundled). ImageRenderer needs no window, display, or TCC grant, so these run
+        // under `just test` and in CI like any Core test.
+        .testTarget(
+            name: "HintjumpUITests",
+            dependencies: ["HintjumpUI", "HintjumpCore"],
+            exclude: ["References"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
             name: "HintjumpPlatformTests",
             dependencies: ["HintjumpPlatform", "HintjumpCore"],

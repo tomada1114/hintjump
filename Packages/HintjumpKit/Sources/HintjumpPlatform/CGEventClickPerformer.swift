@@ -18,8 +18,9 @@ public struct CGEventClickPerformer: ClickPerforming {
     /// the window server route the click to whatever window is under the point. The
     /// local-machine test posts the very same events to its own process instead, so it can
     /// read back what was built without moving the pointer or clicking anything of the
-    /// developer's; whether the HID route lands on the right window is left to the
-    /// end-to-end check, which runs where no one is working.
+    /// developer's; whether the HID route lands on the right window is left to the last
+    /// rung of `AGENTS.md`'s "How far verification goes": the developer's Mac, announced
+    /// first.
     enum Delivery: Equatable {
         /// The HID event tap: the pointer moves, and the topmost window at the point gets
         /// the click. What ``init()`` uses.

@@ -6,7 +6,7 @@ paths:
 
 ## Where a Test Goes
 
-Two kinds of test, split by what is under test:
+Three kinds of test, split by what is under test:
 
 - **A decision → a Core test with a fake.** Anything that branches, clamps, formats, or
   remembers lives in `HintjumpCore` and is tested in `Tests/HintjumpCoreTests` against a fake
@@ -22,6 +22,14 @@ Two kinds of test, split by what is under test:
   **skipped** on every other run rather than quietly absent, and a pull request that
   changes an adapter pastes its `just test-local` output as the evidence no gate can
   produce.
+- **What a view draws → a rendering test.** A view in `HintjumpUI` holds no decision, but
+  how it draws Core's state — colours, type, spacing — can still regress.
+  `Tests/HintjumpUITests` renders it off screen with SwiftUI's `ImageRenderer` (no window,
+  no display, no TCC grant, so it runs under `just test` and in CI) and compares it pixel
+  by pixel with a committed PNG under `References/`. An intended change is re-recorded
+  with `just record-snapshots`, and the new PNG files are reviewed in the pull request. The
+  state a scene renders is built the way Core builds it (`HintLayout`), so the image is
+  the product's own layout, not a hand-placed copy.
 
 The first default is also what keeps the developer's Mac out of verification: a behavior
 that only the running app can show today is a candidate for moving its decision into
@@ -32,8 +40,8 @@ working and nothing they do changes its result: it posts events to its own proce
 (`CGEventClickPerformer`'s internal `.process` delivery), never at the HID level; a
 window it shows never becomes key; and a key event is handed to the window directly
 rather than typed. What only real global input can show — the pointer moving, a click
-routed to the window under it, a panel taking key focus — is the end-to-end check's job,
-not this target's.
+routed to the window under it, a panel taking key focus — is left to the last rung of
+`AGENTS.md`'s "How far verification goes", the developer's Mac, announced first.
 
 A local-machine test never becomes the only test of a decision: it is human-run, so it
 proves nothing about the pull request nobody ran it for. Adapters stay translation-only,
