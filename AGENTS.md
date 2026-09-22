@@ -48,6 +48,7 @@ just check-harness # Re-assert the harness's claims about itself (scripts/checks
 just test      # Run tests with the 80% coverage floor on HintjumpCore
 just test-fast CounterTests  # Run only the matching tests, no coverage floor (iteration only)
 just test-local    # Run the local-machine adapter tests (HintjumpPlatformTests) CI cannot run
+just probe dump --app com.apple.finder  # Run the probe (Tools/hintjump-probe) from a terminal with Accessibility
 just build     # Build the app (Debug)
 just run       # Build (Debug), quit any running instance, and launch the fresh build
 just logs      # Stream this app's unified-log output (Ctrl-C to stop)
@@ -79,6 +80,7 @@ job call.
 | A view under `Packages/HintjumpKit/Sources/HintjumpUI/`, or anything under `App/` | `just build` |
 | An adapter under `Packages/HintjumpKit/Sources/HintjumpPlatform/` | `just test` (it compiles under `swift test`); then `just test-local` for its real-OS test, whose output goes in the PR; `just build` if `App/` wires it |
 | A test under `Packages/HintjumpKit/Tests/HintjumpPlatformTests/` | `just test-local` (`just test` and CI report these skipped — they are human-run) |
+| Anything under `Tools/hintjump-probe/` | `swift build --package-path Tools/hintjump-probe` (what CI's test job runs), then `just probe dump --app com.apple.finder` from a terminal with Accessibility |
 | Formatting or style of any Swift file | `just lint` |
 | A SwiftLint or SwiftFormat violation that may be auto-fixable | `just fix` (formats, runs `swiftlint --fix`, then `just lint` reports what still needs a hand edit) |
 | One Core suite, while iterating | `just test-fast <filter>` (e.g. `just test-fast CounterTests`) — no coverage floor, so finish with `just test` |

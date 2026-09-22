@@ -62,6 +62,12 @@ jobs:
       - name: Run tests with coverage floor
         run: scripts/coverage.sh
 
+      # Not in the lint job the issue named: that one runs on ubuntu-latest with no
+      # Swift toolchain, and the probe links AppKit and ApplicationServices. It is a
+      # separate SwiftPM package the app never links, so nothing else here compiles it.
+      - name: Build the probe tool (Tools/hintjump-probe)
+        run: swift build --package-path Tools/hintjump-probe
+
   app:
     name: App Build, UI Test & Smoke
     runs-on: macos-26
