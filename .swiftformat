@@ -5,4 +5,8 @@
 --wraparguments before-first
 --wrapparameters before-first
 --extensionacl on-declarations
+# Group thousands from four digits (1_000), not SwiftFormat's default six: SwiftLint's
+# number_separator (on, via opt_in_rules: all) demands the separator, so the default
+# would strip what the next gate requires and no hand edit could satisfy both (#24).
+--decimalgrouping 3,4
 --exclude .build,build
