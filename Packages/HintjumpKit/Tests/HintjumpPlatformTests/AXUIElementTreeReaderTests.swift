@@ -95,20 +95,26 @@ extension AXUIElementTreeReaderTests {
         return finder.processIdentifier
     }
 
-    /// Reads Finder, turning a thrown read into the missing-grant instruction.
+    /// Reads Finder, turning a missing grant into the instruction to give it.
     ///
-    /// `try?` rather than a propagated `throws`: without the Accessibility grant the
-    /// read fails with ``HintjumpCore/AccessibilityReadError/notTrusted``, and a bare
-    /// thrown error would report "the adapter is broken" for what is really "give your
-    /// terminal a permission".
+    /// Only ``HintjumpCore/AccessibilityReadError/notTrusted`` is turned into `nil` for
+    /// `LocalMachineTests.require`: that one means "give your terminal a permission",
+    /// not "the adapter is broken". Every other error propagates as itself, so a real
+    /// translation failure is reported as what it is.
     static func readFinder(
         pid: pid_t,
         scope: ReadScope,
         strategy: ReadStrategy,
     ) throws -> TreeSnapshot {
         let reader = AXUIElementTreeReader()
+        let tree: TreeSnapshot?
+        do {
+            tree = try reader.readTree(pid: pid, scope: scope, strategy: strategy)
+        } catch AccessibilityReadError.notTrusted {
+            tree = nil
+        }
         return try LocalMachineTests.require(
-            try? reader.readTree(pid: pid, scope: scope, strategy: strategy),
+            tree,
             requires: "the Accessibility permission",
             grant: true,
         )
