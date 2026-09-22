@@ -7,31 +7,64 @@ import Testing
 /// and whose calls are recorded in plain values the test reads afterwards. This is the
 /// port's first fake (`AccessibilityTreeReadingTests.swift`'s doc comment: "the first
 /// decision over a `TreeSnapshot` brings its fake with it") — ``ManualAccessibilityWaker``
-/// is that first decision.
-private final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Sendable {
+/// is that first decision. Internal rather than private because it is this port's one
+/// fake: `WindowTargetCollectorTests` reads through it too.
+final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Sendable {
+    /// One `readTree` call's arguments.
+    struct ReadRequest: Equatable {
+        let pid: pid_t
+        let scope: ReadScope
+        let strategy: ReadStrategy
+    }
+
     /// Safe without a lock: every test below drives it from the `@MainActor` suite, so
     /// the mutations and the reads happen on one actor.
-    private(set) var readTreeCallCount = 0
+    private(set) var readRequests: [ReadRequest] = []
     private(set) var enableManualAccessibilityCalls: [pid_t] = []
 
     private let readAnswers: [TreeSnapshot]
+    private let readError: AccessibilityReadError?
     private let enableError: AccessibilityReadError?
 
-    /// `readAnswers` are returned in order, repeating the last one once they run out.
-    /// `enableError`, when given, is thrown from every
-    /// `enableManualAccessibility(pid:)` call instead of succeeding.
-    init(readAnswers: [TreeSnapshot], enableError: AccessibilityReadError? = nil) {
+    /// How many times `readTree` was called, whether it answered or threw.
+    var readTreeCallCount: Int {
+        readRequests.count
+    }
+
+    /// Answers `readAnswers` in order, repeating the last one once they run out, and
+    /// lets every `enableManualAccessibility(pid:)` call succeed.
+    convenience init(readAnswers: [TreeSnapshot]) {
+        self.init(readAnswers: readAnswers, readError: nil, enableError: nil)
+    }
+
+    /// As ``init(readAnswers:)``, but every `enableManualAccessibility(pid:)` call throws
+    /// `enableError` instead of succeeding.
+    convenience init(readAnswers: [TreeSnapshot], enableError: AccessibilityReadError) {
+        self.init(readAnswers: readAnswers, readError: nil, enableError: enableError)
+    }
+
+    /// Every `readTree` call throws `readError` — a read that never answers.
+    convenience init(readError: AccessibilityReadError) {
+        self.init(readAnswers: [], readError: readError, enableError: nil)
+    }
+
+    private init(
+        readAnswers: [TreeSnapshot],
+        readError: AccessibilityReadError?,
+        enableError: AccessibilityReadError?,
+    ) {
         self.readAnswers = readAnswers
+        self.readError = readError
         self.enableError = enableError
     }
 
-    func readTree(
-        pid _: pid_t,
-        scope _: ReadScope,
-        strategy _: ReadStrategy,
-    ) -> TreeSnapshot {
-        defer { readTreeCallCount += 1 }
-        return readAnswers[min(readTreeCallCount, readAnswers.count - 1)]
+    func readTree(pid: pid_t, scope: ReadScope, strategy: ReadStrategy) throws -> TreeSnapshot {
+        let answerIndex = min(readRequests.count, readAnswers.count - 1)
+        readRequests.append(ReadRequest(pid: pid, scope: scope, strategy: strategy))
+        if let readError {
+            throw readError
+        }
+        return readAnswers[answerIndex]
     }
 
     func enableManualAccessibility(pid: pid_t) throws {

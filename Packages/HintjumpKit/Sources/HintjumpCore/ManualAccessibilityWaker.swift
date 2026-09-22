@@ -7,9 +7,8 @@ import Foundation
 /// `docs/decisions.md` › "Chromium-based apps are in the first release's scope; no wake
 /// by default" is explicit that `AXManualAccessibility` is never set up front — only
 /// after a read comes back with an empty `AXWebArea`, and never twice for the same
-/// process. This type is the one place that sequence lives; no product caller wires it
-/// up yet (the frontmost-window entry point this would sit behind does not exist), so
-/// it lands with its test and no caller (tracked in the issue this ships).
+/// process. This type is the one place that sequence lives; ``WindowTargetCollector``,
+/// behind the frontmost-window entry points, is its product caller.
 @MainActor
 public final class ManualAccessibilityWaker {
     private let reader: AccessibilityTreeReading
