@@ -290,3 +290,23 @@ file is their public record.
   and revisits both the tier rule and N; changing either is a new entry that
   supersedes this one. Neither change alters `RankedTarget` or the assigner's
   output shape.
+
+## 2026-09-22 Clicks are synthesized mouse events at the element's visible center; the pointer stays there
+
+- Decision: a hint clicks by posting a synthesized mouse press and release —
+  `CGEvent` at the HID event tap, left or right button, click state forced to 1 —
+  at the element's visible center, through the `ClickPerforming` port and its
+  `CGEventClickPerformer` adapter. The pointer is left at the click point. Which
+  point is the visible center is Core's decision, not the adapter's.
+- Why: a synthesized event is the only mechanism that clicks every element kind
+  the same way — text fields, rows, web content — right clicks included, where
+  `AXPress` and `AXShowMenu` are each supported only by some roles. The pointer
+  stays because moving it back races the target app's own handling of the click.
+  Posting needs no grant beyond the Accessibility one the app already asks for;
+  without it the OS drops the event silently, so the adapter checks the grant
+  first and reports it as its own error.
+- Rejected: `AXPress` for left clicks (not every clickable element publishes it —
+  `docs/research/electron-accessibility.md` shows many do, not all); warping the
+  pointer back after the click.
+- Supersedes: nothing; it names the API and the pointer behaviour that "Name,
+  distribution, and foundation" left as "click synthesis".
