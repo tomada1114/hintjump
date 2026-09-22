@@ -103,17 +103,21 @@ public final class ConfigStore {
     /// value and leaving every other byte of the file — comments included — untouched.
     ///
     /// A no-op write is skipped: asking to disable an app that is already disabled
-    /// should not rewrite the user's file at all.
+    /// should not rewrite the user's file at all. The list the file holds is adopted
+    /// either way, so a file edited to say the same thing before a reload still takes
+    /// effect when the menu asks for it.
     public func setDisabled(_ bundleID: String, _ disabled: Bool) throws {
         let text = try file.read() ?? HintjumpConfig.defaultFileContents
         var bundleIDs = try ConfigSchema.config(from: text).disabledApps
         if disabled {
             guard !bundleIDs.contains(bundleID) else {
+                config.disabledApps = bundleIDs
                 return
             }
             bundleIDs.append(bundleID)
         } else {
             guard bundleIDs.contains(bundleID) else {
+                config.disabledApps = bundleIDs
                 return
             }
             bundleIDs.removeAll { $0 == bundleID }

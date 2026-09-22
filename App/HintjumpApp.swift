@@ -38,10 +38,16 @@ struct HintjumpApp: App {
             Button("Reload Config") {
                 composition.statusMenu.reloadConfig()
             }
+            // "Disable in <App>" / "Enable in <App>" for the last app frontmost other than
+            // Hintjump; absent until there is one with a bundle identifier.
+            if let title = composition.statusMenu.disableItemTitle {
+                Button(title) {
+                    composition.statusMenu.toggleDisabledForLastApp()
+                }
+            }
             Divider()
             // An agent has no app menu and no ⌘Q of its own, so this is how a local run
-            // quits. The other items (Disable in <App>, Status…) come with later
-            // status-menu features.
+            // quits. The other items (Status…) come with later status-menu features.
             Button("Quit Hintjump") {
                 NSApplication.shared.terminate(nil)
             }

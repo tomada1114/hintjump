@@ -35,6 +35,19 @@ documented limitation, not something Hintjump works around.
 The shortcuts and the label characters are set in `~/.config/hintjump/config.toml`
 (status menu › Open Config File, then Reload Config).
 
+### The status menu
+
+The status menu holds:
+
+- **Open Config File** — opens `~/.config/hintjump/config.toml` in your plain-text editor.
+- **Reload Config** — re-reads that file; a file with a mistake is reported in the log
+  and the previous settings stay in force.
+- **`Disable in <App>`** — turns Hintjump off in the last app you used before opening the
+  menu, by adding its bundle identifier to `[apps] disabled` (nothing else in the file
+  changes). While that app is frontmost, none of Hintjump's four shortcuts are
+  registered, so those key combinations reach the app instead. The item then reads
+  **`Enable in <App>`**, which turns Hintjump back on there.
+
 ## Quickstart
 
 Prerequisites: Xcode 26.5+, [mise](https://mise.jdx.dev/), and

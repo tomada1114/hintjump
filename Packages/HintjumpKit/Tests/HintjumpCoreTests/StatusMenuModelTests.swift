@@ -25,25 +25,44 @@ struct StatusMenuModelTests {
         let store: ConfigStore
         let controller: TriggerController
         let opener: FakeConfigFileOpener
+        let observer: FakeFrontmostAppObserver
+        let policy: DisabledAppsPolicy
         let model: StatusMenuModel
     }
 
-    /// A model over the default file, loaded and applied the way `App/` starts it.
+    /// A model over the default file with no app frontmost, started the way `App/`
+    /// starts it.
     static func started() throws -> Harness {
-        let file = FakeConfigFile(contents: HintjumpConfig.defaultFileContents)
+        try started(contents: HintjumpConfig.defaultFileContents, frontmost: nil)
+    }
+
+    /// A model over `contents`, loaded, applied, and started with `frontmost` in front,
+    /// the way `App/` starts it.
+    static func started(contents: String, frontmost: FrontmostApp?) throws -> Harness {
+        let file = FakeConfigFile(contents: contents)
         let registrar = FakeTriggerRegistrar()
         let store = ConfigStoreTests.store(file)
         let controller = TriggerController(registrar: registrar)
         let opener = FakeConfigFileOpener()
-        let model = StatusMenuModel(store: store, controller: controller, opener: opener)
+        let observer = FakeFrontmostAppObserver()
+        let policy = DisabledAppsPolicy(controller: controller, observer: observer) { store.config }
+        let model = StatusMenuModel(
+            store: store,
+            controller: controller,
+            opener: opener,
+            policy: policy,
+        )
         try store.load()
         controller.apply(store.config)
+        policy.start(from: frontmost)
         return Harness(
             file: file,
             registrar: registrar,
             store: store,
             controller: controller,
             opener: opener,
+            observer: observer,
+            policy: policy,
             model: model,
         )
     }

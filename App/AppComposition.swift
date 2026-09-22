@@ -17,7 +17,11 @@ final class AppComposition {
     let store: ConfigStore
     /// The four global shortcuts, registered from ``store``'s configuration.
     let triggers: TriggerController
-    /// What the status menu's "Open Config File" and "Reload Config" do.
+    /// Unregisters the triggers while an app in `[apps] disabled` is frontmost, following
+    /// every app switch.
+    let disabledApps: DisabledAppsPolicy
+    /// What the status menu's "Open Config File", "Reload Config", and
+    /// "Disable in <App>" do.
     let statusMenu: StatusMenuModel
     /// The hint session every trigger press is handed to.
     let hints: HintSession
@@ -26,10 +30,15 @@ final class AppComposition {
         let configStore = ConfigStore(file: UserConfigFile(), loginItem: SMAppServiceLoginItem())
         store = configStore
         triggers = TriggerController(registrar: CarbonTriggerRegistrar())
+        disabledApps = DisabledAppsPolicy(
+            controller: triggers,
+            observer: WorkspaceFrontmostAppObserver(),
+        ) { configStore.config }
         statusMenu = StatusMenuModel(
             store: configStore,
             controller: triggers,
             opener: WorkspaceConfigFileOpener(),
+            policy: disabledApps,
         )
         hints = Self.makeHintSession { configStore.config }
         // The controller logs every press before handing it on, so a press stays
@@ -64,14 +73,18 @@ final class AppComposition {
         return session
     }
 
-    /// Loads the config file, then registers the triggers it names.
+    /// Loads the config file, registers the triggers it names, then starts following
+    /// app switches from the app frontmost now — suspending the triggers at once if that
+    /// app is disabled.
     ///
     /// A failed load is logged by the store and leaves the defaults in force, so the
-    /// triggers are registered either way. Both steps are idempotent — a second load
-    /// re-reads the same file, and ``TriggerController/apply(_:)`` starts from nothing —
-    /// so a second call, from a label that appeared twice, needs no started-flag.
+    /// triggers are registered either way. Every step is idempotent — a second load
+    /// re-reads the same file, ``TriggerController/apply(_:)`` starts from nothing, and a
+    /// second start replaces the observer — so a second call, from a label that appeared
+    /// twice, needs no started-flag.
     func start() {
         _ = try? store.load()
         triggers.apply(store.config)
+        disabledApps.start(from: WorkspaceFrontmostAppProvider().currentFrontmostApp())
     }
 }

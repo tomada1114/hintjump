@@ -183,7 +183,8 @@ struct ConfigStoreTests {
     }
 
     @Test
-    func `writes nothing when the list already says what was asked for`() throws {
+    func `writes nothing when the list already says what was asked for, and adopts that list`(
+    ) throws {
         let file = FakeConfigFile(contents: "[apps]\ndisabled = [\"one\"]\n")
         let store = Self.store(file)
 
@@ -191,6 +192,7 @@ struct ConfigStoreTests {
         try store.setDisabled("two", false)
 
         #expect(file.writes.isEmpty)
+        #expect(store.config.disabledApps == ["one"])
     }
 
     @Test

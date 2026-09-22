@@ -211,5 +211,30 @@ extension HintSessionTests {
             #expect(fixture.presenter.hideCount == 1)
             #expect(fixture.clicker.clicks.isEmpty)
         }
+
+        @Test
+        func `a disabled app frontmost reads nothing, for the moment before the switch lands`() {
+            var config = HintjumpConfig.default
+            config.disabledApps = ["com.apple.finder"]
+            let frozen = config
+            let collector = FakeHintTargetCollector(answering: HintSessionTests.targetSet(count: 3))
+            let presenter = FakeHintOverlayPresenter(screen: HintSessionTests.screen)
+            let session = HintSession(
+                frontmostApp: FakeFrontmostAppProvider(answering: [HintSessionTests.app]),
+                collectors: [.clickInWindow: collector],
+                presenter: presenter,
+                clicker: FakeClickPerformer(),
+                configuration: { frozen },
+                deferToNextTurn: { _ in
+                    // Nothing is shown, so no click is ever deferred.
+                },
+            )
+
+            session.trigger(.clickInWindow)
+
+            #expect(session.overlay == nil)
+            #expect(collector.collectedApps.isEmpty)
+            #expect(presenter.shows.isEmpty)
+        }
     }
 }
