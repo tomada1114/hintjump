@@ -27,5 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its `SystemAccessibilityTrust` adapter, a `SystemSettingsOpening` port for the Status
   window's future "Open System Settings…" button, and an `AccessibilityGateViewModel` that
   refreshes on launch and on becoming active and prompts at most once per process
+- The `launch_at_login` config key works: at launch and on the status menu's new
+  "Reload Config" item, Hintjump registers or unregisters itself as a login item
+  (System Settings › General › Login Items) to match it, through the
+  `LoginItemRegistering` port and its `SMAppServiceLoginItem` adapter. A login item the
+  system refuses to change is logged and does not fail the reload; one switched off in
+  System Settings is left off
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
