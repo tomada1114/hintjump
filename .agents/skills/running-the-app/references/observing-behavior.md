@@ -1,7 +1,10 @@
 # Observing behavior with no human at the keyboard
 
 Three ways to watch a running build: a screenshot, a throwaway UI test that drives a
-flow, and a launch that starts the app in a known state. Every command here was run
+flow, and a launch that starts the app in a known state. All three run on the
+developer's Mac, so each is the last rung of `AGENTS.md`'s "How far verification goes":
+announce it and wait for the go-ahead before the first command that launches, clicks, or
+captures. Every command here was run
 against this template's own app. Write every artifact to a scratch directory outside the
 checkout — nothing below belongs in a commit.
 

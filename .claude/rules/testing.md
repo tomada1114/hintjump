@@ -31,6 +31,10 @@ Three kinds of test, split by what is under test:
   state a scene renders is built the way Core builds it (`HintLayout`), so the image is
   the product's own layout, not a hand-placed copy.
 
+The first default is also what keeps the developer's Mac out of verification: a behavior
+that only the running app can show today is a candidate for moving its decision into
+Core, so a unit test sees it instead (`AGENTS.md` › How far verification goes).
+
 A local-machine test acts only on what it owns, so it runs while the developer keeps
 working and nothing they do changes its result: it posts events to its own process
 (`CGEventClickPerformer`'s internal `.process` delivery), never at the HID level; a

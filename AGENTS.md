@@ -89,7 +89,7 @@ job call.
 | `project.yml`, or `Config/Debug.xcconfig` | `just generate && just build` |
 | A test under `LaunchUITests/`, or launch behavior | `just uitest` |
 | The Release configuration, or anything only a Release launch shows | `just smoke` |
-| Behavior only the running app shows (a view's wiring, an OS integration, a log line) | `just run`, then `just logs` — no gate asserts it, so the PR carries the evidence instead (the `running-the-app` skill) |
+| Behavior only the running app shows (a view's wiring, an OS integration, a log line) | `just run`, then `just logs` — the last rung below, announced first; no gate asserts it, so the PR carries the evidence instead (the `running-the-app` skill) |
 | A shell script under `scripts/` (including the sourced `scripts/guard/*.sh`), or `.githooks/pre-commit` | `just lint`, then `just test-scripts` |
 | `scripts/verify-hooks.sh` | `just lint`, then `just test-scripts`; `just verify-hooks` for the check itself |
 | A harness check under `scripts/checks/` (including the sourced `scripts/checks/lib.sh`) | `just lint`, then `just test-scripts`; `just check-harness` for the checks themselves |
@@ -100,6 +100,31 @@ job call.
 | `mise.toml` | `mise install`, then `just check` |
 | `.github/labels.yml`, or an issue form under `.github/ISSUE_TEMPLATE/` | `just lint` (its `typos` spell-check); `scripts/tests/sync-labels_test.sh` for `scripts/sync-labels.sh` itself |
 | `.github/rulesets/main.json`, or `scripts/apply-ruleset.sh` | `scripts/tests/apply-ruleset_test.sh` |
+
+### How far verification goes
+
+The table names the narrowest check; this is how far up to climb. The developer keeps
+working on this Mac while an agent verifies, so stop at the first rung that can see the
+change — most changes stop at the first:
+
+1. **Unit tests** — `just test`. Every decision lives in `HintjumpCore` behind a port,
+   and `HintSessionTests` drives the whole trigger → collect → label → place → key →
+   click flow with fakes. A change to an existing feature its unit tests already cover
+   is verified there and needs no run of the app. When a behavior seems to need the
+   running app, first ask whether its decision can move into Core, where a test sees it.
+2. **Quiet adapter tests** — `just test-local`. They act only on what the tests own
+   (`.claude/rules/testing.md` › Where a Test Goes), so they run while the developer
+   works, with no announcement.
+3. **The developer's Mac, last** — `just run`, and anything that presses a trigger,
+   clicks, opens a menu, or takes focus. Only for what nothing above can see: a new OS
+   integration, wiring in `App/`, a click the window server routes, the overlay taking
+   key focus. It is announced and waits for the go-ahead ("Security and human
+   approval"), and it clicks only this app or a window the check itself opened — never
+   another vendor's UI, whose reaction nobody can predict (a stray click once raised a
+   password manager's Touch ID prompt).
+
+A pull request says which rung verified it and, when it stopped below the last, why
+that was enough.
 
 ## Architecture
 
@@ -234,8 +259,9 @@ of a check that enforces it.
   needs repository admin permissions to succeed, and still needs sign-off before
   its first run against the live repository.
 - A measurement or verification that needs the developer's hands off the Mac — a
-  `just probe time` series, anything that posts input the developer would feel or whose
-  numbers a stray click or app switch would corrupt. `just test-local` is not one: its
+  `just probe time` series, a check on the last rung of "How far verification goes",
+  anything that posts input the developer would feel or whose numbers a stray click or
+  app switch would corrupt. `just test-local` is not one: its
   tests act only on what they own (`.claude/rules/testing.md` › Where a Test Goes). Say what
   is about to run, roughly how long it takes, and which windows must stay as they
   are, and wait for the go-ahead (`AskUserQuestion` in Claude Code) before the first
