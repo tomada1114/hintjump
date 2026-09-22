@@ -21,5 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the file — comments included — untouched
 - Accessibility tree reading: the `AccessibilityTreeReading` port, its `AXUIElementTreeReader`
   adapter, and the `hintjump-probe` command-line tool (`just probe`) the first verifications use
+- The app asks for Accessibility access at launch: the `AccessibilityTrustChecking` port and
+  its `SystemAccessibilityTrust` adapter, a `SystemSettingsOpening` port for the Status
+  window's future "Open System Settings…" button, and an `AccessibilityGateViewModel` that
+  refreshes on launch and on becoming active and prompts at most once per process
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
