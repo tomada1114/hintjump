@@ -137,6 +137,15 @@ ruleset:
 test-local:
     cd Packages/HintjumpKit && RUN_LOCAL_MACHINE_TESTS=1 swift test --filter 'HintjumpPlatformTests'
 
+# Run the probe tool (Tools/hintjump-probe) from a terminal that holds the Accessibility
+# grant, e.g. `just probe dump --app com.apple.finder`. It is a separate SwiftPM package,
+# never linked by the app, and it prints: its findings go under docs/research/.
+#
+# `{{ args }}` is unquoted for the same reason as `release-prep` below — just substitutes
+# a variadic parameter as one string, with no array expansion.
+probe *args:
+    swift run --package-path Tools/hintjump-probe hintjump-probe {{ args }}
+
 # Prepare a release — `just release-prep <version>`, plus `--dry-run` to check
 # without writing: sets MARKETING_VERSION, increments CURRENT_PROJECT_VERSION, and
 # rolls CHANGELOG.md's [Unreleased] entries into a dated section. Writes those two
