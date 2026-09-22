@@ -23,7 +23,8 @@ struct ReceivedMouseEvent: Equatable {
 /// test process alone (``CGEventClickPerformer/Delivery/process(_:)``) and read back from
 /// its own queue. The HID route the product takes — the pointer moving to the point and
 /// the window server handing the click to the window under it — is the one part this
-/// cannot see; the end-to-end check covers it, where no one is working.
+/// cannot see; it is left to the last rung of `AGENTS.md`'s "How far verification goes":
+/// the developer's Mac, announced first.
 @Suite("CGEventClickPerformer against the real event system", .requiresLocalMachine)
 enum CGEventClickPerformerTests {
     /// Needs the Accessibility grant, held by the application that launched the run.

@@ -48,6 +48,7 @@ just check-harness # Re-assert the harness's claims about itself (scripts/checks
 just test      # Run tests with the 80% coverage floor on HintjumpCore
 just test-fast CounterTests  # Run only the matching tests, no coverage floor (iteration only)
 just test-local    # Run the local-machine adapter tests (HintjumpPlatformTests) CI cannot run
+just record-snapshots  # Re-record the overlay's reference images (HintjumpUITests) after an intended change
 just probe dump --app com.apple.finder  # Run the probe (Tools/hintjump-probe) from a terminal with Accessibility
 just build     # Build the app (Debug)
 just run       # Build (Debug), quit any running instance, and launch the fresh build
@@ -77,7 +78,8 @@ job call.
 |---|---|
 | A Swift file under `Packages/HintjumpKit/Sources/HintjumpCore/` | `just test` |
 | A test under `Packages/HintjumpKit/Tests/HintjumpCoreTests/` | `just test` |
-| A view under `Packages/HintjumpKit/Sources/HintjumpUI/`, or anything under `App/` | `just build` |
+| A view under `Packages/HintjumpKit/Sources/HintjumpUI/` | `just test` (its rendering is compared with reference images; `just record-snapshots` for an intended change, and the new PNGs go in the PR); `just build` |
+| Anything under `App/` | `just build` |
 | An adapter under `Packages/HintjumpKit/Sources/HintjumpPlatform/` | `just test` (it compiles under `swift test`); then `just test-local` for its real-OS test, whose output goes in the PR; `just build` if `App/` wires it |
 | A test under `Packages/HintjumpKit/Tests/HintjumpPlatformTests/` | `just test-local` (`just test` and CI report these skipped — they are human-run) |
 | Anything under `Tools/hintjump-probe/` | `swift build --package-path Tools/hintjump-probe` (what CI's test job runs), then `just probe dump --app com.apple.finder` from a terminal with Accessibility |
@@ -116,6 +118,8 @@ Packages/HintjumpKit/
 │                           #   friends) — translation only, no domain logic, and
 │                           #   deliberately outside the coverage floor
 ├── Tests/HintjumpCoreTests/   # Swift Testing suites — CI-run, coverage-gated
+├── Tests/HintjumpUITests/     # Views rendered off screen and compared with the
+│                           #   reference PNGs under References/ — CI-run, no grant
 └── Tests/HintjumpPlatformTests/
                             # Adapter tests against the real OS — opt-in and human-run
                             #   (`just test-local`), reported as skipped everywhere else
