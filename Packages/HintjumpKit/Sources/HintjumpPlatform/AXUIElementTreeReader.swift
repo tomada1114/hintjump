@@ -26,7 +26,8 @@ public struct AXUIElementTreeReader: AccessibilityTreeReading {
         // Stateless: the Accessibility API is the whole dependency.
     }
 
-    /// Reads `scope` of `pid` and returns it as values, with what the read cost.
+    /// Reads `scope` of `pid`, no deeper than `maxDepth`, and returns it as values, with
+    /// what the read cost.
     ///
     /// The clock starts at the first Accessibility call and stops after the last, so the
     /// duration measures the OS round trips a strategy makes and not this process's own
@@ -38,6 +39,7 @@ public struct AXUIElementTreeReader: AccessibilityTreeReading {
         pid: pid_t,
         scope: ReadScope,
         strategy: ReadStrategy,
+        maxDepth: Int?,
     ) throws -> TreeSnapshot {
         guard AXIsProcessTrusted() else {
             throw AccessibilityReadError.notTrusted
@@ -50,13 +52,14 @@ public struct AXUIElementTreeReader: AccessibilityTreeReading {
         let start = clock.now
         let application = AXUIElementCreateApplication(pid)
         let root = try Self.root(of: application, scope: scope, pid: pid)
-        let elements = Self.walk(from: root, strategy: strategy)
+        let elements = Self.walk(from: root, strategy: strategy, maxDepth: maxDepth)
         let readDuration = clock.now - start
 
         AppLog.accessibility.debug(
             """
             read tree pid=\(pid, privacy: .public) scope=\(scope.rawValue, privacy: .public) \
             strategy=\(strategy.rawValue, privacy: .public) \
+            maxDepth=\(maxDepth.map(String.init) ?? "none", privacy: .public) \
             elements=\(elements.count, privacy: .public) \
             duration=\(readDuration.milliseconds, privacy: .public)ms
             """,
@@ -70,6 +73,18 @@ public struct AXUIElementTreeReader: AccessibilityTreeReading {
             elements: elements,
             readDuration: readDuration,
         )
+    }
+
+    /// Reads the whole tree under `scope`: ``readTree(pid:scope:strategy:maxDepth:)``
+    /// with no depth limit, so a caller that holds this adapter directly — the probe, a
+    /// local-machine test — need not name the limit it does not want.
+    @MainActor
+    public func readTree(
+        pid: pid_t,
+        scope: ReadScope,
+        strategy: ReadStrategy,
+    ) throws -> TreeSnapshot {
+        try readTree(pid: pid, scope: scope, strategy: strategy, maxDepth: nil)
     }
 
     /// Sets `AXManualAccessibility` on the application element of `pid`.

@@ -65,6 +65,7 @@ final class AppComposition {
             collectors: [
                 .clickInWindow: windowCollector,
                 .rightClickInWindow: windowCollector,
+                .appMenus: AppMenuTargetCollector(reader: AXUIElementTreeReader()),
                 .statusIcons: StatusItemTargetCollector(listing: WindowListStatusItems()),
             ],
             presenter: presenter,

@@ -101,7 +101,16 @@ extension AXUIElementTreeReader {
     /// recorded**, and only its subtree is skipped: keeping the element makes a pruned
     /// read's element list comparable with an unpruned one instead of silently shorter
     /// at the top.
-    static func walk(from root: AXUIElement, strategy: ReadStrategy) -> [ElementSnapshot] {
+    ///
+    /// An element at `depth >= maxDepth` is recorded the same way, and its children are
+    /// not pushed: a depth-limited read is a prefix of the unlimited one's levels, not a
+    /// different answer. `nil` descends everything. A batched read still receives the
+    /// element's `AXChildren` in its one call, but none of those children is read.
+    static func walk(
+        from root: AXUIElement,
+        strategy: ReadStrategy,
+        maxDepth: Int?,
+    ) -> [ElementSnapshot] {
         var elements: [ElementSnapshot] = []
         var visibleRect: CGRect?
         var stack = [Pending(element: root, depth: 0, parentIndex: nil)]
@@ -115,6 +124,9 @@ extension AXUIElementTreeReader {
             if index == 0 {
                 visibleRect = prunes ? read.frame : nil
             } else if prunes, isOutOfView(read.frame, within: visibleRect) {
+                continue
+            }
+            if let maxDepth, pending.depth >= maxDepth {
                 continue
             }
 

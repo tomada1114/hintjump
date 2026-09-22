@@ -89,6 +89,41 @@ struct AXUIElementTreeReaderTests {
         #expect(pruned.elements.map(\.role) == batchedPruned.elements.map(\.role))
         #expect(pruned.elements.map(\.depth) == batchedPruned.elements.map(\.depth))
     }
+
+    @Test
+    func `a menu bar read one level deep stops at the titles`() throws {
+        let pid = try Self.finderProcessIdentifier()
+        let limited = try Self.readFinder(
+            pid: pid,
+            scope: .menuBar,
+            strategy: .batched,
+            maxDepth: 1,
+        )
+        let whole = try Self.readFinder(pid: pid, scope: .menuBar, strategy: .batched)
+
+        let deepest = limited.elements.map(\.depth).max() ?? 0
+        #expect(deepest <= 1, "the limited read went \(deepest) levels deep")
+        let titles = limited.elements.filter { $0.role == "AXMenuBarItem" }
+        #expect(titles.count >= 5, "Finder's bar has \(titles.count) AXMenuBarItem titles")
+        // The closed menus under the titles are what the limit leaves unread.
+        #expect(
+            whole.elements.count > limited.elements.count,
+            "unlimited \(whole.elements.count) vs limited \(limited.elements.count) elements",
+        )
+        // A depth-limited read is the unlimited one's top levels, not a different answer.
+        let wholeTop = whole.elements.filter { $0.depth <= 1 }
+        #expect(limited.elements.map(\.role) == wholeTop.map(\.role))
+        #expect(limited.elements.map(\.depth) == wholeTop.map(\.depth))
+    }
+
+    @Test
+    func `a read zero levels deep is the root alone`() throws {
+        let pid = try Self.finderProcessIdentifier()
+        let root = try Self.readFinder(pid: pid, scope: .menuBar, strategy: .naive, maxDepth: 0)
+
+        #expect(root.elements.count == 1)
+        #expect(root.elements.first?.role == "AXMenuBar")
+    }
 }
 
 /// Getting at Finder, and turning a missing grant into the instruction to give it.
@@ -119,10 +154,25 @@ extension AXUIElementTreeReaderTests {
         scope: ReadScope,
         strategy: ReadStrategy,
     ) throws -> TreeSnapshot {
+        try readFinder(pid: pid, scope: scope, strategy: strategy, maxDepth: nil)
+    }
+
+    /// ``readFinder(pid:scope:strategy:)``, no deeper than `maxDepth`.
+    static func readFinder(
+        pid: pid_t,
+        scope: ReadScope,
+        strategy: ReadStrategy,
+        maxDepth: Int?,
+    ) throws -> TreeSnapshot {
         let reader = AXUIElementTreeReader()
         let tree: TreeSnapshot?
         do {
-            tree = try reader.readTree(pid: pid, scope: scope, strategy: strategy)
+            tree = try reader.readTree(
+                pid: pid,
+                scope: scope,
+                strategy: strategy,
+                maxDepth: maxDepth,
+            )
         } catch AccessibilityReadError.notTrusted {
             tree = nil
         }

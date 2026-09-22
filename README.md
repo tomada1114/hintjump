@@ -24,6 +24,9 @@ Privacy & Security › Accessibility), which it asks for at launch.
   Type a label and that element is left-clicked; the labels go away.
 - **⌃⌥⇧Space** does the same with a right click: the labels are outlined and a
   "Right click" chip names the action.
+- **⌃⇧M** puts labels on the frontmost app's menu bar menus, from the Apple menu to
+  Help. Type a label and that menu opens; from there the arrow keys, type-ahead, and
+  Return work as they always do in a menu.
 - **⌃⇧S** puts labels on the menu bar's status items — other apps' icons, Wi-Fi,
   Control Center, the clock, and Hintjump's own — left to right. Type a label and
   that item is clicked. An item hidden behind the camera housing gets no label.

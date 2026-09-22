@@ -8,13 +8,14 @@ import Testing
 /// port's first fake (`AccessibilityTreeReadingTests.swift`'s doc comment: "the first
 /// decision over a `TreeSnapshot` brings its fake with it") — ``ManualAccessibilityWaker``
 /// is that first decision. Internal rather than private because it is this port's one
-/// fake: `WindowTargetCollectorTests` reads through it too.
+/// fake: `WindowTargetCollectorTests` and `AppMenuTargetCollectorTests` read through it too.
 final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Sendable {
     /// One `readTree` call's arguments.
     struct ReadRequest: Equatable {
         let pid: pid_t
         let scope: ReadScope
         let strategy: ReadStrategy
+        let maxDepth: Int?
     }
 
     /// Safe without a lock: every test below drives it from the `@MainActor` suite, so
@@ -58,9 +59,16 @@ final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Se
         self.enableError = enableError
     }
 
-    func readTree(pid: pid_t, scope: ReadScope, strategy: ReadStrategy) throws -> TreeSnapshot {
+    func readTree(
+        pid: pid_t,
+        scope: ReadScope,
+        strategy: ReadStrategy,
+        maxDepth: Int?,
+    ) throws -> TreeSnapshot {
         let answerIndex = min(readRequests.count, readAnswers.count - 1)
-        readRequests.append(ReadRequest(pid: pid, scope: scope, strategy: strategy))
+        readRequests.append(
+            ReadRequest(pid: pid, scope: scope, strategy: strategy, maxDepth: maxDepth),
+        )
         if let readError {
             throw readError
         }
@@ -167,6 +175,36 @@ struct ManualAccessibilityWakerTests {
         #expect(result == webAreaSnapshot(pid: 42, hasChild: true))
         #expect(reader.enableManualAccessibilityCalls == [42])
         #expect(reader.readTreeCallCount == 2)
+    }
+
+    @Test
+    func `a depth limit reaches the reader on the first read and on the read after waking`() {
+        let reader = FakeAccessibilityTreeReader(readAnswers: [
+            webAreaSnapshot(pid: 42, hasChild: false),
+            webAreaSnapshot(pid: 42, hasChild: true),
+        ])
+        let waker = ManualAccessibilityWaker(reader: reader)
+
+        _ = try? waker.readTree(pid: 42, scope: .menuBar, strategy: .batched, maxDepth: 1)
+
+        #expect(reader.readRequests == [
+            .init(pid: 42, scope: .menuBar, strategy: .batched, maxDepth: 1),
+            .init(pid: 42, scope: .menuBar, strategy: .batched, maxDepth: 1),
+        ])
+    }
+
+    @Test
+    func `without a depth limit the reader is asked for the whole tree`() {
+        let reader = FakeAccessibilityTreeReader(readAnswers: [
+            webAreaSnapshot(pid: 42, hasChild: true),
+        ])
+        let waker = ManualAccessibilityWaker(reader: reader)
+
+        _ = try? waker.readTree(pid: 42, scope: .focusedWindow, strategy: .batchedPruned)
+
+        #expect(reader.readRequests == [
+            .init(pid: 42, scope: .focusedWindow, strategy: .batchedPruned, maxDepth: nil),
+        ])
     }
 
     @Test
