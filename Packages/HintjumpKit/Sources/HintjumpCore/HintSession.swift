@@ -79,6 +79,21 @@ public final class HintSession {
         return .character(first)
     }
 
+    /// What a read that ends in ``AccessibilityReadError/attributeUnsupported(_:)``
+    /// was missing, for the `trigger ignored` log line: the attribute is the root of
+    /// `entryPoint`'s read, so the window triggers lack a focused window and the menu-bar
+    /// ones a menu bar. The status-items collector reads no attribute today; should it
+    /// ever, the menu bar is where its items live.
+    static func unsupportedAttributeReason(for entryPoint: EntryPoint) -> String {
+        switch entryPoint {
+        case .clickInWindow, .rightClickInWindow:
+            "no focused window"
+
+        case .appMenus, .statusIcons:
+            "no menu bar"
+        }
+    }
+
     /// `duration` in whole milliseconds, for a log line.
     private static func milliseconds(_ duration: Duration) -> Int {
         Int((duration / .milliseconds(1)).rounded())
@@ -103,7 +118,7 @@ public final class HintSession {
         }
         guard let collector = collector(for: entryPoint),
               let app = appToCollect(for: collector),
-              let set = collect(with: collector, from: app),
+              let set = collect(with: collector, from: app, for: entryPoint),
               present(set, for: entryPoint)
         else {
             return
@@ -185,13 +200,17 @@ public final class HintSession {
     private func collect(
         with collector: any HintTargetCollecting,
         from app: FrontmostApp,
+        for entryPoint: EntryPoint,
     ) -> TargetSet? {
         do {
             return try collector.collect(from: app)
         } catch AccessibilityReadError.notTrusted {
             AppLog.hints.info("trigger ignored: accessibility not granted")
         } catch AccessibilityReadError.attributeUnsupported {
-            AppLog.hints.info("trigger ignored: no focused window")
+            AppLog.hints.info(
+                // swiftlint:disable:next line_length
+                "trigger ignored: \(Self.unsupportedAttributeReason(for: entryPoint), privacy: .public) entry=\(entryPoint.rawValue, privacy: .public)",
+            )
         } catch {
             AppLog.hints.error("trigger failed: \(String(describing: error), privacy: .public)")
         }

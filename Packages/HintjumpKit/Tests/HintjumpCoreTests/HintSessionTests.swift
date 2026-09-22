@@ -28,16 +28,32 @@ enum HintSessionTests {
             )
         }
 
-        /// `app` frontmost, `collector` behind both window entry points, and a presenter
-        /// whose every point is on `screen`.
+        /// `app` frontmost, `collector` behind both window entry points and none behind
+        /// the menu-bar ones, and a presenter whose every point is on `screen`.
         init(app: FrontmostApp?, collector: FakeHintTargetCollector, screen: CGRect?) {
+            self.init(
+                app: app,
+                collector: collector,
+                screen: screen,
+                entryPoints: [.clickInWindow, .rightClickInWindow],
+            )
+        }
+
+        /// `app` frontmost, `collector` behind `entryPoints` and no collector behind any
+        /// other, and a presenter whose every point is on `screen`.
+        init(
+            app: FrontmostApp?,
+            collector: FakeHintTargetCollector,
+            screen: CGRect?,
+            entryPoints: [EntryPoint],
+        ) {
             provider = FakeFrontmostAppProvider(answering: [app])
             self.collector = collector
             presenter = FakeHintOverlayPresenter(screen: screen)
             let deferred = turns
             session = HintSession(
                 frontmostApp: provider,
-                collectors: [.clickInWindow: collector, .rightClickInWindow: collector],
+                collectors: Dictionary(uniqueKeysWithValues: entryPoints.map { ($0, collector) }),
                 presenter: presenter,
                 clicker: clicker,
                 configuration: { .default },
