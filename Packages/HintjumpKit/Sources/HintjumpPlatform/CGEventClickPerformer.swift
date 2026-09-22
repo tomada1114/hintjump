@@ -10,8 +10,25 @@ import HintjumpCore
 /// The pointer is left at the click point on purpose — moving it back would race the
 /// target app's own handling of the click.
 ///
-/// Stateless and retains no OS object, so nothing here can cross an isolation boundary.
+/// Retains no OS object, so nothing here can cross an isolation boundary.
 public struct CGEventClickPerformer: ClickPerforming {
+    /// Where the synthesized events are posted.
+    ///
+    /// The product always posts at the HID level, which is what moves the pointer and lets
+    /// the window server route the click to whatever window is under the point. The
+    /// local-machine test posts the very same events to its own process instead, so it can
+    /// read back what was built without moving the pointer or clicking anything of the
+    /// developer's; whether the HID route lands on the right window is left to the
+    /// end-to-end check, which runs where no one is working.
+    enum Delivery: Equatable {
+        /// The HID event tap: the pointer moves, and the topmost window at the point gets
+        /// the click. What ``init()`` uses.
+        case hidSystem
+        /// Straight into one process's event queue: the pointer stays put and no other
+        /// process sees the events.
+        case process(pid_t)
+    }
+
     /// The event types and the `CGMouseButton` a ``HintjumpCore/MouseButton`` translates to.
     private struct EventKinds {
         let press: CGEventType
@@ -29,8 +46,16 @@ public struct CGEventClickPerformer: ClickPerforming {
         }
     }
 
+    /// How this performer posts; always ``Delivery/hidSystem`` outside the tests.
+    let delivery: Delivery
+
     public init() {
-        // Stateless: every click builds and posts its own events.
+        self.init(delivery: .hidSystem)
+    }
+
+    /// A performer posting through `delivery`; internal, for the local-machine test.
+    init(delivery: Delivery) {
+        self.delivery = delivery
     }
 
     private static func event(
@@ -69,7 +94,17 @@ public struct CGEventClickPerformer: ClickPerforming {
         // double-click interval at the same spot would reach the app as a double click.
         press.setIntegerValueField(.mouseEventClickState, value: 1)
         release.setIntegerValueField(.mouseEventClickState, value: 1)
-        press.post(tap: .cghidEventTap)
-        release.post(tap: .cghidEventTap)
+        post(press)
+        post(release)
+    }
+
+    private func post(_ event: CGEvent) {
+        switch delivery {
+        case .hidSystem:
+            event.post(tap: .cghidEventTap)
+
+        case let .process(pid):
+            event.postToPid(pid)
+        }
     }
 }

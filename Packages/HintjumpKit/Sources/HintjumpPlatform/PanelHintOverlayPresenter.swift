@@ -16,12 +16,25 @@ import HintjumpCore
 @MainActor
 public final class PanelHintOverlayPresenter: HintOverlayPresenting {
     /// The overlay window; internal so the local-machine test can see what was shown.
-    let panel = HintOverlayPanel()
+    let panel: HintOverlayPanel
     /// The global mouse-down monitor, installed only while the overlay is shown.
     private var mouseDownMonitor: Any?
 
-    public init() {
+    /// Whether the global mouse-down monitor is installed; internal, for the
+    /// local-machine test.
+    var isWatchingMouseDowns: Bool {
+        mouseDownMonitor != nil
+    }
+
+    public convenience init() {
         // The panel is created ordered out; nothing is shown until `show`.
+        self.init(panel: HintOverlayPanel(takesKeyFocus: true))
+    }
+
+    /// A presenter drawing into `panel`; internal, so the local-machine test can hand in
+    /// one that never becomes key.
+    init(panel: HintOverlayPanel) {
+        self.panel = panel
     }
 
     /// `rect` flipped between the port's top-left-origin space and AppKit's

@@ -21,8 +21,13 @@ final class HintOverlayPanel: NSPanel {
     /// Called when the panel stops being the key window.
     var onResignKey: (@MainActor () -> Void)?
 
+    /// Whether the panel may become the key window; `false` only in the local-machine
+    /// test, which shows the panel without taking the developer's keyboard focus and hands
+    /// it key events directly instead.
+    let takesKeyFocus: Bool
+
     override var canBecomeKey: Bool {
-        true
+        takesKeyFocus
     }
 
     override var canBecomeMain: Bool {
@@ -31,7 +36,8 @@ final class HintOverlayPanel: NSPanel {
 
     /// A panel sized later, by each `show`: the overlay covers whichever screen holds
     /// the target window, so there is no frame worth giving it up front.
-    init() {
+    init(takesKeyFocus: Bool) {
+        self.takesKeyFocus = takesKeyFocus
         super.init(
             contentRect: .zero,
             styleMask: [.borderless, .nonactivatingPanel],

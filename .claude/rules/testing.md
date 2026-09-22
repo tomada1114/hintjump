@@ -23,6 +23,14 @@ Two kinds of test, split by what is under test:
   changes an adapter pastes its `just test-local` output as the evidence no gate can
   produce.
 
+A local-machine test acts only on what it owns, so it runs while the developer keeps
+working and nothing they do changes its result: it posts events to its own process
+(`CGEventClickPerformer`'s internal `.process` delivery), never at the HID level; a
+window it shows never becomes key; and a key event is handed to the window directly
+rather than typed. What only real global input can show — the pointer moving, a click
+routed to the window under it, a panel taking key focus — is the end-to-end check's job,
+not this target's.
+
 A local-machine test never becomes the only test of a decision: it is human-run, so it
 proves nothing about the pull request nobody ran it for. Adapters stay translation-only,
 and outside the coverage floor, precisely so that stays true. When macOS withholds an
