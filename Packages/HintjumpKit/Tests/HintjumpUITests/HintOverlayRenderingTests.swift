@@ -43,7 +43,7 @@ enum ReferenceImages {
 /// with its committed reference image under `References/`. A change to the tags' layout,
 /// colours, type, typed-character dimming, the outlined right-click style, the chip, or
 /// the clamping at a screen edge changes pixels and fails here; an intended change is
-/// re-recorded with `just record-snapshots`, and the new PNGs are reviewed in the pull
+/// re-recorded with `just record-snapshots`, and the new PNG files are reviewed in the pull
 /// request like any other diff. Every tag in a scene is placed by
 /// ``HintjumpCore/HintLayout`` from a target frame, the way the session places it, so the
 /// scenes exercise the product's own sizes and clamping.

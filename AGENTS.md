@@ -78,7 +78,7 @@ job call.
 |---|---|
 | A Swift file under `Packages/HintjumpKit/Sources/HintjumpCore/` | `just test` |
 | A test under `Packages/HintjumpKit/Tests/HintjumpCoreTests/` | `just test` |
-| A view under `Packages/HintjumpKit/Sources/HintjumpUI/` | `just test` (its rendering is compared with reference images; `just record-snapshots` for an intended change, and the new PNGs go in the PR); `just build` |
+| A view under `Packages/HintjumpKit/Sources/HintjumpUI/` | `just test` (its rendering is compared with reference images; `just record-snapshots` for an intended change, and the new PNG files go in the PR); `just build` |
 | Anything under `App/` | `just build` |
 | An adapter under `Packages/HintjumpKit/Sources/HintjumpPlatform/` | `just test` (it compiles under `swift test`); then `just test-local` for its real-OS test, whose output goes in the PR; `just build` if `App/` wires it |
 | A test under `Packages/HintjumpKit/Tests/HintjumpPlatformTests/` | `just test-local` (`just test` and CI report these skipped — they are human-run) |
@@ -112,10 +112,13 @@ change — most changes stop at the first:
    click flow with fakes. A change to an existing feature its unit tests already cover
    is verified there and needs no run of the app. When a behavior seems to need the
    running app, first ask whether its decision can move into Core, where a test sees it.
-2. **Quiet adapter tests** — `just test-local`. They act only on what the tests own
+2. **Rendering tests** — also `just test`. How a view draws Core's state is checked by
+   rendering it off screen and comparing it with a reference image, so an appearance
+   change needs no screenshot of the running app.
+3. **Quiet adapter tests** — `just test-local`. They act only on what the tests own
    (`.claude/rules/testing.md` › Where a Test Goes), so they run while the developer
    works, with no announcement.
-3. **The developer's Mac, last** — `just run`, and anything that presses a trigger,
+4. **The developer's Mac, last** — `just run`, and anything that presses a trigger,
    clicks, opens a menu, or takes focus. Only for what nothing above can see: a new OS
    integration, wiring in `App/`, a click the window server routes, the overlay taking
    key focus. It is announced and waits for the go-ahead ("Security and human
@@ -144,7 +147,7 @@ Packages/HintjumpKit/
 │                           #   deliberately outside the coverage floor
 ├── Tests/HintjumpCoreTests/   # Swift Testing suites — CI-run, coverage-gated
 ├── Tests/HintjumpUITests/     # Views rendered off screen and compared with the
-│                           #   reference PNGs under References/ — CI-run, no grant
+│                           #   reference PNG files under References/ — CI-run, no grant
 └── Tests/HintjumpPlatformTests/
                             # Adapter tests against the real OS — opt-in and human-run
                             #   (`just test-local`), reported as skipped everywhere else

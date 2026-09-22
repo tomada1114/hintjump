@@ -57,6 +57,15 @@ test:
 test-fast filter:
     cd Packages/HintjumpKit && swift test --filter '{{filter}}'
 
+# Re-record the reference images the rendering tests (HintjumpUITests) compare with, after
+# an intended change to how a view draws. Writes the PNG files under
+# Packages/HintjumpKit/Tests/HintjumpUITests/References/ and lists what changed: look at
+# each one, and commit it so the pull request shows the new appearance. Never run by CI,
+# which only compares.
+record-snapshots:
+    cd Packages/HintjumpKit && RECORD_SNAPSHOTS=1 swift test --filter HintjumpUITests
+    git status --short -- Packages/HintjumpKit/Tests/HintjumpUITests/References
+
 # Build the app (Debug)
 build:
     mise exec -- xcodegen generate

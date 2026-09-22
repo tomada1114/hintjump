@@ -27,7 +27,7 @@ Three kinds of test, split by what is under test:
   `Tests/HintjumpUITests` renders it off screen with SwiftUI's `ImageRenderer` (no window,
   no display, no TCC grant, so it runs under `just test` and in CI) and compares it pixel
   by pixel with a committed PNG under `References/`. An intended change is re-recorded
-  with `just record-snapshots`, and the new PNGs are reviewed in the pull request. The
+  with `just record-snapshots`, and the new PNG files are reviewed in the pull request. The
   state a scene renders is built the way Core builds it (`HintLayout`), so the image is
   the product's own layout, not a hand-placed copy.
 
