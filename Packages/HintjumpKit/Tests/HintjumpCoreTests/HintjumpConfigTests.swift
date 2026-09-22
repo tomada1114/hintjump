@@ -55,4 +55,32 @@ struct HintjumpConfigTests {
                 == ["click_in_window", "right_click_in_window", "app_menus", "status_icons"],
         )
     }
+
+    @Test
+    func `each entry point's raw value is the key its trigger is written under`() {
+        #expect(EntryPoint.allCases.map(\.rawValue) == HintjumpConfig.default.triggers.map(\.key))
+    }
+
+    @Test(arguments: [
+        (EntryPoint.clickInWindow, "ctrl+shift+1"),
+        (EntryPoint.rightClickInWindow, "ctrl+shift+2"),
+        (EntryPoint.appMenus, "ctrl+shift+3"),
+        (EntryPoint.statusIcons, "ctrl+shift+4"),
+    ])
+    func `combination(for:) answers each entry point's own trigger`(
+        _ entryPoint: EntryPoint,
+        _ expected: String,
+    ) throws {
+        let config = try HintjumpConfig(
+            clickInWindow: KeyCombination.parse("ctrl+shift+1"),
+            rightClickInWindow: KeyCombination.parse("ctrl+shift+2"),
+            appMenus: KeyCombination.parse("ctrl+shift+3"),
+            statusIcons: KeyCombination.parse("ctrl+shift+4"),
+            hintCharacters: HintjumpConfig.default.hintCharacters,
+            disabledApps: [],
+            launchAtLogin: false,
+        )
+
+        #expect(try config.combination(for: entryPoint) == KeyCombination.parse(expected))
+    }
 }
