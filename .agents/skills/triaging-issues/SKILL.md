@@ -3,7 +3,8 @@ name: triaging-issues
 description: >
   Covers this repository's issue vocabulary: the type, priority, and blocked label
   taxonomy declared in .github/labels.yml and synced by `just labels`, what
-  `blocked: design` and `blocked: dependency` mean, and what an issue body must contain
+  `blocked: design`, `blocked: dependency`, and `blocked: external` mean, and what an
+  issue body must contain
   (a `path:line`, an observable close condition, a `Depends on #N` line). Use when filing
   a GitHub issue, triaging or re-prioritizing the backlog, picking a `priority: P0`-`P3`
   label, choosing between `bug`/`enhancement`/`documentation`/`chore`, editing
@@ -30,6 +31,7 @@ left untiered; triage adds the priority, and a `blocked:` label where one applie
 | `priority: P3` | Defer only when impact is genuinely low — nobody is waiting on it and no future issue depends on it. Not a stand-in for "I don't want to do this"; an issue that matters but is unappealing to implement belongs at its real tier. |
 | `blocked: design` | Applies when the approach has real, unresolved alternatives a human must choose between — not simply that no one has looked at it yet. It still gets a priority tier (see below); readiness and priority are independent judgments. |
 | `blocked: dependency` | Applies only alongside a `Depends on #N` line in the body (see Ordering constraints below) — the label without a named blocker can't be verified or cleared. |
+| `blocked: external` | Applies when the next step is an action nobody can take from this checkout and only the repository's owner can take at all — enrolling in a developer program, buying a domain, adding a signing secret, reading notes kept outside the repository. The body names that action. It still gets a priority tier. An agent never implements it and never clears the label; the owner removes the label once the action is done, and an issue that waits on it carries `blocked: dependency` with a `Depends on #N` line like any other. |
 
 Priority ranks impact on the rest of the backlog, not how interesting the work is. Do
 not tier an issue by how appealing it is to implement.

@@ -54,3 +54,6 @@
 - name: "blocked: dependency"
   color: f9d0c4
   description: "Waits on a specific open issue named by a Depends on #N line."
+- name: "blocked: external"
+  color: d4c5f9
+  description: "Waits on an owner-only action outside this repository (an account, a purchase, a signing identity)."
