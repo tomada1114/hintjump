@@ -76,6 +76,19 @@ struct AXUIElementTreeReaderTests {
         #expect(naive.elements.map(\.role) == batched.elements.map(\.role))
         #expect(naive.elements.map(\.depth) == batched.elements.map(\.depth))
     }
+
+    @Test
+    func `prunes the same menu bar batched as one attribute at a time`() throws {
+        let pid = try Self.finderProcessIdentifier()
+        let pruned = try Self.readFinder(pid: pid, scope: .menuBar, strategy: .pruned)
+        let batchedPruned = try Self.readFinder(pid: pid, scope: .menuBar, strategy: .batchedPruned)
+
+        // The visible subsets ride in the batched call on one path and are asked one at a
+        // time on the other; which children the walk descends must not depend on that.
+        #expect(pruned.elements.count == batchedPruned.elements.count)
+        #expect(pruned.elements.map(\.role) == batchedPruned.elements.map(\.role))
+        #expect(pruned.elements.map(\.depth) == batchedPruned.elements.map(\.depth))
+    }
 }
 
 /// Getting at Finder, and turning a missing grant into the instruction to give it.

@@ -84,8 +84,9 @@ public enum ReadStrategy: String, CaseIterable, Sendable {
     case batchedPruned
     /// One Accessibility API call per attribute per element, the simplest possible walk.
     case naive
-    /// Skips a subtree whose frame does not intersect the visible rectangle, and reads
-    /// only the visible rows or children of a table, outline, or list.
+    /// Skips a subtree whose frame does not intersect the visible rectangle or is clipped
+    /// to a sliver, and reads only the visible rows or children of a table, outline, or
+    /// list.
     case pruned
 
     /// Whether every attribute of an element is fetched in a single call.
@@ -99,8 +100,8 @@ public enum ReadStrategy: String, CaseIterable, Sendable {
         }
     }
 
-    /// Whether subtrees outside the visible rectangle, and rows or children the
-    /// application reports as invisible, are left unread.
+    /// Whether subtrees outside the visible rectangle or clipped to a sliver, and rows
+    /// or children the application reports as invisible, are left unread.
     public var prunesInvisibleSubtrees: Bool {
         switch self {
         case .batchedPruned, .pruned:

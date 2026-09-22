@@ -6,17 +6,17 @@ import ApplicationServices
 /// answer for is an absence, not a failure, so every function returns `nil` or an empty
 /// collection. Only the root read in `AXUIElementTreeReader.swift` can fail a whole read.
 extension AXUIElementTreeReader {
-    /// Every attribute of one element in a single Accessibility call.
+    /// Every attribute named in `names` of one element in a single Accessibility call.
     ///
     /// The options are empty rather than `.stopOnError`, so an attribute this element
     /// does not support does not abandon the others: its slot comes back as an `AXValue`
     /// carrying an `AXError`, which ``isFailure(_:)`` drops. The result is keyed by name
     /// instead of read by position, so the two read paths cannot drift out of order.
-    static func batchedValues(of element: AXUIElement) -> [String: AnyObject] {
+    static func batchedValues(of element: AXUIElement, names: [String]) -> [String: AnyObject] {
         var raw: CFArray?
         let error = AXUIElementCopyMultipleAttributeValues(
             element,
-            attributeNames as CFArray,
+            names as CFArray,
             AXCopyMultipleAttributeOptions(),
             &raw,
         )
@@ -25,16 +25,16 @@ extension AXUIElementTreeReader {
         }
 
         var result: [String: AnyObject] = [:]
-        for (name, value) in zip(attributeNames, values) where !isFailure(value) {
+        for (name, value) in zip(names, values) where !isFailure(value) {
             result[name] = value
         }
         return result
     }
 
     /// The same attributes, one Accessibility call each.
-    static func individualValues(of element: AXUIElement) -> [String: AnyObject] {
+    static func individualValues(of element: AXUIElement, names: [String]) -> [String: AnyObject] {
         var result: [String: AnyObject] = [:]
-        for name in attributeNames {
+        for name in names {
             var value: CFTypeRef?
             guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success,
                   let value
