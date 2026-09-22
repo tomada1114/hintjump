@@ -15,6 +15,26 @@ Dependabot, or pinned actions. This template starts with all of them.
 **Starting your own app from this template?** Jump to
 [Using This Template](#using-this-template).
 
+## Using Hintjump
+
+Hintjump lives in the menu bar and needs Accessibility access (System Settings ›
+Privacy & Security › Accessibility), which it asks for at launch.
+
+- **⌃⇧Space** puts short labels on the clickable elements of the frontmost window.
+  Type a label and that element is left-clicked; the labels go away.
+- **⌃⌥⇧Space** does the same with a right click: the labels are outlined and a
+  "Right click" chip names the action.
+- **Esc** closes the labels without clicking, and so does pressing the same shortcut
+  again or clicking anywhere with the mouse. Backspace undoes a typed character.
+
+Labels are lowercase ASCII letters, read as the characters you type. Type them with an
+ABC (US-layout) input source: with another layout or an input method active, a key
+may produce a different character, or none, and the label will not match. This is a
+documented limitation, not something Hintjump works around.
+
+The shortcuts and the label characters are set in `~/.config/hintjump/config.toml`
+(status menu › Open Config File, then Reload Config).
+
 ## Quickstart
 
 Prerequisites: Xcode 26.5+, [mise](https://mise.jdx.dev/), and
