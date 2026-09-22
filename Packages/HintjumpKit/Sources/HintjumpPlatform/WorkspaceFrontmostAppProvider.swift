@@ -20,22 +20,13 @@ public struct WorkspaceFrontmostAppProvider: FrontmostAppProviding {
     ///
     /// A snapshot of this instant, not a subscription: the adapter registers for no
     /// notification and keeps no state, matching the pull-style contract of the port
-    /// it implements. Live updates would be a separate observing port, not a change
-    /// of behavior here.
+    /// it implements. Live updates are the separate observing port's job
+    /// (``WorkspaceFrontmostAppObserver``), not a change of behavior here.
     ///
     /// `NSWorkspace` answers `nil` when no application is frontmost; a running
     /// application with no `localizedName` is dropped rather than given a made-up one,
     /// so Core decides what "unavailable" reads like.
     public func currentFrontmostApp() -> FrontmostApp? {
-        guard let application = NSWorkspace.shared.frontmostApplication,
-              let name = application.localizedName
-        else {
-            return nil
-        }
-        return FrontmostApp(
-            name: name,
-            bundleIdentifier: application.bundleIdentifier,
-            processIdentifier: application.processIdentifier,
-        )
+        NSWorkspace.shared.frontmostApplication.flatMap(FrontmostApp.init)
     }
 }
