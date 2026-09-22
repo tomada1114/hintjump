@@ -1,16 +1,17 @@
 ---
 name: running-the-app
 description: >
-  Covers running this app to see a change working: just run to launch the fresh Debug
-  build, confirming the running process really is that build, reading its unified-log
-  output with just logs and log show, taking a screenshot of the app window or the whole
-  screen with screencapture, driving a flow with a throwaway XCUITest under just uitest,
-  putting the app in a known state with launch arguments or environment variables, and
-  just test-local and just reset-permissions. Use when asked to run the app, to launch
-  or start it, or to screenshot it, when a change has to be verified in the real app
-  rather than in tests, when the app must be observed with no human at the keyboard,
-  when a TCC permission prompt or a System Settings step needs a human hand-off, or
-  when deciding what evidence a pull request carries for behavior no CI job can assert.
+  Covers running this app to see a change working — and, first, whether a change needs
+  the running app at all: unit tests, then quiet adapter tests, then the developer's Mac
+  last and announced. Then: just run to launch the fresh Debug build, confirming the
+  running process is that build, reading its unified log with just logs and log show,
+  screenshots with screencapture, a throwaway XCUITest under just uitest, launch
+  arguments or environment variables for a known state, just test-local, and just
+  reset-permissions. Use when asked to run, launch, or screenshot the app, when deciding
+  how far to verify a change, when a change has to be verified in the real app rather
+  than in tests, when a TCC permission prompt or a System Settings step needs a human
+  hand-off, or when deciding what evidence a pull request carries for behavior no CI job
+  can assert.
 ---
 
 # Running the App
@@ -28,6 +29,24 @@ person actually sees — the view that renders nothing, the adapter that returns
 answer because macOS withheld a grant, the log line that never fires. That is what
 launching is for, and its result is evidence in the pull request, never a substitute for
 a test.
+
+## First: does this change need a launch at all?
+
+Usually not. This is the developer's own Mac, and they keep working on it while an agent
+verifies: a launch presses real hotkeys, moves the real pointer, takes keyboard focus,
+and can click into other apps. So a launch is the last rung of `AGENTS.md`'s "How far
+verification goes", and the rungs below it are climbed first:
+
+- **The change touches a feature its unit tests already cover** → `just test` is the
+  verification. Stop there, and say so in the pull request; that is a normal outcome,
+  not a gap.
+- **The change is an adapter's translation** → `just test-local`, which is quiet.
+- **Only a running app can show it** → first ask whether the decision can move into
+  Core, where a test sees it. If it truly cannot, announce the run — what it does, how
+  long, which windows to leave alone — and wait for the go-ahead (`AskUserQuestion` in
+  Claude Code); an approval earlier in the session does not cover a new run. Click only
+  this app or a window the check opened; another vendor's status item or menu can do
+  anything (one raised a password manager's Touch ID prompt).
 
 ## Launch the build you just made
 
@@ -141,6 +160,8 @@ app — and only this app — so the next launch prompts from scratch.
 No gate runs any of this, so the pull request is where it lands. State the exact command
 you ran, not a paraphrase, and paste:
 
+- **Which rung verified it** — the tests that cover the change and, when nothing was
+  launched, why they were enough.
 - **`just test-local` output** for any change under `Sources/HintjumpPlatform/` — required
   by `AGENTS.md`'s Review Checklist, and the one thing CI reports as skipped rather than
   absent.
