@@ -58,7 +58,11 @@ let fakeClock = Date(timeIntervalSince1970: fakeClockEpochSeconds)
 @Suite("ConfigStore")
 struct ConfigStoreTests {
     static func store(_ file: FakeConfigFile) -> ConfigStore {
-        ConfigStore(file: file) { fakeClock }
+        store(file, loginItem: FakeLoginItem(isRegistered: false))
+    }
+
+    static func store(_ file: FakeConfigFile, loginItem: FakeLoginItem) -> ConfigStore {
+        ConfigStore(file: file, loginItem: loginItem) { fakeClock }
     }
 
     @Test
@@ -209,5 +213,115 @@ struct ConfigStoreTests {
             try store.setDisabled("one", true)
         }
         #expect(file.writes.isEmpty)
+    }
+
+    // MARK: - launch_at_login
+
+    @Test
+    func `load registers the login item when the file turns the key on`() throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = true\n")
+        let loginItem = FakeLoginItem(isRegistered: false)
+
+        try Self.store(file, loginItem: loginItem).load()
+
+        #expect(loginItem.setCalls == [true])
+        #expect(loginItem.isRegistered)
+    }
+
+    @Test
+    func `a fresh machine's default file unregisters a leftover login item`() throws {
+        let file = FakeConfigFile(contents: nil)
+        let loginItem = FakeLoginItem(isRegistered: true)
+
+        try Self.store(file, loginItem: loginItem).load()
+
+        #expect(loginItem.setCalls == [false])
+        #expect(loginItem.isRegistered == false)
+    }
+
+    @Test
+    func `reload applies a changed key, in both directions`() throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = false\n")
+        let loginItem = FakeLoginItem(isRegistered: false)
+        let store = Self.store(file, loginItem: loginItem)
+        try store.load()
+        #expect(loginItem.setCalls.isEmpty)
+
+        file.contents = "[startup]\nlaunch_at_login = true\n"
+        try store.reload()
+        #expect(loginItem.setCalls == [true])
+
+        file.contents = "[startup]\nlaunch_at_login = false\n"
+        try store.reload()
+        #expect(loginItem.setCalls == [true, false])
+        #expect(loginItem.isRegistered == false)
+    }
+
+    @Test(arguments: [true, false])
+    func `leaves the login item alone when it already matches`(_ enabled: Bool) throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = \(enabled)\n")
+        let loginItem = FakeLoginItem(isRegistered: enabled)
+        let store = Self.store(file, loginItem: loginItem)
+
+        try store.load()
+        try store.reload()
+
+        #expect(loginItem.setCalls.isEmpty)
+    }
+
+    @Test
+    func `a login item that refuses the change does not fail the reload`() throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = true\n")
+        let loginItem = FakeLoginItem(isRegistered: false)
+        loginItem.setError = fakeLoginItemError
+        let store = Self.store(file, loginItem: loginItem)
+
+        let loaded = try store.load()
+        let reloaded = try store.reload()
+
+        #expect(loaded.launchAtLogin)
+        #expect(reloaded.launchAtLogin)
+        #expect(store.config.launchAtLogin)
+        #expect(store.lastLoad?.result == .success(reloaded))
+        #expect(loginItem.setCalls == [true, true])
+        #expect(loginItem.isRegistered == false)
+    }
+
+    @Test
+    func `a reload that fails to parse leaves the login item alone`() throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = false\n")
+        let loginItem = FakeLoginItem(isRegistered: false)
+        let store = Self.store(file, loginItem: loginItem)
+        try store.load()
+
+        file.contents = "[startup]\nlaunch_at_login = true\nhotkey_left = \"ctrl+a\"\n"
+        #expect(throws: ConfigError(line: 3, reason: "unknown key `hotkey_left`")) {
+            try store.reload()
+        }
+
+        #expect(loginItem.setCalls.isEmpty)
+    }
+
+    @Test
+    func `a read failure leaves the login item alone`() {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = true\n")
+        file.readError = FakeFileError()
+        let loginItem = FakeLoginItem(isRegistered: false)
+
+        #expect(throws: FakeFileError()) {
+            try Self.store(file, loginItem: loginItem).load()
+        }
+        #expect(loginItem.setCalls.isEmpty)
+    }
+
+    @Test
+    func `the disabled-apps write-back does not touch the login item`() throws {
+        let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = true\n")
+        let loginItem = FakeLoginItem(isRegistered: false)
+        let store = Self.store(file, loginItem: loginItem)
+
+        try store.setDisabled("com.apple.Finder", true)
+
+        #expect(loginItem.setCalls.isEmpty)
     }
 }
