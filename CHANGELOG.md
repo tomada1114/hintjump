@@ -105,6 +105,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   assertion a menu-bar agent (`LSUIElement`, `MenuBarExtra`) needs instead of the
   shipped windowed shape, proven against `just build`, `just uitest`, and `just smoke`,
   plus where an `NSStatusItem` delegate lives and what XCUITest can see of a status item
+- `docs/distribution.md` gains a "Sandboxed or not" section: the capabilities that
+  force the App Sandbox off (Accessibility API, `CGEvent` posting, global event taps,
+  file access outside the container), what stays on regardless (Hardened Runtime,
+  Developer ID signing, notarization), what it costs (no Mac App Store), and the
+  `INFOPLIST_KEY_NS…UsageDescription` build settings a TCC-gated API needs. The
+  `starting-an-app` skill makes deciding the posture an explicit, human-signed-off
+  step; the shipped `App/MyApp.entitlements` stays sandboxed
 - `just logs` streams this app's unified-log output — the records whose subsystem is
   the bundle identifier `project.yml` declares, read by the new
   `scripts/bundle-id.sh`, so both recipes that need it survive

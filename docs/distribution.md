@@ -50,6 +50,87 @@ xattr -dr com.apple.quarantine /Applications/MyApp.app
 
 Document this in your release notes, or better, configure the secrets above.
 
+## Sandboxed or not
+
+`App/MyApp.entitlements` ships with `com.apple.security.app-sandbox` set to
+`true`, and that is the right default: it is what the Mac App Store requires,
+and it keeps a bug in the app from reaching the rest of the user's machine.
+Some apps cannot keep it. Decide this before the first feature — the decision
+shapes which distribution channels stay open — and because turning it off
+widens what the app may do to the user's machine, it needs a human's sign-off
+(`AGENTS.md`'s "Security and human approval" covers the entitlements file).
+
+### What forces the sandbox off
+
+There is no entitlement that buys these back. Inside a container they fail at
+runtime, so an app that needs one is unsandboxed or it does not ship:
+
+- **Controlling other apps through the Accessibility API** — `AXUIElement*`
+  calls that read or move another application's windows. `AXIsProcessTrusted()`
+  is never granted to a sandboxed process.
+- **Posting synthesized input** — `CGEvent.post`, whether to drive another app
+  or to fake a keystroke system-wide.
+- **Global event taps** — `CGEvent.tapCreate` on `.cghidEventTap`, the usual
+  way a utility watches for a hotkey while another app is frontmost.
+- **Arbitrary file access** — reading `~/.ssh/config`, a dotfile, or any path
+  the user did not hand over through an open panel. A sandboxed app can still
+  reach a user-picked file, and keep reaching it across launches through a
+  security-scoped bookmark; it cannot go looking on its own.
+
+Plenty of privileged-looking work does *not* require dropping it: automating
+another app through Apple Events (the
+`com.apple.security.automation.apple-events` entitlement), outbound network
+access, and screen capture all work sandboxed with the right entitlement and
+the user's consent.
+
+### What stays on regardless
+
+- **Hardened Runtime** — `ENABLE_HARDENED_RUNTIME: YES` in `project.yml` is a
+  separate mechanism from the sandbox, and notarization requires it either way.
+- **Developer ID signing and notarization** — neither cares whether the app is
+  sandboxed. The release workflow signs whatever the entitlements file says
+  (`codesign --options runtime --entitlements App/MyApp.entitlements`).
+- **Every gate in this repository** — nothing in `just check`, `just smoke`, or
+  CI reads the entitlements file, so flipping the key changes no check.
+
+### What it costs
+
+- **The Mac App Store is out.** The sandbox is a hard store requirement, so an
+  unsandboxed app ships only through direct distribution — which is what this
+  template builds anyway (see "Future steps" below).
+- **Every permission becomes the user's problem.** Accessibility, Input
+  Monitoring, and Screen Recording are granted only in System Settings ›
+  Privacy & Security, one toggle at a time, and macOS re-prompts after the app
+  is re-signed with a different identity. Budget the onboarding screen that
+  explains it.
+
+### The usage-description keys
+
+`project.yml` sets `GENERATE_INFOPLIST_FILE: YES`, so there is no `Info.plist`
+to hand-edit: a privacy string is an `INFOPLIST_KEY_NS…UsageDescription` build
+setting on the `MyApp` target, next to the ones already there.
+
+```yaml
+targets:
+  MyApp:
+    settings:
+      base:
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "MyApp asks Finder to reveal the file you picked."
+```
+
+A TCC-gated API whose key is missing does not fall back to an error — the
+system terminates the process at the moment of the call, so the failure shows
+up at launch, never at build time. The keys these apps reach for most often:
+
+| What the app does | Key |
+|---|---|
+| Automates another app (Apple Events) | `NSAppleEventsUsageDescription` |
+| Reads the Desktop, Documents, or Downloads folder | `NSDesktopFolderUsageDescription`, `NSDocumentsFolderUsageDescription`, `NSDownloadsFolderUsageDescription` |
+| Reads removable or network volumes | `NSRemovableVolumeUsageDescription`, `NSNetworkVolumesUsageDescription` |
+| Camera or microphone | `NSCameraUsageDescription`, `NSMicrophoneUsageDescription` |
+| Calendars, Contacts, Reminders, Photos | `NSCalendarsFullAccessUsageDescription`, `NSContactsUsageDescription`, `NSRemindersFullAccessUsageDescription`, `NSPhotoLibraryUsageDescription` |
+| Accessibility, Input Monitoring, Screen Recording | none — no key exists; prompt with the API's own trust check and send the user to System Settings |
+
 ## Future steps (deliberately out of template scope)
 
 - **Homebrew cask**: as of Homebrew 5.0 (2026), unsigned/un-notarized casks
@@ -58,4 +139,5 @@ Document this in your release notes, or better, configure the secrets above.
   ask, and sign your appcast (see
   [Sparkle's documentation](https://sparkle-project.org/documentation/)).
 - **Mac App Store**: a different signing/provisioning pipeline entirely; this
-  template targets direct distribution via GitHub Releases.
+  template targets direct distribution via GitHub Releases. It also requires
+  the App Sandbox, which "Sandboxed or not" above says some apps cannot keep.
