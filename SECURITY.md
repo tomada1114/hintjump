@@ -5,7 +5,7 @@
 **Do NOT open a public issue for security vulnerabilities.**
 
 Please report security vulnerabilities through
-[GitHub Security Advisories](https://github.com/your-username/my-app/security/advisories/new).
+[GitHub Security Advisories](https://github.com/tomada1114/hintjump/security/advisories/new).
 
 Include:
 

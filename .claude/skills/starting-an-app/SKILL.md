@@ -24,8 +24,8 @@ repository script is written or tested (`writing-repo-scripts`); what a gate fil
 contain (`changing-gates`); the README's own prose (`updating-docs`).
 
 This repository ships a bootstrap script on purpose. Its placeholders are a fixed,
-small set of literals — `MyApp`, `my-app`, `com.example`, `your-username`, `Your Name`,
-and `you@example.com` — with no framework inventory to enumerate, so a single literal
+small set of literals — `Hintjump`, `hintjump`, `io.github.tomada1114`, `tomada1114`, `tomada`,
+and `tmasuyama1114@gmail.com` — with no framework inventory to enumerate, so a single literal
 find-and-replace over tracked files is the whole job, and a script does it more
 reliably than a checklist would. The script stays in the tree after it runs, so the
 record of what it did is a file anyone can still read, and CI's `bootstrap-smoke` job
@@ -58,7 +58,7 @@ scripts/bootstrap.sh CoolApp --bundle-id-prefix io.example --github-user janedoe
   file before running if it should be renamed too. It skips binary and empty files and
   leaves a file without a match untouched. This is why the script refuses to run
   outside a git checkout (see `writing-repo-scripts`).
-- **Paths** named after the app (`MyAppKit`, `MyAppCore`, …) are renamed deepest-first,
+- **Paths** named after the app (`HintjumpKit`, `HintjumpCore`, …) are renamed deepest-first,
   skipping `.git/` and build output, and the Xcode project is regenerated.
 - **`.template-origin`** records where the app was cut from: the template commit on
   line 1, its repository on line 2, then comment lines. It is written only when the
@@ -127,7 +127,7 @@ both shapes side by side: the `project.yml` keys, the `App/` entry point, and th
 Decide this with the shape, before the first feature. An app that drives other
 applications through the Accessibility API, posts `CGEvent`s, installs a global event
 tap, or reads files the user never picked through an open panel cannot be sandboxed —
-and an unsandboxed app can never ship on the Mac App Store. `App/MyApp.entitlements`
+and an unsandboxed app can never ship on the Mac App Store. `App/Hintjump.entitlements`
 ships with `com.apple.security.app-sandbox` on and stays on unless the new app is one
 of those.
 

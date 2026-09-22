@@ -7,26 +7,26 @@
 │ App/                                  (app shell) │  @main, WindowGroup — wiring
 │                                                   │  only; composition root
 ├─────────────────────────┬─────────────────────────┤
-│ MyAppUI     (SwiftUI)   │ MyAppPlatform     (OS)  │  siblings — neither one
+│ HintjumpUI     (SwiftUI)   │ HintjumpPlatform     (OS)  │  siblings — neither one
 │ thin views, no business │ adapters behind Core    │  imports the other
 │ logic                   │ ports; AppKit and co.   │
 ├─────────────────────────┴─────────────────────────┤
-│ MyAppCore                                 (logic) │  models, view models, ports;
+│ HintjumpCore                                 (logic) │  models, view models, ports;
 │                                                   │  no UI/OS-framework import —
 │                                                   │  enforced by lint and test;
 │                                                   │  80% line-coverage floor
 └───────────────────────────────────────────────────┘
 ```
 
-The dependency direction is strictly one-way: `MyAppCore` ← `MyAppUI` and
-`MyAppCore` ← `MyAppPlatform`, and both ← `App`.
+The dependency direction is strictly one-way: `HintjumpCore` ← `HintjumpUI` and
+`HintjumpCore` ← `HintjumpPlatform`, and both ← `App`.
 
-`MyAppCore` must stay free of UI frameworks so it also serves an iOS target
+`HintjumpCore` must stay free of UI frameworks so it also serves an iOS target
 (`docs/adding-ios.md`). SwiftPM's target graph cannot stop `import SwiftUI` — a system
 framework is not a package dependency — so the boundary is enforced twice, by text
 match: `.swiftlint.yml`'s `no_ui_import_in_core` custom rule (the pre-commit hook,
 `just lint`, CI's `lint` job) and the `ArchitectureBoundaryTests` suite in
-`MyAppCoreTests` (`just test`, CI's `test` job). Both reject the UI frameworks
+`HintjumpCoreTests` (`just test`, CI's `test` job). Both reject the UI frameworks
 `SwiftUI`, `AppKit`, `UIKit`, and `Cocoa` (which re-exports AppKit), and the
 OS-integration frameworks an adapter reaches for first — `ApplicationServices`
 (accessibility), `Carbon` (hotkeys), and `ServiceManagement` (login items) — including
@@ -41,21 +41,21 @@ Apple-only frameworks such as Combine stay allowed, and so does Foundation — a
 ## Ports and adapters
 
 Code that talks to the OS — `NSWorkspace`, accessibility, a Carbon hotkey, an event tap,
-an `NSPanel` overlay, a login item — lives in `MyAppPlatform`, never in Core, a view, or
+an `NSPanel` overlay, a login item — lives in `HintjumpPlatform`, never in Core, a view, or
 the shell. It is always the same four pieces, and the template ships one worked example
 of them to copy:
 
 1. **The port**, in Core — a `Sendable` protocol taking and returning value types Core
    owns: `FrontmostAppProviding` in
-   `Packages/MyAppKit/Sources/MyAppCore/FrontmostAppProviding.swift`.
+   `Packages/HintjumpKit/Sources/HintjumpCore/FrontmostAppProviding.swift`.
 2. **The adapter**, in Platform — the OS framework import, translating the OS type into
    the Core value and doing nothing else: `WorkspaceFrontmostAppProvider` in
-   `Packages/MyAppKit/Sources/MyAppPlatform/WorkspaceFrontmostAppProvider.swift`.
+   `Packages/HintjumpKit/Sources/HintjumpPlatform/WorkspaceFrontmostAppProvider.swift`.
 3. **The fake**, in the test target — a real implementation answering from data the test
    hands it, used by the Core tests of whatever consumes the port
    (`.claude/rules/testing.md` › Fakes, not mocks): `FakeFrontmostAppProvider` in
-   `Packages/MyAppKit/Tests/MyAppCoreTests/FrontmostAppViewModelTests.swift`.
-4. **The local-machine test**, in `Packages/MyAppKit/Tests/MyAppPlatformTests` — the
+   `Packages/HintjumpKit/Tests/HintjumpCoreTests/FrontmostAppViewModelTests.swift`.
+4. **The local-machine test**, in `Packages/HintjumpKit/Tests/HintjumpPlatformTests` — the
    adapter against the *real* OS, which the fake by construction cannot check:
    `WorkspaceFrontmostAppProviderTests` asks the live `NSWorkspace`. Every suite there
    carries the `.requiresLocalMachine` trait, so it runs only with
@@ -70,8 +70,8 @@ of them to copy:
 to a Core view model, so nothing below it knows which implementation answered. A test
 substitutes the fake at that same seam.
 
-`MyAppPlatform` is deliberately **outside the coverage floor** — `scripts/coverage.sh`
-measures `Sources/MyAppCore` only. That is a constraint on adapters rather than a
+`HintjumpPlatform` is deliberately **outside the coverage floor** — `scripts/coverage.sh`
+measures `Sources/HintjumpCore` only. That is a constraint on adapters rather than a
 licence: an adapter carries translation, so it has no branch worth a test. The moment
 one needs a decision, the decision moves into Core behind the port, where the floor
 sees it. What the floor cannot hold is the translation itself — whether the OS really
@@ -79,7 +79,7 @@ answers what the adapter assumes — and that is what the fourth piece is for.
 
 ## Logging
 
-**`MyAppCore` imports `os` directly, and that does not break the boundary.** The ban
+**`HintjumpCore` imports `os` directly, and that does not break the boundary.** The ban
 list above is UI frameworks and the OS-integration frameworks an adapter reaches for;
 `os` is neither. It pulls in no AppKit, it is available on every Apple platform Core is
 meant to serve (`docs/adding-ios.md`), and it writes to the unified log rather than
@@ -90,13 +90,13 @@ and `OSLog` are therefore absent from both halves of the ban list, `.swiftlint.y
 `no_ui_import_in_core` and `ArchitectureBoundaryTests`, and a test case pins their
 absence so narrowing that list later fails loudly.
 
-Every logger lives in `AppLog` (`Packages/MyAppKit/Sources/MyAppCore/AppLog.swift`), the
+Every logger lives in `AppLog` (`Packages/HintjumpKit/Sources/HintjumpCore/AppLog.swift`), the
 one place the subsystem is spelled. It is a literal — the app's bundle identifier — and
 not `Bundle.main.bundleIdentifier`, which answers for the test runner under `swift test`
 and for the preview agent inside an Xcode preview; `scripts/bootstrap.sh` rewrites the
 literal with the same placeholder replacement that rewrites `project.yml`, and
-`AppLogTests` fails if the two disagree. `MyAppUI`, `MyAppPlatform`, and `App/` log
-through the same loggers, which they already see by importing `MyAppCore`, so one
+`AppLogTests` fails if the two disagree. `HintjumpUI`, `HintjumpPlatform`, and `App/` log
+through the same loggers, which they already see by importing `HintjumpCore`, so one
 `just logs` stream shows the whole app.
 
 The conventions that go with it — one category per concern, a privacy annotation on
@@ -110,19 +110,19 @@ example: it logs that a refresh happened `.public` and the other application's n
 
 | You are adding… | It goes in… | Tested by… |
 |---|---|---|
-| Domain logic, state, view models | `Packages/MyAppKit/Sources/MyAppCore` | Swift Testing in `Tests/MyAppCoreTests` (coverage-gated) |
-| Views, view modifiers | `Packages/MyAppKit/Sources/MyAppUI` | Core view-model tests + the launch UI test |
-| OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/MyAppKit/Sources/MyAppPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (coverage-gated), plus an opt-in local-machine test of the adapter in `Tests/MyAppPlatformTests` — `just test-local` |
+| Domain logic, state, view models | `Packages/HintjumpKit/Sources/HintjumpCore` | Swift Testing in `Tests/HintjumpCoreTests` (coverage-gated) |
+| Views, view modifiers | `Packages/HintjumpKit/Sources/HintjumpUI` | Core view-model tests + the launch UI test |
+| OS integration: AppKit, accessibility, hotkeys, login items, the file system beyond Foundation | `Packages/HintjumpKit/Sources/HintjumpPlatform`, as an adapter behind a Core port | Core tests through a fake of the port (coverage-gated), plus an opt-in local-machine test of the adapter in `Tests/HintjumpPlatformTests` — `just test-local` |
 | App lifecycle, scenes, menus, wiring an adapter to a view model | `App/` | `LaunchUITests` + `just smoke` |
 
 That last row carries one decision the table cannot: the app's *shape*. The template
 ships a regular windowed app — `WindowGroup`, a Dock tile, a launch test that waits for
 a window. A menu-bar agent (`LSUIElement`, `MenuBarExtra`, a launch test that waits for
-a status item) changes `project.yml`, `App/MyAppApp.swift`, and
+a status item) changes `project.yml`, `App/HintjumpApp.swift`, and
 `LaunchUITests/LaunchTests.swift`, and nothing below them.
 `.agents/skills/starting-an-app/references/app-shapes.md` gives both shapes as proven
 code, including where an `NSApplicationDelegateAdaptor`'s delegate lives when
-`MenuBarExtra` is not enough (`MyAppPlatform`, never `App/`).
+`MenuBarExtra` is not enough (`HintjumpPlatform`, never `App/`).
 
 Keeping logic out of views is what makes the coverage floor honest: the gate
 measures the code that can regress silently, not SwiftUI layout. The same reasoning
@@ -146,7 +146,7 @@ starting points.
 
 Four needs turn up in nearly every hotkey-driven or menu-bar app, and each one's
 zero-dependency answer is stated first on purpose. In this layout that answer is an
-adapter in `MyAppPlatform` behind a Core port ("Ports and adapters" above) — usually
+adapter in `HintjumpPlatform` behind a Core port ("Ports and adapters" above) — usually
 less code than integrating a package, and it keeps the decision in Core where the
 coverage floor sees it. Reach for a package only when the "worth it when" sentence
 describes your app.
@@ -160,7 +160,7 @@ answer for your app.
 
 **Global hotkeys.** Carbon's `RegisterEventHotKey` is still the supported API for a
 system-wide shortcut, and wrapping it costs roughly sixty lines: an adapter in
-`MyAppPlatform` that installs one `EventHandlerUPP`, keeps an id→handler dictionary,
+`HintjumpPlatform` that installs one `EventHandlerUPP`, keeps an id→handler dictionary,
 and hands Core a `Sendable` port. `Carbon` is one of the frameworks Core may not
 import, which is why the adapter is the shape rather than a workaround. A package is
 worth it when your users rebind shortcuts in the UI — the recorder control, its
@@ -171,11 +171,11 @@ the registration.
   MIT; 3.1.0 released 2026-09-11; not archived; floor `.macOS(.v10_15)`, at or below
   this package's `.macOS(.v14)`; one Swift target, no binary target, no build plugin,
   no package dependencies. It ships AppKit and SwiftUI recorder views, so it belongs to
-  `MyAppUI` and `MyAppPlatform` — its types must not reach Core.
+  `HintjumpUI` and `HintjumpPlatform` — its types must not reach Core.
 
 **Launch at login.** No package. `SMAppService.mainApp.register()` (ServiceManagement,
 macOS 13+, below this package's macOS 14 floor) is the entire API, with
-`SMAppService.mainApp.status` to read it back; it lives in a `MyAppPlatform` adapter
+`SMAppService.mainApp.status` to read it back; it lives in a `HintjumpPlatform` adapter
 because `ServiceManagement` is also on Core's blocked-import list. Do not add
 `sindresorhus/LaunchAtLogin`: that repository now redirects to `LaunchAtLogin-Legacy`
 and is archived (last release v5.0.2, 2024-06-25), so it fails the checklist's
@@ -187,7 +187,7 @@ the job.
 
 **A human-editable config file.** `Codable` plus `JSONEncoder`/`JSONDecoder` from
 Foundation covers it: set `outputFormatting` to `[.prettyPrinted, .sortedKeys]` so the
-file diffs cleanly, decode into a Core value type, and let a `MyAppPlatform` adapter
+file diffs cleanly, decode into a Core value type, and let a `HintjumpPlatform` adapter
 own the path under `~/Library/Application Support`. A package is worth it when the file
 is a contract with the user rather than an implementation detail — when they are
 expected to edit it by hand and want comments and trailing commas, which JSON has

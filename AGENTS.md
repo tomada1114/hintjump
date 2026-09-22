@@ -4,46 +4,50 @@
 
 This is a macOS SwiftUI app built from a strict template: XcodeGen generates the
 Xcode project from `project.yml`, all real code lives in a local Swift package
-(`Packages/MyAppKit`), and quality gates (SwiftLint strict, SwiftFormat, Swift 6
+(`Packages/HintjumpKit`), and quality gates (SwiftLint strict, SwiftFormat, Swift 6
 language mode, an 80% line-coverage floor on the Core module) are enforced from
 day one.
 
 ## Product
 
-**TODO: in the template this section is a placeholder.** It is the one part of this
-file about the application rather than the harness, so every repository cut from the
-template writes its own: without it an agent implementing an issue here has no in-repo
-answer to "is this in scope?". Fill in every `TODO:` below right after the rename
-(`README.md`'s "Using This Template", step 3) — once `scripts/bootstrap.sh` has run,
-`just check-harness` fails while one is left
-(`scripts/checks/product-section-filled.sh`).
-
-- **What it is, and who it is for** — TODO: one paragraph. The problem it solves, and
-  whose problem that is.
-- **The core interaction** — TODO: the one thing a user does most. If the app does not
-  do this well, nothing else about it matters.
-- **Non-goals** — TODO: what this app deliberately does not do, even where it would be
-  easy. A first version's cut list is longer than its feature list, and this is the
-  line an eager implementer crosses first: moving anything from here to a goal is a
-  human's decision, not an implementer's.
-- **Where these decisions are recorded** — TODO: where the reasoning behind the three
-  entries above lives (a `docs/` file, a design issue, a decision log), so a reader can
-  find why and not only what.
+- **What it is, and who it is for** — Hintjump is a menu-bar-resident macOS app for
+  people who want to click one thing on screen without reaching for the pointer. A
+  shortcut puts short alphanumeric labels on the clickable elements in a chosen area;
+  typing a label clicks that element and the overlay goes away. It is free and open
+  source, uses no LLM, and sends no analytics.
+- **The core interaction** — press one of four shortcuts, type one (sometimes two)
+  characters, and the element is clicked. The four entry points are separate
+  shortcuts: left click in the frontmost window, right click in the frontmost window,
+  the menu bar's app menus, and the menu bar's status items. Narrowing the target set
+  per entry point is what lets most clicks take a single character; in the frontmost
+  window the elements most likely to be clicked get the single-character labels first.
+  Speed is part of the interaction, not a nicety: labels should appear within 0.3 s of
+  the shortcut.
+- **Non-goals** — scrolling, text search, repeated/chained clicks, modifier clicks
+  (⌘-click etc.), drag, hover, copy, Mission Control and Dock targets, multi-monitor
+  support, link detection inside terminals or editors, persistent labels that stay the
+  same per element, screen-region entry points, sound effects, themes, a Hyperkey, and
+  non-ASCII labels or IME-aware typing (users are expected to type with an ABC input
+  source; that limitation is documented, not worked around). No more than four entry
+  points, and actions are left click and right click only.
+- **Where these decisions are recorded** — GitHub issues in this repository, and
+  `docs/` as decisions are made here. The pre-implementation planning notes are kept
+  outside this repository.
 
 ## Quick Reference
 
 ```bash
 just install   # Install pinned tools (mise), git hooks, and generate the Xcode project
-just generate  # Regenerate MyApp.xcodeproj from project.yml
+just generate  # Regenerate Hintjump.xcodeproj from project.yml
 just fmt       # Format code (swiftformat)
 just fix       # Format, auto-fix SwiftLint violations, then run just lint
 just lint      # Lint (scripts/lint.sh: swiftformat --lint + swiftlint --strict + shellcheck + actionlint + typos)
 just verify-hooks  # Verify the git hooks are installed and executable (scripts/verify-hooks.sh)
 just test-scripts  # Run the plain-bash tests for scripts/ (scripts/tests/run.sh)
 just check-harness # Re-assert the harness's claims about itself (scripts/checks/run-all.sh)
-just test      # Run tests with the 80% coverage floor on MyAppCore
+just test      # Run tests with the 80% coverage floor on HintjumpCore
 just test-fast CounterTests  # Run only the matching tests, no coverage floor (iteration only)
-just test-local    # Run the local-machine adapter tests (MyAppPlatformTests) CI cannot run
+just test-local    # Run the local-machine adapter tests (HintjumpPlatformTests) CI cannot run
 just build     # Build the app (Debug)
 just run       # Build (Debug), quit any running instance, and launch the fresh build
 just logs      # Stream this app's unified-log output (Ctrl-C to stop)
@@ -70,11 +74,11 @@ job call.
 
 | What you changed | The narrowest check that can fail |
 |---|---|
-| A Swift file under `Packages/MyAppKit/Sources/MyAppCore/` | `just test` |
-| A test under `Packages/MyAppKit/Tests/MyAppCoreTests/` | `just test` |
-| A view under `Packages/MyAppKit/Sources/MyAppUI/`, or anything under `App/` | `just build` |
-| An adapter under `Packages/MyAppKit/Sources/MyAppPlatform/` | `just test` (it compiles under `swift test`); then `just test-local` for its real-OS test, whose output goes in the PR; `just build` if `App/` wires it |
-| A test under `Packages/MyAppKit/Tests/MyAppPlatformTests/` | `just test-local` (`just test` and CI report these skipped — they are human-run) |
+| A Swift file under `Packages/HintjumpKit/Sources/HintjumpCore/` | `just test` |
+| A test under `Packages/HintjumpKit/Tests/HintjumpCoreTests/` | `just test` |
+| A view under `Packages/HintjumpKit/Sources/HintjumpUI/`, or anything under `App/` | `just build` |
+| An adapter under `Packages/HintjumpKit/Sources/HintjumpPlatform/` | `just test` (it compiles under `swift test`); then `just test-local` for its real-OS test, whose output goes in the PR; `just build` if `App/` wires it |
+| A test under `Packages/HintjumpKit/Tests/HintjumpPlatformTests/` | `just test-local` (`just test` and CI report these skipped — they are human-run) |
 | Formatting or style of any Swift file | `just lint` |
 | A SwiftLint or SwiftFormat violation that may be auto-fixable | `just fix` (formats, runs `swiftlint --fix`, then `just lint` reports what still needs a hand edit) |
 | One Core suite, while iterating | `just test-fast <filter>` (e.g. `just test-fast CounterTests`) — no coverage floor, so finish with `just test` |
@@ -97,20 +101,20 @@ job call.
 
 ```
 App/                        # Thin shell: @main entry point + resources, NO logic.
-                            #   The composition root: builds MyAppPlatform adapters
+                            #   The composition root: builds HintjumpPlatform adapters
                             #   and hands them to Core view models
-Packages/MyAppKit/
-├── Sources/MyAppCore/      # Domain logic + view models + the ports (protocols) OS
+Packages/HintjumpKit/
+├── Sources/HintjumpCore/      # Domain logic + view models + the ports (protocols) OS
 │                           #   code is reached through — platform-agnostic, no
 │                           #   SwiftUI/AppKit/UIKit/Cocoa/ApplicationServices/
 │                           #   Carbon/ServiceManagement import (enforced by lint
 │                           #   and test), coverage-gated at 80%
-├── Sources/MyAppUI/        # SwiftUI views — thin, delegate to Core view models
-├── Sources/MyAppPlatform/  # OS-integration adapters behind Core ports (AppKit and
+├── Sources/HintjumpUI/        # SwiftUI views — thin, delegate to Core view models
+├── Sources/HintjumpPlatform/  # OS-integration adapters behind Core ports (AppKit and
 │                           #   friends) — translation only, no domain logic, and
 │                           #   deliberately outside the coverage floor
-├── Tests/MyAppCoreTests/   # Swift Testing suites — CI-run, coverage-gated
-└── Tests/MyAppPlatformTests/
+├── Tests/HintjumpCoreTests/   # Swift Testing suites — CI-run, coverage-gated
+└── Tests/HintjumpPlatformTests/
                             # Adapter tests against the real OS — opt-in and human-run
                             #   (`just test-local`), reported as skipped everywhere else
 LaunchUITests/              # XCUITest launch guarantee (XCTest by necessity)
@@ -119,30 +123,30 @@ Config/Debug.xcconfig       # Debug-only build settings project.yml cannot expre
                             #   Config/Local.xcconfig (a local signing identity)
 ```
 
-- New logic goes in `MyAppCore` with tests; views only render Core state
+- New logic goes in `HintjumpCore` with tests; views only render Core state
 - The dependency direction is one-way: Core ← UI and Core ← Platform, both ← App.
-  `MyAppUI` and `MyAppPlatform` are siblings and never import each other
-- OS integration goes in `MyAppPlatform` as an adapter behind a `Sendable` port Core
+  `HintjumpUI` and `HintjumpPlatform` are siblings and never import each other
+- OS integration goes in `HintjumpPlatform` as an adapter behind a `Sendable` port Core
   declares; a Core test substitutes a fake for that port, and `App/` picks the real one.
   Adapters translate and never decide — a decision belongs in Core, which is why
   Platform stays outside the coverage floor (`scripts/coverage.sh` measures Core only).
   The worked example is `FrontmostAppProviding` / `WorkspaceFrontmostAppProvider`
   (`docs/architecture.md` › Ports and adapters)
-- The translation an adapter does *is* checked, just not by a gate: `Tests/MyAppPlatformTests`
+- The translation an adapter does *is* checked, just not by a gate: `Tests/HintjumpPlatformTests`
   runs it against the real OS behind the `.requiresLocalMachine` opt-in, so a human runs
   it with `just test-local` and puts the output in the PR, while `just test` and CI
   report those tests as skipped (`.claude/rules/testing.md` › Where a Test Goes)
-- `MyAppCore` never imports SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon,
+- `HintjumpCore` never imports SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon,
   or ServiceManagement — in any spelling, including `@preconcurrency import AppKit` and
   `import struct SwiftUI.Color`. SwiftPM cannot block a
   system framework, so this is enforced twice: `.swiftlint.yml`'s `no_ui_import_in_core`
   and the `ArchitectureBoundaryTests` suite; their module lists change together.
   `os`/`OSLog` are deliberately *not* on that list — logging is neither a UI nor an
   OS-integration framework, so Core logs directly (`docs/architecture.md` › Logging)
-- Shipped code logs through `os.Logger`, declared once in `MyAppCore`'s `AppLog`;
+- Shipped code logs through `os.Logger`, declared once in `HintjumpCore`'s `AppLog`;
   `print`, `debugPrint`, and `NSLog` are rejected under `Packages/*/Sources/` and `App/`
   by `.swiftlint.yml`'s `no_print_in_sources` (`.claude/rules/swift.md` › Logging)
-- `MyApp.xcodeproj` is generated — edit `project.yml` instead
+- `Hintjump.xcodeproj` is generated — edit `project.yml` instead
 
 ## Skills
 
@@ -167,14 +171,14 @@ tool that sees the generated copy rather than the authored one:
 |---|---|
 | `smart-commit` | committing and pushing changes: grouping them into Conventional Commits, excluding sensitive files |
 | `create-pr` | opening or updating a pull request: the `just check` pre-check, title, template, and checklist |
-| `tdd` | a behavior change in `MyAppCore`: writing a failing Swift Testing test before the implementation |
+| `tdd` | a behavior change in `HintjumpCore`: writing a failing Swift Testing test before the implementation |
 | `changing-gates` | a file that enforces rather than implements: `.swiftlint.yml`, `.swiftformat`, `Package.swift`'s `strictSettings`, `mise.toml`, `.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, the `scripts/guard/` commit-time guard, or a workflow — and which gate would catch a change |
 | `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, and the `Depends on #N` convention |
 | `authoring-skills` | adding, editing, or reviewing a skill: authoring under `.agents/skills/`, the `just agents-sync` mirror, frontmatter, layout, and size limits |
 | `updating-docs` | deciding whether a change owes a documentation update and which surface it lands on: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/*.md`, a skill, or a `///` comment |
 | `writing-repo-scripts` | writing or testing a shell script under `scripts/`, `.githooks/pre-commit`, or `scripts/tests/`: why bash, refusing or skipping outside a git checkout, the stderr contract by example, and `scripts/tests/lib.sh` |
 | `running-the-app` | seeing a change work in the real app: `just run` and confirming the running process is the fresh build, reading `just logs`, screenshotting a window, a throwaway XCUITest, the human hand-off for a TCC prompt, and the evidence a PR then carries |
-| `integrating-system-apis` | calling a macOS system API from `MyAppPlatform`: choosing the mechanism (`CGEventTap`, `AXObserver`, a Carbon hotkey), a C callback's refcon and teardown under Swift 6 strict concurrency, TCC-gated permissions (Accessibility, Input Monitoring, Screen Recording), and what can be tested where |
+| `integrating-system-apis` | calling a macOS system API from `HintjumpPlatform`: choosing the mechanism (`CGEventTap`, `AXObserver`, a Carbon hotkey), a C callback's refcon and teardown under Swift 6 strict concurrency, TCC-gated permissions (Accessibility, Input Monitoring, Screen Recording), and what can be tested where |
 | `starting-an-app` | turning this template into a new app: `scripts/bootstrap.sh`'s rename, what the new repository keeps, its `just labels` and `just ruleset` setup, choosing the app shape (windowed or menu-bar agent), and deciding the sandbox posture |
 
 ### Rules
@@ -200,7 +204,7 @@ Get a human's sign-off before acting on any of these. No file in this repository
 blocks them mechanically today — this section is the rule itself, not a description
 of a check that enforces it.
 
-- Touching `App/MyApp.entitlements`, a signing identity — including the Debug
+- Touching `App/Hintjump.entitlements`, a signing identity — including the Debug
   signing `Config/Debug.xcconfig` and `project.yml` set up — or any signing,
   notarization, or release secret. Creating your own `Config/Local.xcconfig` is not
   such a change: it is gitignored, never committed, and changes nobody else's build.
@@ -278,8 +282,8 @@ The rules in this file are enforced by these layers, from mechanical to procedur
 | Layer | Fires on | Applies to | Holds |
 |---|---|---|---|
 | `.githooks/pre-commit` | `git commit` | anyone who ran `just install` | `scripts/lint.sh --staged-tree` — `swiftformat --lint` and `swiftlint --strict` on the staged Swift files |
-| `.swiftlint.yml`'s `no_ui_import_in_core` custom rule and `ArchitectureBoundaryTests` (`Packages/MyAppKit/Tests/MyAppCoreTests/`) | the lint rule: `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job; the test: `just test` and CI's `test` job | every author | `MyAppCore` imports none of SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon, or ServiceManagement, including attributed and kind-qualified imports — enforced twice, so removing either mechanism leaves the other. The test alone also holds the sibling boundary: `MyAppUI` and `MyAppPlatform` never import each other |
-| `.swiftlint.yml`'s `no_print_in_sources` custom rule | `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job | every author | no `print(`, `debugPrint(`, or `NSLog(` call site under `Packages/*/Sources/` or `App/` — shipped code logs through `MyAppCore`'s `AppLog` (`os.Logger`), whose output survives an `open`-launched `.app` and is what `just logs` streams. A mention inside a comment or a string literal does not count, and test targets are exempt |
+| `.swiftlint.yml`'s `no_ui_import_in_core` custom rule and `ArchitectureBoundaryTests` (`Packages/HintjumpKit/Tests/HintjumpCoreTests/`) | the lint rule: `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job; the test: `just test` and CI's `test` job | every author | `HintjumpCore` imports none of SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon, or ServiceManagement, including attributed and kind-qualified imports — enforced twice, so removing either mechanism leaves the other. The test alone also holds the sibling boundary: `HintjumpUI` and `HintjumpPlatform` never import each other |
+| `.swiftlint.yml`'s `no_print_in_sources` custom rule | `git commit` (via the hook's `swiftlint --strict`), `just lint`, and CI's `lint` job | every author | no `print(`, `debugPrint(`, or `NSLog(` call site under `Packages/*/Sources/` or `App/` — shipped code logs through `HintjumpCore`'s `AppLog` (`os.Logger`), whose output survives an `open`-launched `.app` and is what `just logs` streams. A mention inside a comment or a string literal does not count, and test targets are exempt |
 | `scripts/verify-hooks.sh` (`just install`'s last step, and `just check`'s first) | `just install` and `just check` | anyone who runs either | git resolves the hooks directory to `.githooks/` and `.githooks/pre-commit` is executable — skips under CI or the `ALLOW_MISSING_GIT_HOOKS` opt-out |
 | `scripts/check-staged.sh` (the hook's "Staged guard" section; the rules live in `scripts/guard/`) | `git commit` when any change is staged, with or without a Swift file | anyone who ran `just install` | no obviously secret-shaped path (`.env*`, `secrets/`, signing material, `Config/Local.xcconfig`) or credential-shaped content (private-key header, GitHub token, AWS access key id) lands in a commit; staged deletions are never inspected |
 | `scripts/sync-agents.sh --check` (the hook's "Skills mirror" section, `just lint`, and CI's `lint` job) | `git commit` when a staged path is under `.agents/skills/` or `.claude/skills/`; unconditionally on `just lint` and CI | every author | `.agents/skills/` and `.claude/skills/` stay byte-identical |
@@ -321,7 +325,7 @@ These gaps are deliberate and stay open until their tracking issue closes them:
   that host runs without stopping to ask, so it shapes where a human is consulted rather
   than what is possible: Codex CLI, another agent, and a human at a shell are bound by
   the instructions in this file and by the gates above, not by that file.
-- **Nothing runs `Tests/MyAppPlatformTests` for you.** A CI runner has no logged-in GUI
+- **Nothing runs `Tests/HintjumpPlatformTests` for you.** A CI runner has no logged-in GUI
   session and cannot be granted Accessibility, Input Monitoring, or Screen Recording, so
   those tests carry `.requiresLocalMachine` and are reported as skipped in `just test`
   and in CI. That is deliberate — a skip is visible where a missing test is not — and it
@@ -335,7 +339,7 @@ Before submitting a PR:
 1. `just check` passes (format, lint, tests + coverage, build)
 2. New public APIs have `///` doc comments explaining *why*
 3. Tests cover the new functionality (happy path AND error path); a change under
-   `Sources/MyAppPlatform/` also carries `just test-local` output in the PR, since no
+   `Sources/HintjumpPlatform/` also carries `just test-local` output in the PR, since no
    gate runs those tests
 4. No new dependencies without justification (see .claude/rules/project.md)
 5. User-facing changes have a `CHANGELOG.md` entry under `[Unreleased]`

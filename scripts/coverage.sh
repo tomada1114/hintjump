@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Run the MyAppKit test suite with code coverage and enforce a line-coverage
-# floor on Sources/MyAppCore. The report below is filtered to that path, so MyAppUI
-# and MyAppPlatform are outside it rather than measured and waived. The floor is
-# honest because all logic lives in Core: views render it and MyAppPlatform adapters
+# Run the HintjumpKit test suite with code coverage and enforce a line-coverage
+# floor on Sources/HintjumpCore. The report below is filtered to that path, so HintjumpUI
+# and HintjumpPlatform are outside it rather than measured and waived. The floor is
+# honest because all logic lives in Core: views render it and HintjumpPlatform adapters
 # only translate for it, so neither holds a decision a test could catch
-# (AGENTS.md > Architecture). MyAppPlatformTests does link MyAppPlatform, but its
+# (AGENTS.md > Architecture). HintjumpPlatformTests does link HintjumpPlatform, but its
 # tests are skipped unless RUN_LOCAL_MACHINE_TESTS=1 (`just test-local`) — so they
 # contribute nothing here, and measuring Platform would gate the build on whether a
 # human opted in.
@@ -39,7 +39,7 @@ if [ -n "${COVERAGE_MIN+set}" ]; then
     exit 1
 fi
 
-cd "$(dirname "$0")/../Packages/MyAppKit"
+cd "$(dirname "$0")/../Packages/HintjumpKit"
 
 swift test --enable-code-coverage
 CODECOV_JSON="$(swift test --show-codecov-path)"
@@ -51,7 +51,7 @@ data = json.load(open(sys.argv[1]))
 threshold = float(sys.argv[2])
 covered = total = 0
 for f in data["data"][0]["files"]:
-    if "/Sources/MyAppCore/" not in f["filename"]:
+    if "/Sources/HintjumpCore/" not in f["filename"]:
         continue
     s = f["summary"]["lines"]
     covered += s["covered"]
@@ -59,9 +59,9 @@ for f in data["data"][0]["files"]:
     pct = 100.0 * s["covered"] / s["count"] if s["count"] else 100.0
     print(f'{f["filename"]}: {pct:.1f}%')
 if total == 0:
-    sys.exit("coverage: no MyAppCore files found — gate misconfigured")
+    sys.exit("coverage: no HintjumpCore files found — gate misconfigured")
 pct = 100.0 * covered / total
-print(f"MyAppCore line coverage: {pct:.1f}% (floor {threshold}%)")
+print(f"HintjumpCore line coverage: {pct:.1f}% (floor {threshold}%)")
 # Two decimals in the failure message so a near-miss never rounds up to the
 # floor itself (e.g. 79.96% displayed as "80.0% is below the 80% floor").
 sys.exit(0 if pct >= threshold else f"coverage {pct:.2f}% is below the {threshold}% floor")

@@ -18,7 +18,7 @@ public struct FrontmostApp: Equatable, Sendable {
 /// A port: "which application is frontmost right now?", asked in Core's own vocabulary.
 ///
 /// This is the template's worked example of the ports-and-adapters boundary
-/// (`docs/architecture.md`). Core declares the protocol, `MyAppPlatform` holds the
+/// (`docs/architecture.md`). Core declares the protocol, `HintjumpPlatform` holds the
 /// adapter that answers it with `NSWorkspace`, tests substitute a fake, and `App/` —
 /// the composition root — decides which one a view model gets. Nothing below `App/`
 /// knows which implementation it is talking to.

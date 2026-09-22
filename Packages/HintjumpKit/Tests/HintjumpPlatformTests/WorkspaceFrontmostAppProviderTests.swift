@@ -1,6 +1,6 @@
 import AppKit
-import MyAppCore
-import MyAppPlatform
+import HintjumpCore
+import HintjumpPlatform
 import Testing
 
 /// The worked example of a local-machine adapter test, and the shape every other one

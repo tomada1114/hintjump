@@ -5,13 +5,13 @@
 #                                [--author "Full Name"] [--email ADDRESS] [--repo slug]
 #
 # Replaces (in all git-tracked text files):
-#   MyApp        -> NewName            (also MyAppKit/MyAppCore/MyAppUI/
-#                                      MyAppPlatform/MyAppApp)
-#   my-app       -> repo slug          (default: kebab-case of NewName)
-#   com.example  -> --bundle-id-prefix (kept if omitted)
-#   your-username / Your Name / you@example.com -> optional args (kept if omitted)
+#   Hintjump        -> NewName            (also HintjumpKit/HintjumpCore/HintjumpUI/
+#                                      HintjumpPlatform/HintjumpApp)
+#   hintjump       -> repo slug          (default: kebab-case of NewName)
+#   io.github.tomada1114  -> --bundle-id-prefix (kept if omitted)
+#   tomada1114 / tomada / tmasuyama1114@gmail.com -> optional args (kept if omitted)
 #
-# Then renames MyApp* paths and regenerates the Xcode project.
+# Then renames Hintjump* paths and regenerates the Xcode project.
 # Also removes the template-only CI job (bootstrap-smoke) and its required check
 # in .github/rulesets/main.json.
 # Records the template commit and repository in .template-origin (first run only;

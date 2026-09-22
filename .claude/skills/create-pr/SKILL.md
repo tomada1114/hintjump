@@ -48,7 +48,7 @@ just check
 **If any step fails, abort PR creation** and report the failure.
 
 On success, the "All checks pass (`just check`)" checklist item is verified:
-formatting, SwiftLint strict, tests with the 80% coverage floor on MyAppCore,
+formatting, SwiftLint strict, tests with the 80% coverage floor on HintjumpCore,
 and a Debug build.
 
 ## Step 3: Additional Verification
@@ -56,13 +56,13 @@ and a Debug build.
 Analyze `git diff main..HEAD` to determine:
 
 **Logic placement and coverage:**
-- New/changed logic must live in `Packages/MyAppKit/Sources/MyAppCore` with
-  matching tests in `Tests/MyAppCoreTests`
-- If logic was added to `MyAppUI` or `App/`: mark the "New logic lives in
-  MyAppCore" checklist item unchecked and warn
+- New/changed logic must live in `Packages/HintjumpKit/Sources/HintjumpCore` with
+  matching tests in `Tests/HintjumpCoreTests`
+- If logic was added to `HintjumpUI` or `App/`: mark the "New logic lives in
+  HintjumpCore" checklist item unchecked and warn
 
 **Public API changes:**
-- Check if `public` declarations in `Packages/MyAppKit/Sources/` were added,
+- Check if `public` declarations in `Packages/HintjumpKit/Sources/` were added,
   removed, or changed
 - If changes found: verify docs/ or README was updated where relevant
   - If not updated: mark "Documentation updated" as unchecked and warn
@@ -121,8 +121,8 @@ Fill each item based on verification results from Steps 2-3:
 | Item | Criteria |
 |------|----------|
 | All checks pass | `just check` passed (fmt, lint, test + coverage floor, build) |
-| New logic lives in MyAppCore and is covered | Verified in Step 3; no-logic changes = checked |
-| Adapter change: `just test-local` output in the Test Plan | Required only when `Sources/MyAppPlatform` changed — CI reports those tests as skipped, so the run is yours. No adapter change = checked |
+| New logic lives in HintjumpCore and is covered | Verified in Step 3; no-logic changes = checked |
+| Adapter change: `just test-local` output in the Test Plan | Required only when `Sources/HintjumpPlatform` changed — CI reports those tests as skipped, so the run is yours. No adapter change = checked |
 | Documentation updated | Required only when public API or behavior changed. No change = checked |
 | No breaking changes | No breaking changes, or documented in Summary = checked |
 | PR title follows Conventional Commits | Guaranteed by Step 4 |

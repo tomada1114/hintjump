@@ -3,7 +3,7 @@
 # needs Xcode or builds the package: the override cases assert the script stops
 # before calling it, and the floor cases have the stub hand back a codecov JSON
 # fixture from this case's temp directory for the real python3 gate to read.
-# The script cds into Packages/MyAppKit but, with swift stubbed, writes nothing.
+# The script cds into Packages/HintjumpKit but, with swift stubbed, writes nothing.
 set -euo pipefail
 # shellcheck source=scripts/tests/lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -20,14 +20,14 @@ stub_swift() {
     stub_command swift 'if [ "$*" = "test --show-codecov-path" ]; then echo "${CODECOV_FIXTURE}"; fi'
 }
 
-# write_fixture COVERED COUNT — a codecov JSON with one MyAppCore file at
+# write_fixture COVERED COUNT — a codecov JSON with one HintjumpCore file at
 # COVERED/COUNT lines and one UI file at 0% that the gate must ignore.
 write_fixture() {
     export CODECOV_FIXTURE="${CASE_DIR}/codecov.json"
     cat >"${CODECOV_FIXTURE}" <<JSON
 {"data": [{"files": [
-  {"filename": "/x/Sources/MyAppCore/Counter.swift", "summary": {"lines": {"covered": $1, "count": $2}}},
-  {"filename": "/x/Sources/MyAppUI/ContentView.swift", "summary": {"lines": {"covered": 0, "count": 50}}}
+  {"filename": "/x/Sources/HintjumpCore/Counter.swift", "summary": {"lines": {"covered": $1, "count": $2}}},
+  {"filename": "/x/Sources/HintjumpUI/ContentView.swift", "summary": {"lines": {"covered": 0, "count": 50}}}
 ]}]}
 JSON
 }
@@ -56,7 +56,7 @@ case_at_floor_passes() {
     write_fixture 80 100
     capture "${BASH}" "${COVERAGE_SRC}"
     assert_exit 0
-    assert_stdout_contains "MyAppCore line coverage: 80.0% (floor 80.0%)"
+    assert_stdout_contains "HintjumpCore line coverage: 80.0% (floor 80.0%)"
     grep -qx 'test --enable-code-coverage' "${STUB_BIN}/swift.log" || _fail "swift test was not run with coverage"
 }
 

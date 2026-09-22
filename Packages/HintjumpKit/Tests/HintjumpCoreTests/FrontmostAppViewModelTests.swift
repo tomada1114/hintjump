@@ -1,4 +1,4 @@
-import MyAppCore
+import HintjumpCore
 import Testing
 
 /// A fake, not a mock (`.claude/rules/testing.md` › Fakes, not mocks): it is a real

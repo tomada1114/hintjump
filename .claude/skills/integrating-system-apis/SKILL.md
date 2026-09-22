@@ -1,7 +1,7 @@
 ---
 name: integrating-system-apis
 description: >
-  Covers calling a macOS system API from MyAppPlatform under Swift 6 strict concurrency:
+  Covers calling a macOS system API from HintjumpPlatform under Swift 6 strict concurrency:
   where the port, the adapter, the fake, and the local-machine test go; a C callback
   carrying self through a refcon with Unmanaged; MainActor.assumeIsolated versus a Task
   hop; @preconcurrency import; non-Sendable CF types; teardown order. Use when adding a
@@ -15,7 +15,7 @@ description: >
 
 # Integrating System APIs
 
-**Owns:** calling a macOS system API from `MyAppPlatform` — which mechanism, how its C
+**Owns:** calling a macOS system API from `HintjumpPlatform` — which mechanism, how its C
 callback survives Swift 6, how a TCC grant behaves, and what may be tested where.
 **Does not own:** whether the app may be sandboxed at all or what shape it takes
 (`starting-an-app`); the red-green loop for the Core decision the port serves (`tdd`);
@@ -29,15 +29,15 @@ copy — `docs/architecture.md` › "Ports and adapters" is the full description
 
 | Piece | Where | Worked example |
 |---|---|---|
-| Port: a `Sendable` protocol, value types in and out | `Packages/MyAppKit/Sources/MyAppCore/` | `FrontmostAppProviding.swift` |
-| Adapter: the OS framework import, translation only | `Packages/MyAppKit/Sources/MyAppPlatform/` | `WorkspaceFrontmostAppProvider.swift` |
-| Fake: a real implementation answering from test data | `Tests/MyAppCoreTests/` | `FakeFrontmostAppProvider` in `FrontmostAppViewModelTests.swift` |
-| Local-machine test: the adapter against the real OS | `Tests/MyAppPlatformTests/` | `WorkspaceFrontmostAppProviderTests.swift` |
+| Port: a `Sendable` protocol, value types in and out | `Packages/HintjumpKit/Sources/HintjumpCore/` | `FrontmostAppProviding.swift` |
+| Adapter: the OS framework import, translation only | `Packages/HintjumpKit/Sources/HintjumpPlatform/` | `WorkspaceFrontmostAppProvider.swift` |
+| Fake: a real implementation answering from test data | `Tests/HintjumpCoreTests/` | `FakeFrontmostAppProvider` in `FrontmostAppViewModelTests.swift` |
+| Local-machine test: the adapter against the real OS | `Tests/HintjumpPlatformTests/` | `WorkspaceFrontmostAppProviderTests.swift` |
 
 Write the port first. Its signature is where you decide what the OS type collapses into,
 and an adapter written before its port almost always leaks one: `CGEvent`, `AXUIElement`,
 `NSRunningApplication`, `EventHotKeyRef`, and `CFMachPort` are all non-`Sendable`, all
-banned from `MyAppCore` by `.swiftlint.yml`'s `no_ui_import_in_core` and
+banned from `HintjumpCore` by `.swiftlint.yml`'s `no_ui_import_in_core` and
 `ArchitectureBoundaryTests`, and all better as a `struct` Core owns.
 
 Put the isolation in the port too. Nearly every OS mechanism here is bound to one run
@@ -114,7 +114,7 @@ document.
 
 ## Before you call it done
 
-- [ ] The port takes and returns Core value types only, and `MyAppCore` imports no OS
+- [ ] The port takes and returns Core value types only, and `HintjumpCore` imports no OS
       framework (`just test` runs `ArchitectureBoundaryTests`; `just lint` runs
       `no_ui_import_in_core`).
 - [ ] Every `passRetained` has exactly one `release()` on every exit path, including
@@ -123,7 +123,7 @@ document.
       owner can go away.
 - [ ] Every decision — what to show while ungranted, when to prompt, what a press means —
       is in Core behind the port, with a Core test against a fake.
-- [ ] The adapter has a `.requiresLocalMachine` test in `Tests/MyAppPlatformTests`, and
+- [ ] The adapter has a `.requiresLocalMachine` test in `Tests/HintjumpPlatformTests`, and
       the pull request carries its `just test-local` output. No gate produces it
       (`AGENTS.md` › "Enforcement layers").
 - [ ] No new `@unchecked Sendable`, `nonisolated(unsafe)`, or `try!`.

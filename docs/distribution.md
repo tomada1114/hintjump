@@ -77,14 +77,14 @@ and since macOS 15 the Control-click → Open bypass is gone. Users of unsigned
 builds must clear quarantine manually:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/MyApp.app
+xattr -dr com.apple.quarantine /Applications/Hintjump.app
 ```
 
 Document this in your release notes, or better, configure the secrets above.
 
 ## Sandboxed or not
 
-`App/MyApp.entitlements` ships with `com.apple.security.app-sandbox` set to
+`App/Hintjump.entitlements` ships with `com.apple.security.app-sandbox` set to
 `true`, and that is the right default: it is what the Mac App Store requires,
 and it keeps a bug in the app from reaching the rest of the user's machine.
 Some apps cannot keep it. Decide this before the first feature — the decision
@@ -121,7 +121,7 @@ the user's consent.
   separate mechanism from the sandbox, and notarization requires it either way.
 - **Developer ID signing and notarization** — neither cares whether the app is
   sandboxed. The release workflow signs whatever the entitlements file says
-  (`codesign --options runtime --entitlements App/MyApp.entitlements`).
+  (`codesign --options runtime --entitlements App/Hintjump.entitlements`).
 - **Every gate in this repository** — nothing in `just check`, `just smoke`, or
   CI reads the entitlements file, so flipping the key changes no check.
 
@@ -140,14 +140,14 @@ the user's consent.
 
 `project.yml` sets `GENERATE_INFOPLIST_FILE: YES`, so there is no `Info.plist`
 to hand-edit: a privacy string is an `INFOPLIST_KEY_NS…UsageDescription` build
-setting on the `MyApp` target, next to the ones already there.
+setting on the `Hintjump` target, next to the ones already there.
 
 ```yaml
 targets:
-  MyApp:
+  Hintjump:
     settings:
       base:
-        INFOPLIST_KEY_NSAppleEventsUsageDescription: "MyApp asks Finder to reveal the file you picked."
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "Hintjump asks Finder to reveal the file you picked."
 ```
 
 A TCC-gated API whose key is missing does not fall back to an error — the

@@ -9,13 +9,13 @@ paths:
 Two kinds of test, split by what is under test:
 
 - **A decision → a Core test with a fake.** Anything that branches, clamps, formats, or
-  remembers lives in `MyAppCore` and is tested in `Tests/MyAppCoreTests` against a fake
+  remembers lives in `HintjumpCore` and is tested in `Tests/HintjumpCoreTests` against a fake
   of the port (see "Fakes, not mocks" below). These run in CI on every push and are what
   the 80% line-coverage floor measures. This is the default: if an adapter looks like it
   needs a test for a decision, move the decision into Core instead.
 - **Translation to or from the OS → a local-machine test.** Whether `NSWorkspace`, an
   event tap, or the accessibility API really answers what the adapter assumes can only
-  be checked against the real OS. Those tests live in `Tests/MyAppPlatformTests`, every
+  be checked against the real OS. Those tests live in `Tests/HintjumpPlatformTests`, every
   suite carries the `.requiresLocalMachine` trait, and a human runs them with
   `just test-local`. CI cannot: a runner has no logged-in GUI session and cannot be
   granted Accessibility, Input Monitoring, or Screen Recording. So they are reported as
@@ -46,8 +46,8 @@ reading as a broken adapter.
 
 ## Fakes, not mocks
 
-A port declared in `MyAppCore` (a `Sendable` protocol whose adapter lives in
-`MyAppPlatform`) is substituted in tests by a **fake**, never a mock. A fake is a real,
+A port declared in `HintjumpCore` (a `Sendable` protocol whose adapter lives in
+`HintjumpPlatform`) is substituted in tests by a **fake**, never a mock. A fake is a real,
 working implementation of the protocol that lives in the test target, answers from data
 the test hands it, and records what it was asked in a plain value — a call count, or the
 arguments it received — which the test reads afterwards with `#expect`. It declares no

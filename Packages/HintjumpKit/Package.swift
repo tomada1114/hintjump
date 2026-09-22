@@ -9,24 +9,28 @@ let strictSettings: [SwiftSetting] = [
 ]
 
 let package = Package(
-    name: "MyAppKit",
+    name: "HintjumpKit",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "MyAppCore", targets: ["MyAppCore"]),
-        .library(name: "MyAppUI", targets: ["MyAppUI"]),
-        .library(name: "MyAppPlatform", targets: ["MyAppPlatform"]),
+        .library(name: "HintjumpCore", targets: ["HintjumpCore"]),
+        .library(name: "HintjumpUI", targets: ["HintjumpUI"]),
+        .library(name: "HintjumpPlatform", targets: ["HintjumpPlatform"]),
     ],
     targets: [
-        .target(name: "MyAppCore", swiftSettings: strictSettings),
-        .target(name: "MyAppUI", dependencies: ["MyAppCore"], swiftSettings: strictSettings),
-        // OS-integration adapters behind Core-declared ports. Depends on MyAppCore
-        // only: it must not see MyAppUI, and MyAppUI must not see it (enforced by
+        .target(name: "HintjumpCore", swiftSettings: strictSettings),
+        .target(name: "HintjumpUI", dependencies: ["HintjumpCore"], swiftSettings: strictSettings),
+        // OS-integration adapters behind Core-declared ports. Depends on HintjumpCore
+        // only: it must not see HintjumpUI, and HintjumpUI must not see it (enforced by
         // ArchitectureBoundaryTests, since SwiftPM cannot stop a system framework
         // import and this graph alone would not stop a later dependency edit).
-        .target(name: "MyAppPlatform", dependencies: ["MyAppCore"], swiftSettings: strictSettings),
+        .target(
+            name: "HintjumpPlatform",
+            dependencies: ["HintjumpCore"],
+            swiftSettings: strictSettings,
+        ),
         .testTarget(
-            name: "MyAppCoreTests",
-            dependencies: ["MyAppCore"],
+            name: "HintjumpCoreTests",
+            dependencies: ["HintjumpCore"],
             swiftSettings: strictSettings,
         ),
         // Local-machine tests for the adapters: they talk to the real OS, which a CI
@@ -34,11 +38,11 @@ let package = Package(
         // Input Monitoring, or Screen Recording). Every suite here carries the
         // `.requiresLocalMachine` trait, so the tests are reported as skipped unless
         // RUN_LOCAL_MACHINE_TESTS=1 is set — `just test-local` sets it. Linking
-        // MyAppPlatform does not put it inside the coverage floor: scripts/coverage.sh
-        // measures Sources/MyAppCore and nothing else.
+        // HintjumpPlatform does not put it inside the coverage floor: scripts/coverage.sh
+        // measures Sources/HintjumpCore and nothing else.
         .testTarget(
-            name: "MyAppPlatformTests",
-            dependencies: ["MyAppPlatform", "MyAppCore"],
+            name: "HintjumpPlatformTests",
+            dependencies: ["HintjumpPlatform", "HintjumpCore"],
             swiftSettings: strictSettings,
         ),
     ],

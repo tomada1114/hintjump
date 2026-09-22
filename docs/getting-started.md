@@ -18,13 +18,13 @@ clone needs `mise trust` first (interactively it prompts; non-interactive
 runs fail without it). `just install` then runs `mise install` (SwiftLint,
 SwiftFormat, XcodeGen, xcbeautify, actionlint, ShellCheck, typos — all pinned), points
 `core.hooksPath` at `.githooks/` for the fast pre-commit lint, and generates
-`MyApp.xcodeproj`.
+`Hintjump.xcodeproj`.
 
 ## Everyday Commands
 
 ```bash
 just check     # the full local gate: fmt → lint → test → build
-just test      # Swift Testing suite + 80% coverage floor on MyAppCore
+just test      # Swift Testing suite + 80% coverage floor on HintjumpCore
 just uitest    # XCUITest launch test (first local run may prompt for Accessibility)
 just smoke     # Release build + "does it actually launch" assertion
 ```
@@ -55,7 +55,7 @@ CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = Apple Development
 EOF
 just build
-codesign -d -r- build/dev-derived-data/Build/Products/Debug/MyApp.app
+codesign -d -r- build/dev-derived-data/Build/Products/Debug/Hintjump.app
 ```
 
 Two details cost time if you guess them:
@@ -92,10 +92,10 @@ That drops your own grants for it, so the next launch prompts from scratch.
 
 ```bash
 just generate
-open MyApp.xcodeproj
+open Hintjump.xcodeproj
 ```
 
-Remember: `MyApp.xcodeproj` is generated from `project.yml` and gitignored.
+Remember: `Hintjump.xcodeproj` is generated from `project.yml` and gitignored.
 Change targets/settings in `project.yml`, then `just generate`.
 
 ## App Icon

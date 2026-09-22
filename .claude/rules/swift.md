@@ -9,17 +9,17 @@ paths:
 - Keep modules under 300 lines; one logical concern per file
 - Keep functions under 40 lines; prefer 3 or fewer parameters (group related params in a struct)
 - Value types first: reach for `struct`/`enum`; use `class` only for identity or reference semantics
-- `MyAppCore` must never import SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon,
+- `HintjumpCore` must never import SwiftUI, AppKit, UIKit, Cocoa, ApplicationServices, Carbon,
   or ServiceManagement — it stays platform-agnostic (enforced by `.swiftlint.yml`'s
   `no_ui_import_in_core` and `ArchitectureBoundaryTests`). `os`/`OSLog` are *not* on that
   list: logging is neither a UI nor an OS-integration framework, so Core imports it
   directly (see Logging below)
-- OS integration goes in `MyAppPlatform`, as an adapter behind a `Sendable` port Core
+- OS integration goes in `HintjumpPlatform`, as an adapter behind a `Sendable` port Core
   declares: value types in and out, translation only, no branching domain logic (that
   belongs in Core, where the coverage floor sees it)
-- Views in `MyAppUI` stay thin: no business logic, delegate everything to Core view models
-- `MyAppUI` and `MyAppPlatform` are siblings and never import each other; `App/` is the
-  composition root that hands a `MyAppPlatform` adapter to a Core view model
+- Views in `HintjumpUI` stay thin: no business logic, delegate everything to Core view models
+- `HintjumpUI` and `HintjumpPlatform` are siblings and never import each other; `App/` is the
+  composition root that hands a `HintjumpPlatform` adapter to a Core view model
 - `///` doc comments on all public API; document *why*, not what the signature already says
 
 ## Error Handling
@@ -35,7 +35,7 @@ paths:
   anywhere under `Packages/*/Sources/` or `App/`: a `.app` launched the way users launch
   it discards stdout, so those lines are lost exactly when they matter. Enforced by
   `.swiftlint.yml`'s `no_print_in_sources`; test targets are exempt
-- Every logger is declared in `AppLog` (`Sources/MyAppCore/AppLog.swift`), never built
+- Every logger is declared in `AppLog` (`Sources/HintjumpCore/AppLog.swift`), never built
   inline: `subsystem` is the app's bundle identifier, spelled once as a literal there
   (`Bundle.main.bundleIdentifier` answers for the test runner under `swift test` and for
   the preview agent in a preview), and one `category` names one concern. `just logs`

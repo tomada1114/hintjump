@@ -1,4 +1,4 @@
-import MyAppCore
+import HintjumpCore
 import Testing
 
 @Suite("Counter")
