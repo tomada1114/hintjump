@@ -1,32 +1,55 @@
-import ApplicationServices
+import AppKit
 import HintjumpCore
-import HintjumpPlatform
+@testable import HintjumpPlatform
 import Testing
+
+/// What a posted mouse event looks like to the app that receives it.
+struct ReceivedMouseEvent: Equatable {
+    let type: NSEvent.EventType
+    let clickCount: Int
+    let location: CGPoint
+}
 
 /// The adapter against the real event system, in two suites that can never both run:
 /// one needs the Accessibility grant and the other needs it absent.
 ///
-/// What a Core test with a fake cannot ask — does a click posted at the HID level really
-/// reach the window under the point as one press of the right button, and does the adapter
-/// really refuse, rather than post into nothing, without the grant? Which point to click
-/// stays a Core decision with a Core test (`.claude/rules/testing.md` › Where a Test Goes).
+/// What a Core test with a fake cannot ask — are the events the adapter builds really one
+/// press and one release of the right button, a first click, at the point, as an app
+/// reads them? And does the adapter really refuse, rather than post into nothing,
+/// without the grant? Which point to click stays a Core decision with a Core test
+/// (`.claude/rules/testing.md` › Where a Test Goes).
+///
+/// It never touches the developer's pointer or windows: the events are posted to this
+/// test process alone (``CGEventClickPerformer/Delivery/process(_:)``) and read back from
+/// its own queue. The HID route the product takes — the pointer moving to the point and
+/// the window server handing the click to the window under it — is the one part this
+/// cannot see; the end-to-end check covers it, where no one is working.
 @Suite("CGEventClickPerformer against the real event system", .requiresLocalMachine)
 enum CGEventClickPerformerTests {
-    /// **This suite moves the pointer and clicks.** It clicks only its own
-    /// ``ClickTargetWindow``, and ``ClickTargetWindow/clickPoint()`` refuses to answer
-    /// unless that window is the topmost one at its center, so a click can never land on
-    /// something of the user's; still, keep hands off the Mac for the few seconds it runs
-    /// (`AGENTS.md` › "Security and human approval"). Needs the Accessibility grant, held
-    /// by the application that launched the run.
+    /// Needs the Accessibility grant, held by the application that launched the run.
     ///
-    /// Serialized: both cases show a window at the same spot, and two at once would each
-    /// catch the other's click. It repeats the enclosing suite's `.requiresLocalMachine`
-    /// so that the opt-in guarding a real click is visible where the click is.
-    @Suite("clicking the test's own window", .requiresLocalMachine, .serialized)
+    /// Serialized so the two cases never share the queue they read back from. It repeats
+    /// the enclosing suite's `.requiresLocalMachine` so that the opt-in guarding a posted
+    /// click is visible where the click is.
+    @Suite("clicking into the test's own event queue", .requiresLocalMachine, .serialized)
     @MainActor
-    struct ClicksOwnWindow {
+    struct ClicksOwnProcess {
+        /// On no display: the events carry the point as their location, and nothing at
+        /// the point is meant to receive them.
+        static let point = CGPoint(x: -20_000, y: -20_000)
+
+        static func types(for button: MouseButton) -> [NSEvent.EventType] {
+            switch button {
+            case .left:
+                [.leftMouseDown, .leftMouseUp]
+
+            case .right:
+                [.rightMouseDown, .rightMouseUp]
+            }
+        }
+
         @Test(arguments: [MouseButton.left, .right])
-        func `a click reaches the window under the point once, as that button, and leaves the pointer there`(
+        func `a click arrives as one press and one release of that button at the point`(
             button: MouseButton,
         ) throws {
             _ = try LocalMachineTests.require(
@@ -34,27 +57,36 @@ enum CGEventClickPerformerTests {
                 requires: "the Accessibility grant",
                 grant: true,
             )
-            let target = try ClickTargetWindow()
-            defer { target.close() }
-            let point = try target.clickPoint()
+            let mouseTypes: Set<NSEvent.EventType> = [
+                .leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp,
+            ]
 
-            try CGEventClickPerformer().click(at: point, button: button)
-            ClickTargetWindow.spinRunLoop(for: ClickTargetWindow.settleTime)
-
-            let expected = ClickRecordingView.Press(button: button, clickCount: 1)
-            #expect(target.recorder.presses == [expected])
-            let pointer = try #require(CGEvent(source: nil)?.location)
-            #expect(
-                abs(pointer.x - point.x) <= 1 && abs(pointer.y - point.y) <= 1,
-                "pointer at \(pointer), clicked \(point)",
+            try CGEventClickPerformer(delivery: .process(getpid())).click(
+                at: Self.point,
+                button: button,
             )
+            let received = OwnEventQueue.drain(for: OwnEventQueue.settleTime)
+                .filter { mouseTypes.contains($0.type) }
+                .map { event in
+                    ReceivedMouseEvent(
+                        type: event.type,
+                        clickCount: event.clickCount,
+                        location: event.cgEvent?.location ?? .zero,
+                    )
+                }
+
+            let expected = Self.types(for: button).map { type in
+                ReceivedMouseEvent(type: type, clickCount: 1, location: Self.point)
+            }
+            #expect(received == expected)
         }
     }
 
     /// Without the grant the OS would drop the click silently, and Core could not tell
     /// that apart from a click that landed. Runs only where the grant is absent, so on a
     /// developer's machine that holds it this reports as skipped. It posts nothing either
-    /// way: the `#require` stops the test before `click` if the grant turns out present.
+    /// way: the `#require` stops the test before `click` if the grant turns out present,
+    /// and the performer delivers to this process only, like the suite above.
     @Suite("without the Accessibility grant", .requiresLocalMachine)
     @MainActor
     struct WithoutGrant {
@@ -69,7 +101,8 @@ enum CGEventClickPerformerTests {
             )
 
             #expect(throws: ClickError.notTrusted) {
-                try CGEventClickPerformer().click(at: .zero, button: .left)
+                try CGEventClickPerformer(delivery: .process(getpid()))
+                    .click(at: .zero, button: .left)
             }
         }
     }

@@ -122,20 +122,24 @@ ruleset:
 # below. Sets RUN_LOCAL_MACHINE_TESTS=1, the opt-in the `.requiresLocalMachine` trait
 # reads, so these run here and stay reported-as-skipped everywhere else. No coverage
 # floor: adapters translate rather than decide, so `scripts/coverage.sh` still measures
-# HintjumpCore only, and `just test` is still the gate.
+# HintjumpCore only, and `just test` is still the gate. `scripts/test-local.sh` fails a
+# run that ends without Swift Testing's summary line, which would otherwise exit 0.
 #
-# Grants: today's suite needs none — NSWorkspace only needs a GUI session. A test that
-# reaches for Accessibility, Input Monitoring, or Screen Recording needs that permission
-# granted to the application that launched the run (your terminal, or Xcode) in System
-# Settings › Privacy & Security; the test process inherits its launcher's grants and
-# never gets its own. macOS reports a missing grant as an empty answer rather than an
-# error, so such a test unwraps through `LocalMachineTests.require(_:requires:)`, whose
-# failure names the grant to give instead of failing as a bare nil.
+# Quiet: it acts only on what the tests own — clicks are posted to the test process
+# itself, the overlay panel never takes key focus, and nothing is typed — so you can keep
+# working while it runs, and nothing you do changes its results.
+#
+# Grants: the Accessibility tests need that permission granted to the application that
+# launched the run (your terminal, or Xcode) in System Settings › Privacy & Security; the
+# test process inherits its launcher's grants and never gets its own. macOS reports a
+# missing grant as an empty answer rather than an error, so such a test unwraps through
+# `LocalMachineTests.require(_:requires:grant:)`, whose failure names the grant to give
+# instead of failing as a bare nil.
 #
 # Run it before a PR that touches an adapter, and paste the result in the PR: no gate
 # can do it for you.
 test-local:
-    cd Packages/HintjumpKit && RUN_LOCAL_MACHINE_TESTS=1 swift test --filter 'HintjumpPlatformTests'
+    scripts/test-local.sh
 
 # Run the probe tool (Tools/hintjump-probe) from a terminal that holds the Accessibility
 # grant, e.g. `just probe dump --app com.apple.finder`. It is a separate SwiftPM package,

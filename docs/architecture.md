@@ -64,7 +64,9 @@ of them to copy:
    session and cannot be granted Accessibility, Input Monitoring, or Screen Recording,
    so such a test could only ever fail there. A skip is the honest outcome, and a human
    runs `just test-local` when an adapter changes and puts the output in the pull
-   request (`.claude/rules/testing.md` › Where a Test Goes).
+   request (`.claude/rules/testing.md` › Where a Test Goes). Those tests act only on what
+   they own — events posted to the test process itself, a window that never becomes key —
+   so the run needs no hands off the Mac.
 
 `App/` is the composition root: the only place that constructs an adapter and hands it
 to a Core view model, so nothing below it knows which implementation answered. A test

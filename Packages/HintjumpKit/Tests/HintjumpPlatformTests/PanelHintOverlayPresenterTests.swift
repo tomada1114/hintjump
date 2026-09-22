@@ -11,9 +11,13 @@ import Testing
 /// expects, and does taking the overlay down stay silent? Needs no TCC grant — only a
 /// logged-in GUI session with a display.
 ///
-/// It shows a transparent, click-through panel of its own for a moment and makes it key,
-/// so keyboard focus leaves the frontmost app briefly; it posts no event to any other
-/// window. Serialized: every case shares the one screen.
+/// It never takes the developer's keyboard focus: the panel it shows is transparent,
+/// click-through, and built unable to become key, and key events are handed to the panel
+/// directly rather than typed. So nothing the developer types or clicks meanwhile reaches
+/// it, and no assertion here counts anything the developer could cause. That a real
+/// panel does become key without activating Hintjump is the one part this cannot see; the
+/// end-to-end check covers it, where no one is working. Serialized: every case shares the
+/// one screen.
 @Suite(
     "PanelHintOverlayPresenter against the real window server",
     .requiresLocalMachine,
@@ -21,9 +25,11 @@ import Testing
 )
 @MainActor
 struct PanelHintOverlayPresenterTests {
-    /// Long enough for the window server to order a window in or out, and for a late
-    /// resignation to arrive.
-    static let settleTime: TimeInterval = 0.3
+    /// A presenter whose panel never becomes key, so showing it leaves the developer's
+    /// keyboard focus where it is.
+    private static func quietPresenter() -> PanelHintOverlayPresenter {
+        PanelHintOverlayPresenter(panel: HintOverlayPanel(takesKeyFocus: false))
+    }
 
     private static func primaryScreen() throws -> NSScreen {
         try LocalMachineTests.require(
@@ -72,23 +78,27 @@ struct PanelHintOverlayPresenterTests {
     }
 
     @Test
-    func `show covers the canvas flipped into AppKit's coordinates, and hide takes it down silently`(
+    func `show covers the canvas flipped into AppKit's coordinates, and hide takes it down`(
     ) throws {
         NSApplication.shared.setActivationPolicy(.accessory)
         let primary = try Self.primaryScreen().frame
-        let presenter = PanelHintOverlayPresenter()
+        let presenter = Self.quietPresenter()
         let canvas = CGRect(x: 40, y: 60, width: 300, height: 200)
-        var keys: [HintKey] = []
-        var dismissals = 0
 
         presenter.show(
             canvas: canvas,
-            onKey: { keys.append($0) },
-            onDismiss: { dismissals += 1 },
+            onKey: { _ in
+                // Nothing types into a panel that cannot become key.
+            },
+            onDismiss: {
+                // A click of the developer's elsewhere may land here; it is not counted.
+            },
         )
-        ClickTargetWindow.spinRunLoop(for: Self.settleTime)
+        OwnEventQueue.drain(for: OwnEventQueue.settleTime)
 
         #expect(presenter.panel.isVisible)
+        #expect(!presenter.panel.isKeyWindow)
+        #expect(presenter.isWatchingMouseDowns)
         #expect(presenter.panel.frame == CGRect(
             x: 40,
             y: primary.height - 260,
@@ -97,11 +107,37 @@ struct PanelHintOverlayPresenterTests {
         ))
 
         presenter.hide()
-        ClickTargetWindow.spinRunLoop(for: Self.settleTime)
+        OwnEventQueue.drain(for: OwnEventQueue.settleTime)
 
         #expect(!presenter.panel.isVisible)
-        #expect(keys.isEmpty)
-        #expect(dismissals == 0)
+        #expect(!presenter.isWatchingMouseDowns)
+        #expect(presenter.panel.onKey == nil)
+        #expect(presenter.panel.onResignKey == nil)
+    }
+
+    /// No event is dispatched between `show` and the resignation, so a click of the
+    /// developer's cannot reach the mouse-down monitor and add a dismissal of its own.
+    @Test
+    func `losing key status while shown is one dismissal, and after hide it is none`() {
+        NSApplication.shared.setActivationPolicy(.accessory)
+        let presenter = Self.quietPresenter()
+        var dismissals = 0
+
+        presenter.show(
+            canvas: CGRect(x: 40, y: 60, width: 300, height: 200),
+            onKey: { _ in
+                // Not what this test is about.
+            },
+            onDismiss: { dismissals += 1 },
+        )
+        presenter.panel.resignKey()
+
+        #expect(dismissals == 1)
+
+        presenter.hide()
+        presenter.panel.resignKey()
+
+        #expect(dismissals == 1)
     }
 
     @Test(arguments: [
@@ -115,7 +151,7 @@ struct PanelHintOverlayPresenterTests {
         characters: String,
         expected: HintKey,
     ) throws {
-        let panel = HintOverlayPanel()
+        let panel = HintOverlayPanel(takesKeyFocus: false)
         var keys: [HintKey] = []
         panel.onKey = { keys.append($0) }
 
@@ -126,7 +162,7 @@ struct PanelHintOverlayPresenterTests {
 
     @Test
     func `a key-up, an auto-repeat, and a composed sequence reach no handler`() throws {
-        let panel = HintOverlayPanel()
+        let panel = HintOverlayPanel(takesKeyFocus: false)
         var keys: [HintKey] = []
         panel.onKey = { keys.append($0) }
 

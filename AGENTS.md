@@ -230,8 +230,9 @@ of a check that enforces it.
   needs repository admin permissions to succeed, and still needs sign-off before
   its first run against the live repository.
 - A measurement or verification that needs the developer's hands off the Mac — a
-  `just probe time` series, a `just test-local` run against a window that must not
-  change, anything whose numbers a stray click or app switch would corrupt. Say what
+  `just probe time` series, anything that posts input the developer would feel or whose
+  numbers a stray click or app switch would corrupt. `just test-local` is not one: its
+  tests act only on what they own (`.claude/rules/testing.md` › Where a Test Goes). Say what
   is about to run, roughly how long it takes, and which windows must stay as they
   are, and wait for the go-ahead (`AskUserQuestion` in Claude Code) before the first
   run — never assume the person is watching and knows to stop. A run that was touched
