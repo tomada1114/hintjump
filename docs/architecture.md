@@ -35,7 +35,8 @@ attributed
 imports. A `//`-commented import is ignored, but one that starts a line inside a
 `/* … */` block or a multi-line string literal is still flagged — delete it instead.
 "Platform-agnostic" here means free of those frameworks, not buildable on Linux:
-Apple-only frameworks such as Combine stay allowed, and so does Foundation.
+Apple-only frameworks such as Combine stay allowed, and so does Foundation — and so do
+`os` and `OSLog`, deliberately, so Core can log (see Logging below).
 
 ## Ports and adapters
 
@@ -64,6 +65,35 @@ measures `Sources/MyAppCore` only. That is a constraint on adapters rather than 
 licence: an adapter carries translation, so it has no branch worth a test. The moment
 one needs a decision, the decision moves into Core behind the port, where the floor
 sees it.
+
+## Logging
+
+**`MyAppCore` imports `os` directly, and that does not break the boundary.** The ban
+list above is UI frameworks and the OS-integration frameworks an adapter reaches for;
+`os` is neither. It pulls in no AppKit, it is available on every Apple platform Core is
+meant to serve (`docs/adding-ios.md`), and it writes to the unified log rather than
+touching the screen or the OS on Core's behalf. So logging is *not* modelled as a port:
+a `LoggingPort` would buy no testability — a log line is not an outcome a test asserts —
+and would cost every Core type an injected dependency it does not otherwise need. `os`
+and `OSLog` are therefore absent from both halves of the ban list, `.swiftlint.yml`'s
+`no_ui_import_in_core` and `ArchitectureBoundaryTests`, and a test case pins their
+absence so narrowing that list later fails loudly.
+
+Every logger lives in `AppLog` (`Packages/MyAppKit/Sources/MyAppCore/AppLog.swift`), the
+one place the subsystem is spelled. It is a literal — the app's bundle identifier — and
+not `Bundle.main.bundleIdentifier`, which answers for the test runner under `swift test`
+and for the preview agent inside an Xcode preview; `scripts/bootstrap.sh` rewrites the
+literal with the same placeholder replacement that rewrites `project.yml`, and
+`AppLogTests` fails if the two disagree. `MyAppUI`, `MyAppPlatform`, and `App/` log
+through the same loggers, which they already see by importing `MyAppCore`, so one
+`just logs` stream shows the whole app.
+
+The conventions that go with it — one category per concern, a privacy annotation on
+anything user-derived, and never `print`/`debugPrint`/`NSLog` under `Sources/` or `App/`
+(`.swiftlint.yml`'s `no_print_in_sources` rejects them) — are in
+`.claude/rules/swift.md` › Logging. `FrontmostAppViewModel.refresh()` is the worked
+example: it logs that a refresh happened `.public` and the other application's name
+`.private`.
 
 ## Where new code goes
 

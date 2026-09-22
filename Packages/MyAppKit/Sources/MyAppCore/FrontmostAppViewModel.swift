@@ -35,7 +35,20 @@ public final class FrontmostAppViewModel {
     /// state here is only as fresh as the last caller made it. The app refreshes when
     /// its scene becomes active; a live-updating app would observe an OS notification
     /// through a second port rather than poll this one.
+    ///
+    /// Also the template's worked example of a log call (``AppLog``): another
+    /// application's name is data about the person using this Mac, so it is
+    /// interpolated `.private` and the unified log redacts it unless someone
+    /// deliberately enables private data. The part that is safe to read at a glance —
+    /// that a refresh happened, and whether the port answered at all — stays public.
     public func refresh() {
-        frontmostApp = provider.currentFrontmostApp()
+        let answer = provider.currentFrontmostApp()
+        frontmostApp = answer
+        AppLog.frontmostApp.debug(
+            """
+            refresh: answered=\(answer != nil, privacy: .public) \
+            name=\(answer?.name ?? "", privacy: .private)
+            """,
+        )
     }
 }

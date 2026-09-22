@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A logging convention: `os.Logger` through `MyAppCore`'s new `AppLog`, whose
+  `subsystem` is the app's bundle identifier (the one `just logs` streams) and whose
+  categories name one concern each. `MyAppCore` may `import os` — it is neither a UI nor
+  an OS-integration framework, so it stays off both halves of the Core ban list
+  (`docs/architecture.md` › Logging). `FrontmostAppViewModel.refresh()` is the worked
+  example, logging another application's name `.private`
+- `.swiftlint.yml`'s `no_print_in_sources` custom rule rejects `print(`, `debugPrint(`,
+  and `NSLog(` under `Packages/*/Sources/` and `App/` (the pre-commit hook, `just lint`,
+  and CI's `lint` job); comments, string literals, and test targets are exempt
 - `MyAppPlatform` target: the home for OS-integration code, behind `Sendable` ports
   declared in `MyAppCore`. Ships a worked example — the `FrontmostAppProviding` port,
   its `NSWorkspace`-backed `WorkspaceFrontmostAppProvider` adapter, and the fake the

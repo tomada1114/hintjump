@@ -17,6 +17,11 @@ struct ArchitectureBoundaryTests {
     /// OS-integration frameworks are the ones an adapter reaches for first
     /// (accessibility, hotkeys, login items) and each belongs in `MyAppPlatform`.
     ///
+    /// `os` and `OSLog` are deliberately absent: logging is not a UI or OS-integration
+    /// framework, so Core logs directly through ``MyAppCore/AppLog``
+    /// (`docs/architecture.md` › Logging). The "ignores other modules" case below pins
+    /// that, so narrowing the list to ban them would fail a test rather than pass.
+    ///
     /// Must match `.swiftlint.yml`'s `no_ui_import_in_core`: change both lists together.
     static let forbiddenModules = [
         "SwiftUI", "AppKit", "UIKit", "Cocoa",
@@ -140,6 +145,11 @@ struct ArchitectureBoundaryTests {
         "/// import AppKit",
         "import Foundation",
         "import Observation",
+        // Logging is allowed in Core — see `forbiddenModules` above.
+        "import os",
+        "import OSLog",
+        "@preconcurrency import os",
+        "import struct os.Logger",
         "import SwiftUIExtras",
         "import ServiceManagementExtras",
         "@preconcurrency import Combine",
