@@ -100,5 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A hint-character set of 8–16 characters, or a window with more than 276 targets, no
   longer leaves targets without a label: single-character labels give way to
   two-character ones only when labels would otherwise run out
+- A popover opened from inside another popover, or from a control in a sheet, is now
+  what the click-in-window triggers label, rather than the outer popover or the whole
+  sheet behind it
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

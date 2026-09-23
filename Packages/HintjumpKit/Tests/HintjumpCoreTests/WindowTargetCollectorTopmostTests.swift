@@ -280,3 +280,26 @@ struct WindowTargetCollectorTopmostTests {
         #expect(set.container == .focusedWindow)
     }
 }
+
+// MARK: - A popover in a sheet
+
+extension WindowTargetCollectorTopmostTests {
+    @Test
+    func `a popover open in a focused sheet is hinted, not the sheet behind it`() throws {
+        let sheet = Self.tree(
+            TopmostContainerNarrowingTests.sheetWithPopover,
+            pid: PID.finder,
+            scope: .focusedWindow,
+        )
+        let collector = WindowTargetCollector(
+            reader: FakeAccessibilityTreeReader(readAnswers: [sheet]),
+            probe: FakeTopmostContainerProbe(),
+        )
+
+        let set = try collector.collect(from: Self.finder)
+
+        #expect(set.container == .popover)
+        #expect(set.rootFrame == TopmostContainerNarrowingTests.popoverFrame)
+        #expect(set.targets.map(\.role) == ["AXButton", "AXCheckBox"])
+    }
+}
