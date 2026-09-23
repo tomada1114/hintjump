@@ -70,6 +70,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to right, and typing a label left-clicks it. The items come from the on-screen window
   list in one call, with no new permission; one hidden behind the camera housing gets
   no label. It works even while Hintjump's own window is frontmost
+- Hints on an open context menu, panel, sheet, or popover: ⌃⇧Space and ⌃⌥⇧Space now
+  label whatever is on top of the frontmost window — a panel another app opened with
+  the keyboard focus (Control Center's Wi-Fi and other panels, Notification Center,
+  Spotlight, a launcher), an open context menu, a sheet or save-changes alert, or a
+  popover — and the window itself otherwise. An open menu bar menu and a floating
+  panel such as Fonts fall back to the window. The `shown` log line names the container
+  that was labeled (`container=contextMenu scope=popUpMenu pid=…`)
 - The status item shows a hint-tag icon instead of the placeholder symbol: a monochrome
   template image that follows the menu bar's light or dark appearance, the outline of a
   rounded tag with a pointer arrow inside. Its update-dot and config-error variants are

@@ -20,8 +20,9 @@ Dependabot, or pinned actions. This template starts with all of them.
 Hintjump lives in the menu bar and needs Accessibility access (System Settings ›
 Privacy & Security › Accessibility), which it asks for at launch.
 
-- **⌃⇧Space** puts short labels on the clickable elements of the frontmost window.
-  Type a label and that element is left-clicked; the labels go away.
+- **⌃⇧Space** puts short labels on the clickable elements of whatever is on top of
+  the frontmost window. Type a label and that element is left-clicked; the labels go
+  away.
 - **⌃⌥⇧Space** does the same with a right click: the labels are outlined and a
   "Right click" chip names the action.
 - **⌃⇧M** puts labels on the frontmost app's menu bar menus, from the Apple menu to
@@ -32,6 +33,16 @@ Privacy & Security › Accessibility), which it asks for at launch.
   that item is clicked. An item hidden behind the camera housing gets no label.
 - **Esc** closes the labels without clicking, and so does pressing the same shortcut
   again or clicking anywhere with the mouse. Backspace undoes a typed character.
+
+"Whatever is on top" is, in this order: a panel another app has open with the keyboard
+focus — Control Center's (Wi-Fi, Sound, and the rest), Notification Center, Spotlight,
+or a launcher such as Raycast; an open context menu (or the submenu open on it); a
+sheet, such as a save panel or a save-changes alert; a popover inside the window; and
+otherwise the window itself. Two things fall back to the window instead: an open menu
+bar menu — the shortcut does not reach Hintjump while one is open, and its own arrow
+keys and type-ahead already work — and a floating panel such as TextEdit's Fonts
+panel, which does not have the keyboard focus. When a context menu or panel cannot be
+read after all, the window is labeled as before.
 
 Labels are lowercase ASCII letters, read as the characters you type. Type them with an
 ABC (US-layout) input source: with another layout or an input method active, a key
