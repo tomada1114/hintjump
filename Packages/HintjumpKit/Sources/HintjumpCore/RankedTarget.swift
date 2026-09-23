@@ -25,11 +25,21 @@ public enum TargetTier: Int, CaseIterable, Comparable, Sendable {
 
 /// Why an element is not a target.
 ///
-/// ``TargetRanker/exclusion(ofElementAt:in:)`` checks in the order clickable, enabled,
-/// framed, large enough, inside the window, and reports the first that fails.
+/// Two stages report these. The clickable filter,
+/// ``TargetRanker/exclusion(ofElementAt:in:)``, checks in the order clickable, enabled,
+/// framed, large enough, inside the window, and reports the first that fails. Among the
+/// elements it admits, ``TargetRanker/ranking(_:)`` then drops the duplicates that would
+/// spend a label on a spot another target already covers — a window-sized group first,
+/// then what is inside a target row, then a twin of a better-ranked target — since a
+/// click lands at the survivor's visible center either way (`docs/decisions.md` ›
+/// "Clicks are synthesized mouse events at the element's visible center").
 public enum TargetExclusion: String, CaseIterable, Sendable {
     /// The element reports `AXEnabled` as `false`.
     case disabled
+    /// An `AXCell`, or an `AXTextField` inside one, whose nearest `AXRow` is itself a
+    /// target: the row takes the label. Its center selects the item without starting
+    /// Finder's click-to-rename, and a right click there opens that item's menu.
+    case insideTargetRow
     /// The element has no position or size, so there is nowhere to put its label.
     case noFrame
     /// No `AXPress` action and not one of the roles a click is known to work on.
@@ -37,8 +47,29 @@ public enum TargetExclusion: String, CaseIterable, Sendable {
     /// The element's center is outside the window's frame, or the read's root — the
     /// window — reports no frame at all.
     case outsideWindow
+    /// Another target with exactly this frame ranks earlier and keeps the label.
+    case sameFrame
     /// Narrower or shorter than ``TargetRanker/minimumTargetSize``.
     case tooSmall
+    /// Admitted only through `AXPress`, not by its role, covering at least half the
+    /// read's root, and holding another target: the pressable group every Electron
+    /// window wraps its content in, whose center is some unrelated control.
+    case windowSizedGroup
+}
+
+/// One read's ranking with the reason for everything left out — what a caller explaining
+/// a missing element needs, since a duplicate is only a duplicate among the others.
+public struct TargetRanking: Equatable, Sendable {
+    /// The targets in rank order: exactly what ``TargetRanker/rank(_:)`` returns.
+    public let targets: [RankedTarget]
+    /// Why the element at each index of the ranked list is not a target, or `nil` at a
+    /// target's index; as long as that list.
+    public let exclusions: [TargetExclusion?]
+
+    public init(targets: [RankedTarget], exclusions: [TargetExclusion?]) {
+        self.targets = targets
+        self.exclusions = exclusions
+    }
 }
 
 /// What a tier assignment is shown about one element that passed the clickable filter.

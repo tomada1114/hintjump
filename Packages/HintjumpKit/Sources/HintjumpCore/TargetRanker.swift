@@ -4,6 +4,16 @@ import CoreGraphics
 private enum Admission {
     case admitted(CGRect)
     case excluded(TargetExclusion)
+
+    var exclusion: TargetExclusion? {
+        switch self {
+        case .admitted:
+            nil
+
+        case let .excluded(reason):
+            reason
+        }
+    }
 }
 
 /// An element that passed the filter, with what its place in the order is decided by.
@@ -32,7 +42,8 @@ private struct Admitted {
 /// first — the order single- and two-character labels are handed out in.
 ///
 /// Two separable steps. The clickable filter (``exclusion(ofElementAt:in:)``) is fixed
-/// here. The tier each surviving element gets is one replaceable function,
+/// here, and so is the collapse of duplicates among what it admits (``ranking(_:)``).
+/// The tier each surviving element gets is one replaceable function,
 /// ``TierAssignment``, defaulting to ``FirstCutTiers/tier(_:)``: the rule as #37's
 /// target-count measurement revised it (`docs/decisions.md` › "The tier rule after #37's
 /// measurement; N stays 16"). Keeping it replaceable means a later revision changes
@@ -65,22 +76,19 @@ public struct TargetRanker: Sendable {
         self.assignTier = assignTier
     }
 
-    /// Why the element at `index` is not a target, or `nil` when it is one.
+    /// Why the clickable filter turns the element at `index` away, or `nil` when it
+    /// admits the element.
     ///
     /// Exposed so a caller can say why an element it expected is missing — the
-    /// measurement of how often the wanted element ranks high needs exactly that.
-    /// `index` must be a valid index of `elements`.
+    /// measurement of how often the wanted element ranks high needs exactly that. An
+    /// admitted element can still be left out as a duplicate of another target; that
+    /// depends on the rest of the read and on the rank order, so only ``ranking(_:)``
+    /// reports it. `index` must be a valid index of `elements`.
     public static func exclusion(
         ofElementAt index: Int,
         in elements: [ElementSnapshot],
     ) -> TargetExclusion? {
-        switch admission(ofElementAt: index, in: elements) {
-        case .admitted:
-            nil
-
-        case let .excluded(reason):
-            reason
-        }
+        admission(ofElementAt: index, in: elements).exclusion
     }
 
     /// The element's containers, nearest first, following ``ElementSnapshot/parentIndex``.
@@ -100,7 +108,9 @@ public struct TargetRanker: Sendable {
         return chain
     }
 
-    private static func parentIndex(
+    /// The index of the element's parent, or `nil` for the root or a parent index that
+    /// breaks the pre-order.
+    static func parentIndex(
         ofElementAt index: Int,
         in elements: [ElementSnapshot],
     ) -> Int? {
@@ -135,11 +145,14 @@ public struct TargetRanker: Sendable {
     }
 
     private static func isClickable(elementAt index: Int, in elements: [ElementSnapshot]) -> Bool {
-        let element = elements[index]
-        if element.actions.contains("AXPress") {
-            return true
-        }
-        guard let role = element.role else {
+        elements[index].actions.contains("AXPress")
+            || isClickableByRole(elementAt: index, in: elements)
+    }
+
+    /// Whether the element's role alone would let it through the filter — a listed role,
+    /// or a row directly in an outline or a table — with or without an `AXPress` action.
+    static func isClickableByRole(elementAt index: Int, in elements: [ElementSnapshot]) -> Bool {
+        guard let role = elements[index].role else {
             return false
         }
         if clickableRoles.contains(role) {
@@ -151,17 +164,59 @@ public struct TargetRanker: Sendable {
         return rowContainerRoles.contains(elements[parent].role ?? "")
     }
 
-    /// The clickable subset of `elements`, in rank order.
+    /// `sorted` as ranked targets, keeping only the first of each frame and marking the
+    /// rest ``TargetExclusion/sameFrame`` in `exclusions`.
+    private static func collapsingTwins(
+        _ sorted: [Admitted],
+        of elements: [ElementSnapshot],
+        exclusions: inout [TargetExclusion?],
+    ) -> [RankedTarget] {
+        var seenFrames = Set<DuplicateTargets.FrameKey>()
+        var targets: [RankedTarget] = []
+        for target in sorted {
+            guard seenFrames.insert(DuplicateTargets.FrameKey(target.frame)).inserted else {
+                exclusions[target.index] = .sameFrame
+                continue
+            }
+            targets.append(RankedTarget(
+                rank: targets.count + 1,
+                tier: target.tier,
+                elementIndex: target.index,
+                element: elements[target.index],
+            ))
+        }
+        return targets
+    }
+
+    /// The clickable subset of `elements`, in rank order, with no two targets for one
+    /// spot: ``ranking(_:)``'s targets.
     ///
     /// `elements` is a read's pre-order list (``TreeSnapshot/elements``): index 0 is the
     /// root, whose frame bounds every target — for a `.focusedWindow` read, the window.
     public func rank(_ elements: [ElementSnapshot]) -> [RankedTarget] {
+        ranking(elements).targets
+    }
+
+    /// The targets of `elements` in rank order, and why every other element is not one.
+    ///
+    /// The filter's admitted elements lose their duplicates in three steps, each a
+    /// ``TargetExclusion``: a pressable group covering half the root that holds another
+    /// target (``TargetExclusion/windowSizedGroup``); a cell, or a text field in a cell,
+    /// whose nearest row is still a target (``TargetExclusion/insideTargetRow``); and,
+    /// once ranked, any target whose frame an earlier target has exactly
+    /// (``TargetExclusion/sameFrame``). The survivors keep their order; ranks are
+    /// renumbered without gaps. The collapse adds only passes linear in the read, apart
+    /// from a walk up from each cell and text field to its row, since a window of about
+    /// 1,800 elements has to rank within the 0.3 s budget.
+    public func ranking(_ elements: [ElementSnapshot]) -> TargetRanking {
+        let admissions = elements.indices.map { Self.admission(ofElementAt: $0, in: elements) }
+        var exclusions = admissions.map(\.exclusion)
         guard let windowFrame = elements.first?.frame else {
-            return []
+            return TargetRanking(targets: [], exclusions: exclusions)
         }
+        DuplicateTargets.excludeStructural(in: elements, root: windowFrame, exclusions: &exclusions)
         let admitted = elements.indices.compactMap { index -> Admitted? in
-            guard case let .admitted(frame) = Self.admission(ofElementAt: index, in: elements)
-            else {
+            guard exclusions[index] == nil, case let .admitted(frame) = admissions[index] else {
                 return nil
             }
             let candidate = TargetCandidate(
@@ -171,13 +226,11 @@ public struct TargetRanker: Sendable {
             )
             return Admitted(index: index, frame: frame, tier: assignTier(candidate))
         }
-        return admitted.sorted(by: Admitted.precedes).enumerated().map { offset, target in
-            RankedTarget(
-                rank: offset + 1,
-                tier: target.tier,
-                elementIndex: target.index,
-                element: elements[target.index],
-            )
-        }
+        let targets = Self.collapsingTwins(
+            admitted.sorted(by: Admitted.precedes),
+            of: elements,
+            exclusions: &exclusions,
+        )
+        return TargetRanking(targets: targets, exclusions: exclusions)
     }
 }
