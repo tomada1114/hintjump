@@ -87,6 +87,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   content. Toolbar buttons, a site's header and navigation bar, and links inside an
   embedded frame get two-character labels (`docs/research/target-counts.md`)
 
+### Changed
+
+- A window's close, minimize, zoom, and full-screen buttons now get the last labels in
+  every window, dialogs included, instead of taking single-character labels
+
 ### Fixed
 
 - An empty embedded frame, such as an ad scrolled out of view, no longer wakes a

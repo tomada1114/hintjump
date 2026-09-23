@@ -213,7 +213,9 @@ demoting links inside an iframe to tier 4. Both are what the owner would want, b
 neither changes any number above — those elements are tier 2 behind a full tier 1 in
 every scored window — so the data does not ask for them. They would matter in a window
 with few primaries (Claude Desktop's and Obsidian's reads, where the window buttons take
-singles 7–9 and 4–6), where no wanted category was scored.
+singles 7–9 and 4–6), where no wanted category was scored. The window buttons were
+later demoted anyway, by #87 (`docs/decisions.md` › "The tier rule after #37's
+measurement; N stays 16").
 
 **N stays 16.** Under the recommended rule every added single buys about three points
 of the logged share (68% at 16, 74% at 18, 81% at 20) with no knee, and each one costs

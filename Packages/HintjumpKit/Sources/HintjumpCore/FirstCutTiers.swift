@@ -17,6 +17,11 @@ public enum FirstCutTiers {
         "AXButton", "AXMenuButton", "AXPopUpButton", "AXRadioButton",
     ]
     private static let rowOrCellRoles: Set<String> = ["AXCell", "AXRow"]
+    /// Subroles of a window's own close, minimize, zoom, and full-screen buttons: the
+    /// window's frame, not what it is read for.
+    private static let windowButtonSubroles: Set<String> = [
+        "AXCloseButton", "AXFullScreenButton", "AXMinimizeButton", "AXZoomButton",
+    ]
     /// Window subroles that mark a dialog, whose few buttons are nearly always the click.
     private static let dialogSubroles: Set<String> = ["AXDialog", "AXSystemDialog"]
     /// A web page's own header and navigation bar: the site's chrome, not what the page is
@@ -50,10 +55,15 @@ public enum FirstCutTiers {
     ///    table's text field is how a row shows its name (every file in Finder's list
     ///    view has one), not an input, and ranking it with the inputs would spend the
     ///    single-character labels on it.
-    /// 4. ``TargetTier/other``: everything else.
+    /// 4. ``TargetTier/other``: everything else, and a window's own close, minimize,
+    ///    zoom, and full-screen buttons in every kind of window — checked before tier 1,
+    ///    since a dialog would otherwise make them primary with its other buttons.
     @Sendable
     public static func tier(_ candidate: TargetCandidate) -> TargetTier {
         let role = candidate.element.role ?? ""
+        if windowButtonSubroles.contains(candidate.element.subrole ?? "") {
+            return .other
+        }
         if isPrimary(candidate) {
             return .primary
         }

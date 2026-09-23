@@ -190,9 +190,48 @@ extension TargetRankerTests {
             ),
         ]
 
+        private static let windowButtonSubroles: [String] = [
+            "AXCloseButton", "AXMinimizeButton", "AXZoomButton", "AXFullScreenButton",
+        ]
+        /// The window's own close, minimize, zoom, and full-screen buttons, in a standard
+        /// window and in a dialog, where every other button is primary.
+        static let windowButtonCases: [TierCase] = windowButtonSubroles.flatMap { subrole in
+            ["AXStandardWindow", "AXDialog"].map { window in
+                TierCase(
+                    "a \(subrole) in an \(window) window",
+                    [Spec(subrole: subrole, frame: rect(7, 3, 14, 16))],
+                    rootSubrole: window,
+                    expected: .other,
+                )
+            }
+        }
+
         @Test(arguments: cases)
         func `each kind of element gets its tier`(of testCase: TierCase) throws {
             #expect(try tier(of: testCase) == testCase.expected)
+        }
+
+        @Test(arguments: windowButtonCases)
+        func `a window's own buttons rank last in every kind of window`(
+            of testCase: TierCase,
+        ) throws {
+            #expect(try tier(of: testCase) == testCase.expected)
+        }
+
+        @Test
+        func `a dialog's close button ranks last while its other buttons stay primary`() {
+            let elements = tree(
+                [
+                    Spec(subrole: "AXCloseButton", frame: rect(7, 3, 14, 16)),
+                    Spec(frame: rect(700, 550, 80, 24)),
+                    Spec(frame: rect(800, 550, 80, 24)),
+                ],
+                rootFrame: windowFrame,
+                rootSubrole: "AXDialog",
+            )
+            let ranked = TargetRanker().rank(elements)
+            #expect(ranked.map(\.elementIndex) == [2, 3, 1])
+            #expect(ranked.map(\.tier) == [.primary, .primary, .other])
         }
 
         @Test

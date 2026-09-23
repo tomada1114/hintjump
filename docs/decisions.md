@@ -464,7 +464,7 @@ file is their public record.
 - Decision: supersedes "N = 16 and the first-cut tiers, pending #37's measurement"
   above. The label assigner keeps N = 16 singles
   (`LabelAssigner.defaultSingleCount`, 276 labels with 26 characters). The ranker's
-  tier rule (`FirstCutTiers`, edited in place) changes in four ways; the clickable
+  tier rule (`FirstCutTiers`, edited in place) changes in five ways; the clickable
   filter, the reading order within a tier, and `RankedTarget` do not.
   - A toolbar's buttons are no longer primary; they rank with every other button.
     A sheet's or a dialog's buttons still are.
@@ -475,6 +475,12 @@ file is their public record.
   - A sidebar row is one whose nearest outline or table ends within the window's
     leading third, so a sidebar behind an icon rail counts. A pressable element up to
     two levels inside a row that is not itself a target stands in for that row.
+  - A window's own close, minimize, zoom, and full-screen buttons (subroles
+    `AXCloseButton`, `AXMinimizeButton`, `AXZoomButton`, `AXFullScreenButton`) rank
+    last, in every kind of window, checked before any primary rule; a dialog's other
+    buttons stay primary. Added by #87 after the first release's target scope below
+    took in Claude Desktop, whose read gave them singles 7–9, and in a dialog they
+    would have been primary.
 - Why: `docs/research/target-counts.md`. Under the first cut the singles went to the
   toolbar in every window read. No browser article link and no VS Code explorer row
   ranked within 16, and the categories the owner named reached 25% (mean of shares).
@@ -486,9 +492,9 @@ file is their public record.
   buttons, Slack's send button among them. The owner accepted this explicitly: none of
   the categories they named is a toolbar button.
 - Rejected: N = 18 or 20 (fewer labels for a smaller gain than the rule change);
-  demoting the window's close, minimize, and zoom buttons, and iframe links, to the
-  last tier (no measured effect); a sibling tier type beside the first cut (nothing
-  would call the first cut).
+  demoting iframe links to the last tier (no measured effect; the window's buttons,
+  rejected here at first for the same reason, were demoted by #87); a sibling tier
+  type beside the first cut (nothing would call the first cut).
 - Open: the note's categories were described by the owner, not logged click by click,
   and three of them were not in the reads (Claude Desktop's sidebar, Obsidian's file
   list, Slack's send button). Whether a window's content rows should outrank its
