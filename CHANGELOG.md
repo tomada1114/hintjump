@@ -70,5 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to right, and typing a label left-clicks it. The items come from the on-screen window
   list in one call, with no new permission; one hidden behind the camera housing gets
   no label. It works even while Hintjump's own window is frontmost
+- The status item shows a hint-tag icon instead of the placeholder symbol: a monochrome
+  template image that follows the menu bar's light or dark appearance, the outline of a
+  rounded tag with a lowercase `h` inside. Two more glyph candidates (the label `hj`,
+  and a pointer arrow) and the icon's update-dot and config-error "!" variants are drawn
+  alongside it for the final pick; nothing shows those variants yet
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
