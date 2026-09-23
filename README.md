@@ -65,6 +65,27 @@ The status menu holds:
   registered, so those key combinations reach the app instead. The item then reads
   **`Enable in <App>`**, which turns Hintjump back on there.
 
+### What the first release supports
+
+The first release is aimed at the frontmost window of Safari, Chrome, and Claude
+Desktop — with the sheets, dialogs, context menus, and popovers opened in it — and at
+the menu bar's app menus and status items. Other ordinary app windows, such as Finder,
+System Settings, VS Code, Slack, and Obsidian, are read the same way and usually work,
+but without a promise.
+
+Not supported in the first release:
+
+- **System panels** — Control Center's panels, Notification Center, Spotlight, and
+  launchers such as Raycast. The window shortcuts still try them first, as described
+  above, but that path is unverified.
+- **Spotlight's result rows**, which get no labels.
+- **Ranking by where you usually click** in each app.
+
+An open menu bar menu and a floating panel fall back to the window, as above, and
+multiple displays are not supported. What is deferred is tracked in
+[#80](https://github.com/tomada1114/hintjump/issues/80), and the reasons are in
+[docs/decisions.md](docs/decisions.md).
+
 ## Quickstart
 
 Prerequisites: Xcode 26.5+, [mise](https://mise.jdx.dev/), and
