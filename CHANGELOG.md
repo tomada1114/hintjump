@@ -110,5 +110,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A sidebar item whose row is disabled, too small, or outside the window, and so takes
   no label itself, now ranks the pressable element inside it with the sidebar's rows
   rather than leaving the item with no likely target
+- A list-view row hidden behind its column header, such as the first row Finder's list
+  view reports under its "Name" header, no longer takes a label whose click re-sorts
+  the list
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

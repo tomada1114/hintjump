@@ -522,6 +522,10 @@ file is their public record.
   the survivor's visible center either way, so this decides only where a tag sits.
   Each drop is its own `TargetExclusion`, which the probe's `--rank` prints. Finder's
   186 list-view targets were about 74 without these.
+- Amended (#98): after what is inside a target row, an `AXRow` is dropped when its
+  visible center lies inside a column-header button of its nearest outline or table —
+  an `AXSortButton` under it, or an `AXButton` in a group directly in it — since that
+  click presses the header; its cells stay dropped with it.
 
 ## 2026-09-22 The first release's target scope
 

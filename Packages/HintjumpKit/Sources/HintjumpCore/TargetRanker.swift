@@ -225,11 +225,13 @@ public struct TargetRanker: Sendable {
 
     /// The targets of `elements` in rank order, and why every other element is not one.
     ///
-    /// The filter's admitted elements lose their duplicates in three steps, each a
+    /// The filter's admitted elements lose their duplicates in four steps, each a
     /// ``TargetExclusion``: a pressable group covering half the root that holds another
     /// target (``TargetExclusion/windowSizedGroup``); a cell, or a text field in a cell,
-    /// whose nearest row is still a target (``TargetExclusion/insideTargetRow``); and,
-    /// once ranked, any target whose frame an earlier target has exactly
+    /// whose nearest row is still a target (``TargetExclusion/insideTargetRow``); a row
+    /// whose visible center lies inside a column-header button of its own outline or
+    /// table, so its click would press the header (``TargetExclusion/underColumnHeader``);
+    /// and, once ranked, any target whose frame an earlier target has exactly
     /// (``TargetExclusion/sameFrame``). The survivors keep their order; ranks are
     /// renumbered without gaps. The collapse adds only passes linear in the read, apart
     /// from a walk up from each cell and text field to its row, since a window of about

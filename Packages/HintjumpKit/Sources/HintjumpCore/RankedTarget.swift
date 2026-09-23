@@ -30,15 +30,17 @@ public enum TargetTier: Int, CaseIterable, Comparable, Sendable {
 /// framed, large enough, inside the window, and reports the first that fails. Among the
 /// elements it admits, ``TargetRanker/ranking(_:)`` then drops the duplicates that would
 /// spend a label on a spot another target already covers — a window-sized group first,
-/// then what is inside a target row, then a twin of a better-ranked target — since a
-/// click lands at the survivor's visible center either way (`docs/decisions.md` ›
-/// "Clicks are synthesized mouse events at the element's visible center").
+/// then what is inside a target row, then a row hidden under its column header, then a
+/// twin of a better-ranked target — since a click lands at the survivor's visible
+/// center either way (`docs/decisions.md` › "Clicks are synthesized mouse events at the
+/// element's visible center").
 public enum TargetExclusion: String, CaseIterable, Sendable {
     /// The element reports `AXEnabled` as `false`.
     case disabled
     /// An `AXCell`, or an `AXTextField` inside one, whose nearest `AXRow` is itself a
     /// target: the row takes the label. Its center selects the item without starting
-    /// Finder's click-to-rename, and a right click there opens that item's menu.
+    /// Finder's click-to-rename, and a right click there opens that item's menu. A row
+    /// dropped afterwards as ``underColumnHeader`` keeps its cells dropped with it.
     case insideTargetRow
     /// The element has no position or size, so there is nowhere to put its label.
     case noFrame
@@ -51,6 +53,11 @@ public enum TargetExclusion: String, CaseIterable, Sendable {
     case sameFrame
     /// Narrower or shorter than ``TargetRanker/minimumTargetSize``.
     case tooSmall
+    /// An `AXRow` whose visible center — the point its click lands on — lies inside a
+    /// column-header button of its nearest `AXOutline` or `AXTable`: the row scrolled
+    /// behind the header, as Finder's list view reads its first one. Its click would
+    /// press the header and re-sort the list.
+    case underColumnHeader
     /// Admitted only through `AXPress`, not by its role, covering at least half the
     /// read's root, and holding another target: the pressable group every Electron
     /// window wraps its content in, whose center is some unrelated control.
