@@ -20,7 +20,9 @@ hintjump-probe <command> …`:
   With `--rank` (also accepted by `wake`), each row also carries `HintjumpCore`'s
   `TargetRanker` verdict right after its index — `rank=N tier=T` for a target, or
   `rank=- excluded=<reason>` (`notClickable`, `disabled`, `noFrame`, `tooSmall`,
-  `outsideWindow`) — and a last line counts the targets per tier:
+  `outsideWindow` from the clickable filter; `windowSizedGroup`, `insideTargetRow`, or
+  `sameFrame` for a duplicate the ranker collapsed) — and a last line counts the targets
+  per tier:
   `just probe dump --app com.apple.finder --rank`. The root of the read bounds the
   targets, so rank a `focusedWindow` read; an `application` read's root has no frame and
   ranks nothing
