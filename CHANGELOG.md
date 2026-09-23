@@ -95,6 +95,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for its cells and its name (Finder's list view), a control and an invisible twin of
   the same size share one, and an Electron window's window-sized click-through groups
   get none — so fewer targets need two-character labels
+- In a web app shell such as Claude Desktop, the sidebar's entries — its sessions,
+  New chat, and the settings button — now take single-character labels ahead of the
+  window's top bar, whose buttons get two-character ones; a web page's own sidebar in
+  a browser is unaffected
 
 ### Fixed
 
