@@ -2,8 +2,8 @@
 ///
 /// Hand-written rather than a dependency because two of its properties are load-bearing
 /// and neither is guaranteed by a general decoder: every error names its line, for the
-/// Status window, and every value's character span is recorded, so "Disable in <App>"
-/// can rewrite one array without disturbing the user's comments
+/// Status window, and every value's character span is recorded, so a write-back can
+/// replace one key's value without disturbing the user's comments
 /// (`docs/decisions.md` › "Config file: a hand-written TOML subset, one path, one
 /// write-back").
 ///

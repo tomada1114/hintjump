@@ -1,7 +1,7 @@
 import Foundation
 
-/// Reads the configuration file, remembers the last attempt, and performs the one
-/// write-back the app does.
+/// Reads the configuration file, remembers the last attempt, and writes changed keys
+/// back in place.
 ///
 /// `@MainActor` because the Status window reads ``lastLoad`` and the status menu calls
 /// ``setDisabled(_:_:)``; the file access it delegates to is a port, so a test drives
@@ -11,9 +11,11 @@ import Foundation
 /// watching: a user editing a file half-way through a save would otherwise be read
 /// mid-edit and told their file is broken.
 ///
-/// Every successful load also makes the login item match `[startup] launch_at_login`
-/// (``LoginItemSync``), so editing the key and reloading is how a user turns launch at
-/// login on or off.
+/// Every adoption — a successful load, reload, or ``update(_:)`` — also makes the login
+/// item match `[startup] launch_at_login` (``LoginItemSync``), so editing the key and
+/// reloading is how a user turns launch at login on or off. The rest of applying an
+/// adopted configuration — the triggers and the disabled-apps policy — is
+/// ``ConfigApplier``'s, which every caller runs after an adoption.
 @MainActor
 public final class ConfigStore {
     /// What the last ``load()`` or ``reload()`` produced, and when.
@@ -81,13 +83,13 @@ public final class ConfigStore {
     public func load() throws -> HintjumpConfig {
         let parsed: HintjumpConfig
         do {
-            parsed = try adopt(readOrCreate())
+            parsed = try parse(readOrCreate())
         } catch {
             let failure = String(describing: error)
             AppLog.config.error("config load failed: \(failure, privacy: .private)")
             throw error
         }
-        loginItem.apply(launchAtLogin: parsed.launchAtLogin)
+        adopt(parsed)
         return parsed
     }
 
@@ -99,31 +101,53 @@ public final class ConfigStore {
         try load()
     }
 
-    /// Adds or removes a bundle identifier in `[apps] disabled`, rewriting only that
-    /// value and leaving every other byte of the file — comments included — untouched.
+    /// Changes the configuration and writes back only the keys whose value changed,
+    /// each one's value replaced in place, leaving every other byte of the file —
+    /// comments included — untouched (``ConfigRewriter``). Returns what was adopted.
     ///
-    /// A no-op write is skipped: asking to disable an app that is already disabled
-    /// should not rewrite the user's file at all. The list the file holds is adopted
+    /// `change` is applied to what the file says now, not to ``config``: the file is the
+    /// source of truth, and an edit a user saved without reloading is kept rather than
+    /// written over. A file that does not parse refuses the update with its own
+    /// ``ConfigError`` — the user may be halfway through fixing it. The rewritten text
+    /// is validated before it is written, so a change a hand edit could not make — two
+    /// triggers on one combination, too few hint characters — is refused with the same
+    /// line-numbered error, and nothing is written.
+    ///
+    /// An unchanged configuration writes nothing, but what the file says is adopted
     /// either way, so a file edited to say the same thing before a reload still takes
-    /// effect when the menu asks for it.
-    public func setDisabled(_ bundleID: String, _ disabled: Bool) throws {
+    /// effect. A missing file is updated from the default's text.
+    @discardableResult
+    public func update(_ change: (inout HintjumpConfig) -> Void) throws -> HintjumpConfig {
         let text = try file.read() ?? HintjumpConfig.defaultFileContents
-        var bundleIDs = try ConfigSchema.config(from: text).disabledApps
-        if disabled {
-            guard !bundleIDs.contains(bundleID) else {
-                config.disabledApps = bundleIDs
-                return
-            }
-            bundleIDs.append(bundleID)
-        } else {
-            guard bundleIDs.contains(bundleID) else {
-                config.disabledApps = bundleIDs
-                return
-            }
-            bundleIDs.removeAll { $0 == bundleID }
+        let current = try ConfigSchema.config(from: text)
+        var changed = current
+        change(&changed)
+        let rewritten = try ConfigRewriter.rewrite(text, changing: current, to: changed)
+        guard rewritten != text else {
+            adopt(current)
+            return current
         }
-        try file.write(DisabledAppsRewriter.rewrite(text, disabled: bundleIDs))
-        config.disabledApps = bundleIDs
+        let validated = try ConfigSchema.config(from: rewritten)
+        try file.write(rewritten)
+        adopt(validated)
+        return validated
+    }
+
+    /// Adds or removes a bundle identifier in `[apps] disabled` — an ``update(_:)`` of
+    /// that one list.
+    ///
+    /// Asking to disable an app that is already disabled, or to enable one that is not,
+    /// changes nothing and so writes nothing.
+    public func setDisabled(_ bundleID: String, _ disabled: Bool) throws {
+        try update { config in
+            if disabled {
+                if !config.disabledApps.contains(bundleID) {
+                    config.disabledApps.append(bundleID)
+                }
+            } else {
+                config.disabledApps.removeAll { $0 == bundleID }
+            }
+        }
     }
 
     /// The file's text, or the default's after writing it when there is no file.
@@ -136,16 +160,22 @@ public final class ConfigStore {
         return text
     }
 
-    /// Parses `text`, records the attempt, and keeps the result when it is a success.
-    private func adopt(_ text: String) throws -> HintjumpConfig {
+    /// Parses `text`, recording a failure as the last attempt.
+    private func parse(_ text: String) throws -> HintjumpConfig {
         do {
-            let parsed = try ConfigSchema.config(from: text)
-            config = parsed
-            lastLoad = LoadRecord(date: now(), result: .success(parsed))
-            return parsed
+            return try ConfigSchema.config(from: text)
         } catch {
             lastLoad = LoadRecord(date: now(), result: .failure(error))
             throw error
         }
+    }
+
+    /// Puts `parsed` in force: records it as the last attempt and makes the login item
+    /// match it. The login item's own failure is logged, never thrown — the file was
+    /// read fine, so the adoption succeeded.
+    private func adopt(_ parsed: HintjumpConfig) {
+        config = parsed
+        lastLoad = LoadRecord(date: now(), result: .success(parsed))
+        loginItem.apply(launchAtLogin: parsed.launchAtLogin)
     }
 }
