@@ -20,6 +20,9 @@ final class AppComposition {
     /// Unregisters the triggers while an app in `[apps] disabled` is frontmost, following
     /// every app switch.
     let disabledApps: DisabledAppsPolicy
+    /// The one apply path: every writer of the configuration hands what ``store``
+    /// adopted to it, so the triggers and ``disabledApps`` follow.
+    let applier: ConfigApplier
     /// What the status menu's "Open Config File", "Reload Config", and
     /// "Disable in <App>" do.
     let statusMenu: StatusMenuModel
@@ -34,9 +37,10 @@ final class AppComposition {
             controller: triggers,
             observer: WorkspaceFrontmostAppObserver(),
         ) { configStore.config }
+        applier = ConfigApplier(store: configStore, controller: triggers, policy: disabledApps)
         statusMenu = StatusMenuModel(
             store: configStore,
-            controller: triggers,
+            applier: applier,
             opener: WorkspaceConfigFileOpener(),
             policy: disabledApps,
         )
@@ -89,12 +93,12 @@ final class AppComposition {
     ///
     /// A failed load is logged by the store and leaves the defaults in force, so the
     /// triggers are registered either way. Every step is idempotent — a second load
-    /// re-reads the same file, ``TriggerController/apply(_:)`` starts from nothing, and a
-    /// second start replaces the observer — so a second call, from a label that appeared
-    /// twice, needs no started-flag.
+    /// re-reads the same file, ``ConfigApplier/apply()`` starts the triggers from
+    /// nothing, and a second start replaces the observer — so a second call, from a
+    /// label that appeared twice, needs no started-flag.
     func start() {
         _ = try? store.load()
-        triggers.apply(store.config)
+        applier.apply()
         disabledApps.start(from: WorkspaceFrontmostAppProvider().currentFrontmostApp())
     }
 }

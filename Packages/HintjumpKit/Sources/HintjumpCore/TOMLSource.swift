@@ -2,7 +2,7 @@
 /// rewriter can splice a value back by offset.
 ///
 /// Characters rather than `String.Index`: the offsets the parser records for a value
-/// have to survive being handed to ``DisabledAppsRewriter``, and an integer offset into
+/// have to survive being handed to ``ConfigRewriter``, and an integer offset into
 /// one array is the simplest thing that does. Configuration files are small enough that
 /// the copy costs nothing.
 struct TOMLSource {

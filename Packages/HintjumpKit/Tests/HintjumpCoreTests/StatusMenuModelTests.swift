@@ -27,6 +27,7 @@ struct StatusMenuModelTests {
         let opener: FakeConfigFileOpener
         let observer: FakeFrontmostAppObserver
         let policy: DisabledAppsPolicy
+        let applier: ConfigApplier
         let model: StatusMenuModel
     }
 
@@ -46,14 +47,15 @@ struct StatusMenuModelTests {
         let opener = FakeConfigFileOpener()
         let observer = FakeFrontmostAppObserver()
         let policy = DisabledAppsPolicy(controller: controller, observer: observer) { store.config }
+        let applier = ConfigApplier(store: store, controller: controller, policy: policy)
         let model = StatusMenuModel(
             store: store,
-            controller: controller,
+            applier: applier,
             opener: opener,
             policy: policy,
         )
         try store.load()
-        controller.apply(store.config)
+        applier.apply()
         policy.start(from: frontmost)
         return Harness(
             file: file,
@@ -63,6 +65,7 @@ struct StatusMenuModelTests {
             opener: opener,
             observer: observer,
             policy: policy,
+            applier: applier,
             model: model,
         )
     }

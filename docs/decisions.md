@@ -218,13 +218,14 @@ file is their public record.
   TOML: `#` comments, `[section]` headers, `key = "string"`,
   `key = ["a", "b"]` (multi-line allowed), and `key = true|false`. Every
   error names its line (`Line N: <reason>`); an unknown key is an error. The
-  app writes the commented default file once when none exists, reloads only
-  on request, and writes back only the disabled-apps list, leaving every
-  other line — comments included — untouched.
-- Why: the Status window shows line-numbered errors, and "Disable in <App>"
-  has to edit the file without destroying the user's comments; a
-  hand-written subset gives both with no dependency, and it lives under the
-  coverage floor. A dotfile path is the convention for hand-edited, shareable
+  app writes the commented default file once when none exists and reloads
+  only on request. Any key is written back by replacing only its value (a
+  key or section the file lacks is appended), and every other byte —
+  comments, spacing, key order — stays as written.
+- Why: the Settings window's Config File pane shows line-numbered errors, and
+  every write-back has to edit the file without destroying the user's
+  comments; a hand-written subset gives both with no dependency, and it lives
+  under the coverage floor. A dotfile path is the convention for hand-edited, shareable
   configuration; Application Support is for data the app manages.
 - Rejected: a TOML decoding dependency (decode-only, error line numbers not
   guaranteed, a dependency to vet); JSON (no comments, hard to edit by

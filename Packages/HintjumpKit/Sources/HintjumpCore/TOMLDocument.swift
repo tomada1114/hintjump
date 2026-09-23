@@ -30,7 +30,7 @@ public struct TOMLEntry: Equatable, Sendable {
     public let value: TOMLValue
     /// The 1-based line the key is on — what an error about this entry reports.
     public let line: Int
-    /// The value's character offsets in the original text. ``DisabledAppsRewriter``
+    /// The value's character offsets in the original text. ``ConfigRewriter``
     /// replaces exactly this span, which is what keeps every other byte — comments
     /// included — identical.
     let valueRange: Range<Int>

@@ -317,13 +317,14 @@ struct ConfigStoreTests {
     }
 
     @Test
-    func `the disabled-apps write-back does not touch the login item`() throws {
+    func `the disabled-apps write-back applies the launch_at_login the file holds`() throws {
         let file = FakeConfigFile(contents: "[startup]\nlaunch_at_login = true\n")
         let loginItem = FakeLoginItem(isRegistered: false)
         let store = Self.store(file, loginItem: loginItem)
 
         try store.setDisabled("com.apple.Finder", true)
 
-        #expect(loginItem.setCalls.isEmpty)
+        #expect(loginItem.setCalls == [true])
+        #expect(store.config.launchAtLogin)
     }
 }
