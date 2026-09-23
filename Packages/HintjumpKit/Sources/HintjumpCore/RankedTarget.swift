@@ -26,8 +26,9 @@ public enum TargetTier: Int, CaseIterable, Comparable, Sendable {
 /// Why an element is not a target.
 ///
 /// Two stages report these. The clickable filter,
-/// ``TargetRanker/exclusion(ofElementAt:in:)``, checks in the order clickable, enabled,
-/// framed, large enough, inside the window, and reports the first that fails. Among the
+/// ``TargetRanker/exclusion(ofElementAt:in:)``, checks in the order clickable, not a
+/// splitter, enabled, framed, large enough, inside the window, and reports the first
+/// that fails. Among the
 /// elements it admits, ``TargetRanker/ranking(_:)`` then drops the duplicates that would
 /// spend a label on a spot another target already covers — a window-sized group first,
 /// then pressable content inside a target button or link, then what is inside a target
@@ -58,6 +59,11 @@ public enum TargetExclusion: String, CaseIterable, Sendable {
     case outsideWindow
     /// Another target with exactly this frame ranks earlier and keeps the label.
     case sameFrame
+    /// An `AXSplitter`, even one that reports `AXPress`: a split view's divider is only
+    /// ever dragged, and drag is a non-goal, so pressing it is never a destination. Claude
+    /// Desktop's "Resize sidebar" splitter otherwise put a label on the invisible
+    /// boundary between its sidebar and its transcript (#115).
+    case splitter
     /// Narrower or shorter than ``TargetRanker/minimumTargetSize``.
     case tooSmall
     /// An `AXRow` whose visible center — the point its click lands on — lies inside a

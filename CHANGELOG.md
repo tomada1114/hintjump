@@ -124,5 +124,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A list-view row hidden behind its column header, such as the first row Finder's list
   view reports under its "Name" header, no longer takes a label whose click re-sorts
   the list
+- A split view's divider, such as Claude Desktop's "Resize sidebar" splitter, no longer
+  takes a label on the invisible boundary between two panes: a splitter is only ever
+  dragged
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main

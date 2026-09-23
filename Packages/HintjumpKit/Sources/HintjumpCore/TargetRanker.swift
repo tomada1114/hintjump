@@ -152,6 +152,9 @@ public struct TargetRanker: Sendable {
         guard isPressable || isClickableByRole(element, parent: parent) else {
             return .excluded(.notClickable)
         }
+        guard element.role != "AXSplitter" else {
+            return .excluded(.splitter)
+        }
         guard element.isEnabled else {
             return .excluded(.disabled)
         }
