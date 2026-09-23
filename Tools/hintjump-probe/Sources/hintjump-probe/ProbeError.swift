@@ -10,6 +10,8 @@ let failureExitCode: Int32 = 1
 enum ProbeError: Error {
     case inapplicable(flag: String, command: Command)
     case missingValue(String)
+    case needs(flag: String, other: String)
+    case noFrontmostApplication
     case notRunning(String)
     case unknownArgument(String)
     case unknownValue(flag: String, value: String)
@@ -18,10 +20,10 @@ enum ProbeError: Error {
     /// `usageExitCode` for a mistyped command line, `failureExitCode` for a real one.
     var exitCode: Int32 {
         switch self {
-        case .notRunning:
+        case .noFrontmostApplication, .notRunning:
             failureExitCode
 
-        case .inapplicable, .missingValue, .unknownArgument, .unknownValue, .usage:
+        case .inapplicable, .missingValue, .needs, .unknownArgument, .unknownValue, .usage:
             usageExitCode
         }
     }
@@ -35,6 +37,12 @@ enum ProbeError: Error {
 
         case let .missingValue(flag):
             "\(flag) needs a value.\n\n\(usageText)"
+
+        case let .needs(flag, other):
+            "\(flag) needs \(other).\n\n\(usageText)"
+
+        case .noFrontmostApplication:
+            "No application is frontmost; name one with --app."
 
         case let .notRunning(bundleIdentifier):
             "No running application with bundle identifier \(bundleIdentifier)."
@@ -54,19 +62,32 @@ enum ProbeError: Error {
 /// What a caller reads from `--help`, from a bare invocation, and from a typo.
 let usageText = """
 usage: hintjump-probe <command> --app <bundle-id> [options]
+usage: hintjump-probe front [--app <bundle-id>] [--watch <seconds> [--interval <ms>]]
 
 commands:
     dump   print every element of the tree, then its count and read duration
     time   read repeatedly and print p50/p95 of the read duration
-    front  print the application's direct children, then its focused-window root
+    front  print the application's direct children and focused-window root, then a
+        snapshot of what is on top: the focused window and every AXWindows entry with
+        its subrole, selected menu bar items, open menus, every on-screen window above
+        the normal layer (layer, bounds, owner pid and name), and each container
+        (window, sheet, popover, drawer, menu) with its clickable count, in the
+        frontmost application and in any other application that owns such a window
+        outside the menu bar strip
     wake   set AXManualAccessibility on the application, then dump
 
 options:
-    --app <bundle-id>  the running application to read (required)
+    --app <bundle-id>  the running application to read (required, except for front,
+        which otherwise reads whichever application is frontmost)
     --scope <scope>    focusedWindow (default), menuBar, or application
     --strategy <name>  naive (default), batched, pruned, or batchedPruned
     --runs <n>         reads for `time` (default \(Options.defaultRuns))
     --rank             with dump or wake: each element's rank, or why it is not a target
+    --watch <seconds>  with front: sample for this long and print a snapshot each time
+        the signals change; without --app it follows the frontmost application. It
+        only reads: it never clicks, types, or activates anything
+    --interval <ms>    with --watch: time between samples (default \(Options
+    .defaultIntervalMilliseconds))
 
 `--scope` also accepts the short spellings focused, menubar, and app.
 

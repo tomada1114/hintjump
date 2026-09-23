@@ -15,19 +15,21 @@ private let halves = 2
 @MainActor
 func run(_ options: Options) throws {
     let reader = AXUIElementTreeReader()
-    let pid = try processIdentifier(for: options.bundleIdentifier)
 
     switch options.command {
     case .dump:
-        try dump(with: reader, pid: pid, options: options)
+        try dump(with: reader, pid: processIdentifier(for: options), options: options)
 
     case .front:
-        try front(with: reader, pid: pid)
+        // `front` resolves its own application: the frontmost one when `--app` is
+        // absent, and afresh on every sample of a watch.
+        try front(with: reader, options: options)
 
     case .time:
-        try time(with: reader, pid: pid, options: options)
+        try time(with: reader, pid: processIdentifier(for: options), options: options)
 
     case .wake:
+        let pid = try processIdentifier(for: options)
         try wake(with: reader, pid: pid)
         try dump(with: reader, pid: pid, options: options)
     }
@@ -49,9 +51,10 @@ func wake(with reader: AXUIElementTreeReader, pid: pid_t) throws {
     }
 }
 
-/// The pid of the first running instance of `bundleIdentifier`.
+/// The pid of the first running instance of `--app`.
 @MainActor
-func processIdentifier(for bundleIdentifier: String) throws -> pid_t {
+func processIdentifier(for options: Options) throws -> pid_t {
+    let bundleIdentifier = try options.requiredBundleIdentifier()
     let running = NSRunningApplication.runningApplications(
         withBundleIdentifier: bundleIdentifier,
     )
@@ -72,32 +75,6 @@ func dump(with reader: AXUIElementTreeReader, pid: pid_t, options: Options) thro
     print(summary(of: tree))
     if let ranking {
         print(ranking.summary)
-    }
-}
-
-/// The baseline for "what does the adapter call the topmost container?".
-///
-/// The application's direct children — its windows, panels, and menu bar — followed by
-/// the root a `.focusedWindow` read starts from, so the two answers can be compared
-/// against each other on one screen.
-@MainActor
-func front(with reader: AXUIElementTreeReader, pid: pid_t) throws {
-    let tree = try reader.readTree(pid: pid, scope: .application, strategy: .naive)
-    for (index, element) in tree.elements.enumerated() where element.depth == 1 {
-        print(row(index: index, element: element, extra: []))
-    }
-    print(summary(of: tree))
-
-    do {
-        let focused = try reader.readTree(pid: pid, scope: .focusedWindow, strategy: .naive)
-        guard let root = focused.elements.first else {
-            print("no focused window")
-            return
-        }
-        print("focusedWindow " + row(index: 0, element: root, extra: []))
-    } catch let error as AccessibilityReadError {
-        guard case .attributeUnsupported = error else { throw error }
-        print("no focused window")
     }
 }
 
