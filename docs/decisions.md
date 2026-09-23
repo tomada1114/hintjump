@@ -526,6 +526,21 @@ file is their public record.
   visible center lies inside a column-header button of its nearest outline or table —
   an `AXSortButton` under it, or an `AXButton` in a group directly in it — since that
   click presses the header; its cells stay dropped with it.
+- Amended (#110): an `AXButton`, `AXLink`, or `AXPopUpButton` is primary as a web app
+  shell's sidebar entry when its nearest `AXLandmarkComplementary` ancestor ends within
+  the window's leading third (the sidebar row test's bound) and the element is at least
+  half that landmark's width. It applies only when the nearest `AXWebArea` above the
+  landmark is an app shell: its top edge within 1 pt of the window's top and its
+  leading and trailing edges within 1 pt of the window's, as in an Electron app. A
+  browser page sits below the browser's toolbar, so a website's `<aside>` keeps its
+  tier. Claude Desktop's sidebar is such a landmark, with buttons and pop-ups in plain
+  groups and no outline or rows, so the sidebar row test did not see it: its sessions
+  ranked 20 and later and its settings pop-up 42. With this rule its eleven entries join
+  the three existing primaries within the 16 singles; the half-width bound leaves the
+  sidebar's icon buttons and each entry's 30 pt "…" pop-up as plain buttons. Accepted
+  cost: the window's top bar drops to two-character labels, as the toolbars did above.
+  The banner and navigation exclusion and #87's window-button demotion still apply
+  first.
 
 ## 2026-09-22 The first release's target scope
 

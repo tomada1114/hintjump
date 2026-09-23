@@ -251,7 +251,10 @@ is worth +8.
 
 - A re-read of Claude Desktop's main window (with its sidebar) and of Obsidian with its
   file list open, to score the logged categories these reads could not; edit 4 is
-  expected to cover Claude's sidebar but is unverified there.
+  expected to cover Claude's sidebar but is unverified there. Re-read for Claude
+  Desktop in #110: edit 4 does not cover it (its sidebar is a complementary landmark of
+  buttons, with no outline or rows), so a rule of its own now does (`docs/decisions.md`
+  › "The tier rule after #37's measurement; N stays 16" › Amended (#110)).
 - Whether a window's content rows (Finder's files, a Settings pane's controls) should
   outrank its sidebar — an owner call, since both categories were assumed.
 - Duplicate targets (a row and its cells, a row and its same-size inner group,
