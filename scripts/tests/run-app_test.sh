@@ -141,8 +141,9 @@ case_leaves_a_same_named_app_alone() {
 case_survivor_is_reported_not_forced() {
     root=$(make_fixture_root)
     executable=$(make_fixture_bundle Hintjump io.github.tomada1114.Hintjump)
-    # SIG_IGN survives the fork, so this sleep really does ignore SIGTERM.
-    pid=$(spawn_detached 'trap "" TERM; sleep 5')
+    # SIG_IGN survives the fork and the exec, so this sleep really does ignore SIGTERM,
+    # and the pid under test is the sleep itself, which the closing kill -9 ends.
+    pid=$(spawn_detached 'trap "" TERM; exec sleep 30')
     stub_process_table "  ${pid} ${executable}" "  4242 ${executable}"
     stub_open
 
