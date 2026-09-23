@@ -28,8 +28,10 @@ clicked, typed, or activated anything.
   Every 500 ms it took each on-screen window at layers 3–999 (not the window server's,
   not full-screen, not 40 pt tall or less), asked the system-wide element for the
   element at a point 20 pt below the window's top edge, and printed that element's
-  role chain up to the application. `front` now does the same for the frontmost
-  application's pop-up-menu-level windows (the `popup` lines, dfcc737).
+  role chain up to the application. `front` then gained the same hit test for the
+  frontmost application's pop-up-menu-level windows (the `popup` lines, dfcc737), and
+  one more watch with that version, 2026-09-22 20:19, read a Finder context menu
+  through it. That run is where the context menu's clickable count comes from.
 - **The hotkey.** With the Debug app running, the developer pressed ⌃⇧Space in some of
   the cases; whether it was delivered is read from the app's unified log
   (`trigger pressed: click_in_window`).
@@ -44,7 +46,7 @@ otherwise.
 |---|---|---|---|---|---|---|
 | Nothing special | a plain Finder window, list view | no pop-up-menu-level window; `AXFocusedWindow` is the window | `AXWindow/AXStandardWindow` | 183–187 | frontmost | yes (tried on two Electron apps' plain windows; hints shown) |
 | App menu open | Finder › File (also Go and Window, and TextEdit › File) | the `AXMenuBarItem` reports `AXSelected`, and the `AXMenu` under it has a real frame; a same-pid window at layer 101 (`kCGPopUpMenuWindowLevel`) with the menu's bounds; `AXFocusedWindow` is usually empty and `AXFocusedUIElement` is the application | `AXMenu` under the `AXMenuBarItem` | Finder File 8–10 with nothing selected, 27 with an item selected (42 elements either way); Go 18, Window 10; TextEdit File 15 | frontmost | **no** (two attempts, no `trigger pressed` line) |
-| Context menu open | right-click a file in a Finder list | only the same-pid layer-101 window. `AXFocusedWindow` is empty, `AXFocusedUIElement` is the application, the application element has no `AXMenu` child, nothing on the menu bar is selected, and the right-clicked element does not list the menu in `AXChildren` (the window read's element count did not change). Hit-testing inside the window answers `AXMenuItem` < `AXMenu` < `AXOutline` < `AXScrollArea` < `AXSplitGroup` < `AXSplitGroup` < `AXWindow` < `AXApplication`: the menu's parent is the element that was right-clicked | `AXMenu` (31 children) | not counted in these runs: the `popup` line that counts it was added afterwards | frontmost | **yes**: it fired and the session logged `trigger ignored: no focused window`; the menu stayed open |
+| Context menu open | right-click a file in a Finder list | only the same-pid layer-101 window. `AXFocusedWindow` is empty, `AXFocusedUIElement` is the application, the application element has no `AXMenu` child, nothing on the menu bar is selected, and the right-clicked element does not list the menu in `AXChildren` (the window read's element count did not change). Hit-testing inside the window answers `AXMenuItem` < `AXMenu` < `AXOutline` < `AXScrollArea` < `AXSplitGroup` < `AXSplitGroup` < `AXWindow` < `AXApplication`: the menu's parent is the element that was right-clicked. The probe's own `popup` line found the same thing (`chain=AXMenuItem<AXMenu`, `parent=AXOutline`, the menu owned by Finder's pid, its frame equal to the window's bounds) | `AXMenu` (31 children) | 27 (47 elements; the probe's `popup` line, one opening, menu read in 34 ms) | frontmost | **yes**: it fired and the session logged `trigger ignored: no focused window`; the menu stayed open |
 | Popover | the Tags button in Finder's toolbar | an `AXPopover` inside the focused window's subtree (depth 9); `AXFocusedWindow` unchanged, focus inside the popover. No window of its own | `AXPopover` | 17 (37 elements) | frontmost | not tried |
 | Sheet | ⌘S in an unsaved TextEdit document | `AXFocusedWindow`'s role is `AXSheet` (no subrole, `AXMain` false); in the application tree it sits at depth 2 under the document window | `AXSheet` | 99 (207 elements) | frontmost | not tried |
 | Alert | ⌘W on an unsaved TextEdit document | the same as the sheet: `AXFocusedWindow`'s role is `AXSheet`. On this macOS the save-changes alert is a sheet, not an `AXDialog` window | `AXSheet` | 8 (16 elements) | frontmost | not tried |
@@ -174,5 +176,3 @@ What a frontmost-window trigger reads, as ordered checks. The first that matches
 - Whether showing the overlay, a key panel (#44), closes an open context menu before
   the targets are clicked. The one context-menu press ended in "no focused window", so
   no overlay was shown over a menu.
-- The clickable count of a context menu. The runs recorded its 31 children; the
-  `popup` line that counts them landed afterwards.
