@@ -12,9 +12,11 @@ public enum TopmostContainer: String, CaseIterable, Sendable {
     /// Check 1: a panel another process drew and gave focus to — Control Center's,
     /// Notification Center, Spotlight, a third-party launcher.
     case otherProcessPanel
-    /// Check 4: a popover inside the focused window.
+    /// Check 4: a popover inside the focused window, a sheet included — the innermost when
+    /// one is opened from inside another.
     case popover
-    /// Check 3: the focused window is a sheet — a save panel or a save-changes alert.
+    /// Check 3: the focused window is a sheet — a save panel or a save-changes alert — with
+    /// no popover open in it.
     case sheet
 
     /// Where the read that finds this container starts. Everything but a context menu is
@@ -62,8 +64,9 @@ public struct TopmostRead: Equatable, Sendable {
 ///    inside the frontmost such window finds, if it belongs to the frontmost app. The hit
 ///    test is the read's (``ReadScope/popUpMenu``); when it finds no menu the collector
 ///    goes on to the checks below.
-/// 3. The focused window is an `AXSheet`: the sheet.
-/// 4. The focused window's subtree holds an `AXPopover`: the popover.
+/// 3. The focused window is an `AXSheet` with no popover open in it: the sheet.
+/// 4. The focused window's subtree — a sheet's included — holds an `AXPopover`: the
+///    innermost one.
 /// 5. Otherwise the focused window — and with none, nothing.
 ///
 /// Checks 1 and 2 are answered from ``TopmostContainerSignals`` before any tree is read
@@ -105,28 +108,27 @@ public enum TopmostContainerRule {
     }
 
     /// Checks 3 to 5 over a `.focusedWindow` read, `elements` in the read's pre-order: the
-    /// container found, and the elements to rank — the read itself for a sheet or a plain
-    /// window, or the first popover's subtree re-rooted at the popover.
+    /// container found, and the elements to rank — the popover's subtree re-rooted at the
+    /// popover, or else the read itself for a sheet or a plain window.
     ///
-    /// Only a popover with a non-empty frame counts: one without is not on screen, and a
-    /// frameless root would leave nothing to rank. Only one open popover was ever seen at a
-    /// time, so the first in tree order is taken.
+    /// The popover is looked for before the sheet is taken, because one opened from a
+    /// control in a sheet covers the sheet behind it. Of several, the last in pre-order is
+    /// taken: a popover opened from inside another is a descendant of it, so it comes later
+    /// and is the one on top. Only a popover with a non-empty frame counts: one without is
+    /// not on screen, and a frameless root would leave nothing to rank.
     public static func container(
         in elements: [ElementSnapshot],
     ) -> (container: TopmostContainer, elements: [ElementSnapshot]) {
         guard let root = elements.first else {
             return (.focusedWindow, elements)
         }
-        if root.role == sheetRole {
-            return (.sheet, elements)
-        }
-        let popover = elements.indices.dropFirst().first { index in
+        let popover = elements.indices.dropFirst().last { index in
             elements[index].role == popoverRole && !(elements[index].frame?.isEmpty ?? true)
         }
-        guard let popover else {
-            return (.focusedWindow, elements)
+        if let popover {
+            return (.popover, subtree(at: popover, in: elements))
         }
-        return (.popover, subtree(at: popover, in: elements))
+        return (root.role == sheetRole ? .sheet : .focusedWindow, elements)
     }
 
     /// Check 1: the focused application, when it is another process than the frontmost
