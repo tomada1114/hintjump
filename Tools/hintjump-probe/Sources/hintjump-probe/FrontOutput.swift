@@ -27,6 +27,33 @@ func printFrontmost(_ signals: FrontSignals, target: FrontTarget) {
         print("windows none")
     }
     printMenus(signals.menus, pid: target.pid)
+    printPopups(signals.popups)
+}
+
+/// One line per pop-up-menu-level window of the frontmost application: what the hit
+/// test inside it answered and, when that was a menu, the menu as a container with its
+/// clickable count.
+func printPopups(_ popups: [PopupMenu]) {
+    for (index, popup) in popups.enumerated() {
+        let head = "popup #\(index) pid=\(popup.window.pid) layer=\(popup.window.layer) "
+            + "bounds=\(formatted(popup.window.bounds)) hitPid=\(popup.hitPid.map(String.init) ?? "-") "
+            + "chain=\(popup.chain.isEmpty ? "-" : popup.chain.joined(separator: "<"))"
+        guard let menu = popup.menu else {
+            print(head + " menu=none")
+            continue
+        }
+        let clock = ContinuousClock()
+        let start = clock.now
+        let elements = MenuSubtree.snapshots(from: menu)
+        let clickable = TargetRanker().rank(elements).count
+        let read = (clock.now - start).milliseconds
+        print(
+            head + " menu=AXMenu parent=\(popup.menuParentRole ?? "-") "
+                + "owner=\(AXRaw.processIdentifier(of: menu).map(String.init) ?? "-") "
+                + "frame=\(formatted(elements.first?.frame)) elements=\(elements.count) "
+                + "clickable=\(clickable) read=\(formatted(read))ms",
+        )
+    }
 }
 
 /// The selected bar items and open menus of the application read as `pid`.

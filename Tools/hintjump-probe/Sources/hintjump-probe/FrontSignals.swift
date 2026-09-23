@@ -61,6 +61,9 @@ struct FrontSignals {
     let windows: [WindowSignal]
     let menus: MenuSignals
     let serverWindows: [WindowServerWindow]
+    /// The frontmost application's pop-up-menu-level windows, hit-tested for a menu —
+    /// the context-menu signal, which nothing above carries.
+    let popups: [PopupMenu]
 
     /// One line that changes exactly when one of the signals does, so a watch prints a
     /// snapshot only then. Titles and frames are left out on purpose: a window that
@@ -77,6 +80,7 @@ struct FrontSignals {
             "menus=[\(menuOwners.joined(separator: ","))]",
             "selected=[\(selected.joined(separator: ","))]",
             "above=[\(Self.counted(serverWindows.map(\.signatureKey)))]",
+            "popups=[\(popups.map(\.signatureKey).joined(separator: ","))]",
         ]
         return fields.joined(separator: " ")
     }
@@ -96,6 +100,7 @@ struct FrontSignals {
                 windows: [],
                 menus: MenuSignals(openMenus: [], selections: []),
                 serverWindows: onScreen,
+                popups: [],
             )
         }
         let application = AXUIElementCreateApplication(target.pid)
@@ -109,6 +114,7 @@ struct FrontSignals {
             windows: AXRaw.elements(kAXWindowsAttribute, of: application).map(WindowSignal.init),
             menus: MenuSignals.read(from: application),
             serverWindows: onScreen,
+            popups: PopupMenu.read(from: onScreen, pid: target.pid),
         )
     }
 

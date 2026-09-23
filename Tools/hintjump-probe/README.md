@@ -33,7 +33,10 @@ hintjump-probe <command> …`:
   on-screen window above the normal layer from `CGWindowListCopyWindowInfo` (layer,
   bounds, owner pid and name), and each window, sheet, popover, drawer, or menu in the
   tree with its count of clickable descendants — `TargetRanker`'s targets, rooted at
-  that container. Any other application that owns such a window outside the menu bar
+  that container. For each pop-up-menu-level window (layer 101) the frontmost
+  application owns, it hit-tests a point inside the window and walks up to the nearest
+  `AXMenu`, the only signal a context menu gives, and prints it as a `popup` line with
+  the menu's clickable count. Any other application that owns such a window outside the menu bar
   strip (Control Center's panels, Spotlight, Notification Center) is read the same way
   and listed under its own pid: `just probe front --app com.apple.finder`. Without
   `--app` it reads whichever application is frontmost. With `--watch <seconds>` it
