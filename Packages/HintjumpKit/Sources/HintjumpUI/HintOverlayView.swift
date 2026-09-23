@@ -133,7 +133,8 @@ struct HintOverlayCanvas: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             if let overlay {
-                ForEach(overlay.hints, id: \.label) { hint in
+                // Worst-ranked first, so the best-ranked tag is painted on top.
+                ForEach(overlay.hintsInDrawingOrder, id: \.label) { hint in
                     HintTag(hint: hint, style: overlay.style)
                         .position(hint.center)
                 }

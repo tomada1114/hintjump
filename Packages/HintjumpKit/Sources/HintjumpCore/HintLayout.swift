@@ -25,6 +25,8 @@ public enum HintLayout {
     public static let chipWidth: CGFloat = 76
     /// How far below the window's top edge the chip's top sits.
     public static let chipTopInset: CGFloat = 8
+    /// The least room kept between two tags: closer than this, the later-ranked one moves.
+    public static let tagGap: CGFloat = 1
 
     /// Half of a length: a box's center is half its size in from its edge.
     private static let half: CGFloat = 0.5
@@ -36,34 +38,76 @@ public enum HintLayout {
     }
 
     /// The center of a tag of `size` for a target at `targetFrame`, relative to
-    /// `canvas`'s origin.
+    /// `canvas`'s origin, before any other tag is considered.
     ///
-    /// The tag straddles the target's left edge, vertically centered on it (`docs/decisions.md`
-    /// › "Design: signpost hints, one accent, system controls everywhere else"); a tag
-    /// that would then hang off the canvas is pushed back inside it, which is what keeps
-    /// a target flush with the screen's left edge labeled.
+    /// The tag is centered horizontally on the target and straddles its bottom edge
+    /// (`docs/decisions.md` › "Design: signpost hints, one accent, system controls
+    /// everywhere else", amended by #114), so it covers neither the leading icon nor the
+    /// first letters of the title that tell the user which element it labels. The
+    /// target is measured by its part inside `root`, the read's root — the rectangle
+    /// ``ClickPointRule`` clicks the center of — so a row scrolled half out of view is
+    /// labeled where it shows; a target with no area inside `root` falls back to its
+    /// whole frame. A tag that would then hang off the canvas is pushed back inside it,
+    /// which is what lifts the tag of a target at the screen's bottom edge onto it.
     public static func tagCenter(
         for targetFrame: CGRect,
+        within root: CGRect,
         size: CGSize,
         in canvas: CGRect,
     ) -> CGPoint {
-        let anchor = CGPoint(x: targetFrame.minX, y: targetFrame.midY)
-        return clamped(relative(anchor, to: canvas), size: size, in: canvas.size)
+        let visible = visiblePart(of: targetFrame, within: root)
+        return center(at: CGPoint(x: visible.midX, y: visible.maxY), size: size, in: canvas)
     }
 
-    /// A tag for `label` on a target at `targetFrame`, with nothing typed yet.
-    public static func placedHint(
-        label: String,
-        targetFrame: CGRect,
+    /// The tags for `tags`, given in rank order, with nothing typed yet — returned in the
+    /// same order.
+    ///
+    /// Each tag goes to its ``tagCenter(for:within:size:in:)`` unless that box, with a
+    /// ``tagGap`` around it, overlaps a tag already placed; better-ranked tags are placed
+    /// first, so they keep their spots. A colliding tag takes the first of its
+    /// ``fallbackCenters(for:size:in:)`` that overlaps nothing placed, and keeps its
+    /// bottom-center spot when every one does. The check is pairwise, which is ample for
+    /// the at most 276 labels the hint characters make. The right-click chip is not a
+    /// tag and takes no part.
+    public static func placedHints(
+        _ tags: [LabeledFrame],
+        within root: CGRect,
         in canvas: CGRect,
-    ) -> PlacedHint {
-        let size = tagSize(forLabel: label)
-        return PlacedHint(
-            label: label,
-            typedCount: 0,
-            center: tagCenter(for: targetFrame, size: size, in: canvas),
-            size: size,
-        )
+    ) -> [PlacedHint] {
+        var taken: [CGRect] = []
+        return tags.map { tag in
+            let size = tagSize(forLabel: tag.label)
+            let visible = visiblePart(of: tag.frame, within: root)
+            let candidates = [tagCenter(for: tag.frame, within: root, size: size, in: canvas)]
+                + fallbackCenters(for: visible, size: size, in: canvas)
+            let chosen = candidates.first { candidate in
+                let padded = box(around: candidate, size: size).insetBy(dx: -tagGap, dy: -tagGap)
+                return !taken.contains { overlaps(padded, $0) }
+            } ?? candidates[0]
+            taken.append(box(around: chosen, size: size))
+            return PlacedHint(label: tag.label, typedCount: 0, center: chosen, size: size)
+        }
+    }
+
+    /// Where a tag whose bottom-center spot is taken tries next, in order, each clamped
+    /// inside the canvas like the bottom center: the top center, `(visible.midX,
+    /// visible.minY)`; then bottom leading, the tag's left edge on the visible part's left
+    /// edge (`visible.minX`) with its center on the bottom edge (`visible.maxY`); then
+    /// bottom trailing, its right edge on the visible part's right edge (`visible.maxX`),
+    /// also on the bottom edge. Leading and trailing are the left and right edges on
+    /// screen, not by writing direction: labels are ASCII and the overlay is laid out in
+    /// screen coordinates.
+    private static func fallbackCenters(
+        for visible: CGRect,
+        size: CGSize,
+        in canvas: CGRect,
+    ) -> [CGPoint] {
+        let halfWidth = size.width * half
+        return [
+            CGPoint(x: visible.midX, y: visible.minY),
+            CGPoint(x: visible.minX + halfWidth, y: visible.maxY),
+            CGPoint(x: visible.maxX - halfWidth, y: visible.maxY),
+        ].map { center(at: $0, size: size, in: canvas) }
     }
 
     /// The right-click chip for a window at `rootFrame`: centered on it horizontally,
@@ -77,8 +121,38 @@ public enum HintLayout {
         )
         return PlacedChip(
             text: chipText,
-            center: clamped(relative(anchor, to: canvas), size: size, in: canvas.size),
+            center: center(at: anchor, size: size, in: canvas),
             size: size,
+        )
+    }
+
+    /// `frame ∩ root`, or `frame` itself when the two share no area — the same visible
+    /// part ``ClickPointRule`` clicks, with a fallback so a tag is never lost.
+    private static func visiblePart(of frame: CGRect, within root: CGRect) -> CGRect {
+        let visible = frame.intersection(root)
+        return visible.isEmpty ? frame : visible
+    }
+
+    /// The canvas-relative center of a box of `size` anchored at the global point
+    /// `anchor`, clamped inside `canvas`.
+    private static func center(at anchor: CGPoint, size: CGSize, in canvas: CGRect) -> CGPoint {
+        clamped(relative(anchor, to: canvas), size: size, in: canvas.size)
+    }
+
+    /// Whether `first` and `second` share an area. Boxes that only touch along an edge
+    /// do not, so two tags exactly ``tagGap`` apart are not a collision.
+    private static func overlaps(_ first: CGRect, _ second: CGRect) -> Bool {
+        first.minX < second.maxX && second.minX < first.maxX
+            && first.minY < second.maxY && second.minY < first.maxY
+    }
+
+    /// The box of `size` centered on `center`.
+    private static func box(around center: CGPoint, size: CGSize) -> CGRect {
+        CGRect(
+            x: center.x - size.width * half,
+            y: center.y - size.height * half,
+            width: size.width,
+            height: size.height,
         )
     }
 

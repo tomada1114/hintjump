@@ -55,6 +55,32 @@ extension HintSessionTests {
         }
 
         @Test
+        func `a tag is anchored on the part of its target inside the window`() throws {
+            // Hanging 40 pt past the window's right edge (x 900): only x 880 ..< 900 shows.
+            let target = HintTarget(
+                frame: CGRect(x: 880, y: 300, width: 60, height: 20),
+                clickPoint: CGPoint(x: 890, y: 310),
+                role: "AXButton",
+            )
+            let fixture = Fixture(
+                app: HintSessionTests.app,
+                collector: FakeHintTargetCollector(answering: TargetSet(
+                    pid: HintSessionTests.pid,
+                    bundleIdentifier: "com.apple.finder",
+                    rootFrame: HintSessionTests.rootFrame,
+                    targets: [target],
+                    readDuration: HintSessionTests.readDuration,
+                )),
+                screen: HintSessionTests.screen,
+            )
+
+            fixture.session.trigger(.clickInWindow)
+
+            let hint = try #require(fixture.session.overlay?.hints.first)
+            #expect(hint.center == CGPoint(x: 890, y: 320))
+        }
+
+        @Test
         func `targets past the label supply are left unhinted`() {
             let capacity = LabelAssigner()
                 .capacity(characters: HintjumpConfig.default.hintCharacters)

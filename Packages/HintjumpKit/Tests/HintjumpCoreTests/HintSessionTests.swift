@@ -103,8 +103,9 @@ enum HintSessionTests {
             count: count,
             characters: HintjumpConfig.default.hintCharacters,
         )
-        return zip(labels, targets(count: count)).map { label, target in
-            HintLayout.placedHint(label: label, targetFrame: target.frame, in: screen)
+        let tags = zip(labels, targets(count: count)).map { label, target in
+            LabeledFrame(label: label, frame: target.frame)
         }
+        return HintLayout.placedHints(tags, within: rootFrame, in: screen)
     }
 }
