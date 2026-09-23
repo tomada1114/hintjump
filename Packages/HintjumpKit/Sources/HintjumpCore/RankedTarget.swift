@@ -12,7 +12,8 @@ public enum TargetTier: Int, CaseIterable, Comparable, Sendable {
     case linkOrButton = 2
     /// Every other clickable element.
     case other = 4
-    /// Text and search fields, tabs, buttons in a toolbar or a dialog, and sidebar rows.
+    /// Text and search fields, tabs, buttons in a sheet or a dialog, sidebar rows, and
+    /// links in a web page's main content — nothing in a page's banner or navigation.
     case primary = 1
     /// Table and outline rows and cells, and a text field inside a row.
     case rowOrCell = 3
