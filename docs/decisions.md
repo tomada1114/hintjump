@@ -490,3 +490,50 @@ file is their public record.
   and three of them were not in the reads (Claude Desktop's sidebar, Obsidian's file
   list, Slack's send button). Whether a window's content rows should outrank its
   sidebar, and collapsing duplicate targets (a row and its cells), are left for later.
+
+## 2026-09-22 The first release's target scope
+
+- Decision: the owner's call. The first release is judged against a narrow target
+  and supports what is listed here; everything deferred is a sub-issue of the post-v1
+  parent issue #80 and carries the `on hold` label. In scope:
+  - The primary target: the frontmost window of Safari, Chrome, and Claude Desktop,
+    ranked by the tier rule in "The tier rule after #37's measurement; N stays 16"
+    above.
+  - Sheets and dialogs, which are the focused window (#9).
+  - Context menus and popovers (#48). Their real-Mac check is #75, which is not on
+    hold.
+  - The menu bar's app menus and status items, through their own triggers.
+  - Other ordinary app windows — Finder, System Settings, VS Code, Slack, Obsidian —
+    read through the same path, best-effort, with no support promise.
+
+  On hold (sub-issues of #80):
+  - System panels as targets: Control Center, Notification Center, Spotlight, and
+    launchers (#79). Check 1 of the targeting rule in "What 'whatever is on top'
+    means" above stays in the code and enabled, but the first release does not
+    support it.
+  - Spotlight's result rows as targets (#77).
+  - Learning per-app click locations to rank frequently clicked elements (#73).
+
+  Unchanged by this entry: open menu-bar menus and floating panels stay out of scope
+  and fall back to the focused window, and multiple displays stay a product non-goal.
+- Why: the split follows what #9, #37, and #48 found.
+  - #9 (`docs/research/topmost-container.md`): a sheet or an alert needs nothing new,
+    because `AXFocusedWindow` already answers it. A system panel is found only
+    through a separate signal, the focused-application pid, and whether the trigger
+    is delivered at all while one has focus was not tested.
+  - #37 (`docs/research/target-counts.md`): the tier rule was tuned on the categories
+    the owner named for Safari, Chrome, VS Code, and Claude Desktop; the categories
+    for Slack, Finder, System Settings, and Obsidian were assumed for the note. The
+    owner chose the browsers and Claude Desktop as the target the release is judged
+    on, and left every other window best-effort.
+  - #48 implemented the whole rule. Its real-Mac check of context menus and popovers,
+    including whether the overlay closes an open context menu, is #75; the trigger's
+    delivery with a system panel focused is still unverified (#79). Spotlight's
+    result rows do not pass `TargetRanker`'s clickable filter (57 elements, 2
+    admitted), and nothing yet says why (#77).
+  - Click learning (#73) is a new ranking input, not a gap in the rule.
+
+  A narrow target lets the first release be judged on what was measured, rather than
+  wait on every surface the rule can reach.
+- Open: after the first release ships, each sub-issue of #80 is either taken off
+  hold or closed as not planned, and #80 closes.
