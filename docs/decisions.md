@@ -550,6 +550,18 @@ file is their public record.
   cost: the window's top bar drops to two-character labels, as the toolbars did above.
   The banner and navigation exclusion and #87's window-button demotion still apply
   first.
+- Amended (#115): the clickable filter turns away every `AXSplitter`, even one that
+  reports `AXPress`, right after the clickable check. A splitter is only ever dragged,
+  and drag is a non-goal, so pressing one is never a destination; Claude Desktop's
+  "Resize sidebar" splitter, 18 pt wide and the window's full height, put a label on
+  the invisible boundary between the sidebar and the transcript. A role check is the
+  narrowest rule: no size threshold changes, so no clickable container is at risk. The
+  read that chose it (`just probe dump --app com.anthropic.claudefordesktop --rank`,
+  2026-09-23, commit 5b294a5) showed the other tall, invisible containers already gone
+  — the column-sized transcript groups dropped as window-sized (#86) and the sidebar's
+  content group not clickable — and each sidebar entry down to one label besides its
+  "…" pop-up (#109). A link wrapped across two lines, anchored at its paragraph's edge,
+  is split into #118.
 
 ## 2026-09-22 The first release's target scope
 

@@ -19,7 +19,7 @@ hintjump-probe <command> …`:
   duration: `just probe dump --app com.apple.finder --scope focusedWindow --strategy naive`.
   With `--rank` (also accepted by `wake`), each row also carries `HintjumpCore`'s
   `TargetRanker` verdict right after its index — `rank=N tier=T` for a target, or
-  `rank=- excluded=<reason>` (`notClickable`, `disabled`, `noFrame`, `tooSmall`,
+  `rank=- excluded=<reason>` (`notClickable`, `splitter`, `disabled`, `noFrame`, `tooSmall`,
   `outsideWindow` from the clickable filter; `windowSizedGroup`, `insideTargetControl`,
   `insideTargetRow`, `underColumnHeader`, or `sameFrame` for a duplicate the ranker
   collapsed) — and a last line counts the targets per tier:
