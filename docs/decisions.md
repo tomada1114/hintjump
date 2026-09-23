@@ -458,6 +458,12 @@ file is their public record.
   Notification Center, or Spotlight has focus. Second, whether showing the overlay,
   a key panel (#44), closes an open context menu. Third, why Spotlight's result
   rows do not pass `TargetRanker`'s clickable filter.
+- Amended (#88): check 4 takes the last `AXPopover` with a non-empty frame in the
+  read's pre-order, the innermost when one popover is opened from inside another,
+  and looks inside a sheet too. A popover open in a sheet is therefore targeted
+  (`container=popover`) before check 3 takes the sheet; a sheet with no popover
+  is still the sheet. The first popover in tree order, and the sheet taken whole,
+  both labeled what the topmost popover hides.
 
 ## 2026-09-22 The tier rule after #37's measurement; N stays 16
 

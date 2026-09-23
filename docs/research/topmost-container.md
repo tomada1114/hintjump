@@ -143,12 +143,17 @@ What a frontmost-window trigger reads, as ordered checks. The first that matches
    if it belongs to the frontmost pid. When no `AXMenu` is found (a menu fading out, or
    a popover drawn at that level), go on to check 3. A menu-bar menu would also match
    here, but the trigger is never delivered while one is open.
-3. **A sheet.** Otherwise, if `AXFocusedWindow`'s role is `AXSheet`, target it. This is
-   what a `.focusedWindow` read already does. It covers save panels and save-changes
-   alerts.
-4. **A popover.** Otherwise, if the focused window's subtree holds an `AXPopover`,
-   target the popover. Only one open popover was ever seen at a time; which one to take
-   when there are several is not settled here.
+3. **A sheet.** Otherwise, if `AXFocusedWindow`'s role is `AXSheet` and no popover
+   (check 4) is open in it, target it. This is what a `.focusedWindow` read already
+   does. It covers save panels and save-changes alerts.
+4. **A popover.** Otherwise, if the focused window's subtree — a sheet's included —
+   holds an `AXPopover` with a non-empty frame, target the last such popover in
+   pre-order. Only one open popover was ever seen at a time in these runs. When there
+   are several, the last is the deepest: a popover opened from inside another is its
+   descendant, so it comes later and is the one on top. A popover opened from a
+   control in a sheet covers the sheet, so it is looked for there too and wins over
+   check 3 (#88). A popover without a frame, or with an empty one, is not on screen and
+   is skipped, so an outer popover is taken over a frameless inner one.
 5. **The focused window.** Otherwise target `AXFocusedWindow`, whatever its subrole
    (`AXStandardWindow`, `AXDialog`, Finder's desktop scroll area).
 6. **Nothing.** With no focused window and nothing matched above, the trigger shows
