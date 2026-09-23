@@ -26,7 +26,10 @@ Three kinds of test, split by what is under test:
   how it draws Core's state — colours, type, spacing — can still regress.
   `Tests/HintjumpUITests` renders it off screen with SwiftUI's `ImageRenderer` (no window,
   no display, no TCC grant, so it runs under `just test` and in CI) and compares it pixel
-  by pixel with a committed PNG under `References/`. An intended change is re-recorded
+  by pixel with a committed PNG under `References/`. A view made of AppKit-backed
+  controls — a grouped `Form`, a `Link` — which `ImageRenderer` draws as a placeholder,
+  is drawn by an `NSHostingView` into a fixed-size sRGB bitmap instead, still with no
+  window (`SettingsRenderingTests`). An intended change is re-recorded
   with `just record-snapshots`, and the new PNG files are reviewed in the pull request. The
   state a scene renders is built the way Core builds it (`HintLayout`), so the image is
   the product's own layout, not a hand-placed copy.

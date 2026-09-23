@@ -28,6 +28,14 @@ final class AppComposition {
     let statusMenu: StatusMenuModel
     /// The hint session every trigger press is handed to.
     let hints: HintSession
+    /// Whether this process holds the Accessibility grant. Composed once, here, rather
+    /// than inside a view: it must survive scene recreation and keep its own
+    /// `hasPrompted` state for the life of the process, and the status item's gate and
+    /// the Settings window read the same one.
+    let accessibilityGate: AccessibilityGateViewModel
+    /// The Settings window's model, kept for the life of the process so the selected
+    /// pane survives the window closing.
+    let settings: SettingsViewModel
 
     init() {
         let configStore = ConfigStore(file: UserConfigFile(), loginItem: SMAppServiceLoginItem())
@@ -43,6 +51,22 @@ final class AppComposition {
             applier: applier,
             opener: WorkspaceConfigFileOpener(),
             policy: disabledApps,
+        )
+        let gate = AccessibilityGateViewModel(trust: SystemAccessibilityTrust())
+        accessibilityGate = gate
+        settings = SettingsViewModel(
+            store: configStore,
+            applier: applier,
+            gate: gate,
+            system: SettingsSystem(
+                ports: SettingsPorts(
+                    systemSettings: WorkspaceSystemSettingsOpener(),
+                    configFile: WorkspaceConfigFileOpener(),
+                    pasteboard: GeneralPasteboardWriter(),
+                ),
+                version: AppVersion(infoDictionary: Bundle.main.infoDictionary ?? [:]),
+                homeDirectory: NSHomeDirectory(),
+            ),
         )
         hints = Self.makeHintSession { configStore.config }
         // The controller logs every press before handing it on, so a press stays

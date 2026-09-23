@@ -84,4 +84,14 @@ public enum AppLog {
     /// durations, labels, and reasons are `.public`; nothing element-level beyond a role
     /// is logged, and no title or description ever reaches a line.
     public static let hints = Logger(subsystem: subsystem, category: "hints")
+
+    /// The Settings window concern: ``SettingsViewModel`` refreshing what the window
+    /// shows, the pane it shows, and what its buttons did, and the status menu asking
+    /// for the window.
+    ///
+    /// Its own category because it is the stream a "Settings… did nothing" or "the
+    /// window shows the wrong state" investigation watches: `log stream --predicate
+    /// 'category == "settings"'`. Pane names, the grant's state, and the file's state are
+    /// `.public`; the config file's path never reaches a line.
+    public static let settings = Logger(subsystem: subsystem, category: "settings")
 }

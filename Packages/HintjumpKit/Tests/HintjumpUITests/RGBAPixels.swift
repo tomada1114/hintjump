@@ -12,23 +12,27 @@ struct PixelDifference {
     let differingPixels: Int
     /// The largest difference seen in any channel of any pixel, 0–255.
     let largestChannelDelta: Int
-    /// The reference faded to a quarter, with every differing pixel painted solid red.
-    let highlighted: RGBAPixels
 
-    /// Compares `actual` with `reference`, which must be the same size, counting a pixel
-    /// as different when any channel moved by more than `tolerance`.
-    init(actual: RGBAPixels, reference: RGBAPixels, tolerance: Int) {
+    private let actual: RGBAPixels
+    private let reference: RGBAPixels
+    private let tolerance: Int
+
+    /// The reference faded to a quarter, with every differing pixel painted solid red.
+    ///
+    /// Drawn on demand rather than during the comparison: only a failed comparison
+    /// writes it, and building it for every passing one made a large scene — the
+    /// Settings window's, over a million pixels — take seconds to compare in an
+    /// unoptimized test build.
+    var highlighted: RGBAPixels {
         let stride = RGBAPixels.bytesPerPixel
-        var differing = 0
-        var largest = 0
         var marked = reference
         for start in Swift.stride(from: 0, to: reference.bytes.count, by: stride) {
-            let delta = (start ..< start + stride)
-                .map { abs(Int(actual.bytes[$0]) - Int(reference.bytes[$0])) }
-                .max() ?? 0
-            largest = max(largest, delta)
+            let delta = actual.bytes.withUnsafeBufferPointer { actualBytes in
+                reference.bytes.withUnsafeBufferPointer { referenceBytes in
+                    Self.delta(actualBytes, referenceBytes, at: start)
+                }
+            }
             if delta > tolerance {
-                differing += 1
                 marked.bytes.replaceSubrange(start ..< start + stride, with: Self.red)
             } else {
                 for channel in start ..< start + Self.colorChannels {
@@ -38,9 +42,109 @@ struct PixelDifference {
                 marked.bytes[start + Self.colorChannels] = RGBAPixels.channelMax
             }
         }
+        return marked
+    }
+
+    /// Compares `actual` with `reference`, which must be the same size, counting a pixel
+    /// as different when any channel moved by more than `tolerance`.
+    init(actual: RGBAPixels, reference: RGBAPixels, tolerance: Int) {
+        self.actual = actual
+        self.reference = reference
+        self.tolerance = tolerance
+        guard !Self.identical(actual.bytes, reference.bytes) else {
+            differingPixels = 0
+            largestChannelDelta = 0
+            return
+        }
+        var differing = 0
+        var largest = 0
+        actual.bytes.withUnsafeBufferPointer { actualBytes in
+            reference.bytes.withUnsafeBufferPointer { referenceBytes in
+                let stride = RGBAPixels.bytesPerPixel
+                for start in Swift.stride(from: 0, to: referenceBytes.count, by: stride) {
+                    let delta = Self.delta(actualBytes, referenceBytes, at: start)
+                    largest = max(largest, delta)
+                    if delta > tolerance {
+                        differing += 1
+                    }
+                }
+            }
+        }
         differingPixels = differing
         largestChannelDelta = largest
-        highlighted = marked
+    }
+
+    /// Whether the two byte arrays are the same, compared as memory: the common case, a
+    /// render that matches its reference exactly, then costs no per-pixel loop.
+    private static func identical(_ actual: [UInt8], _ reference: [UInt8]) -> Bool {
+        guard actual.count == reference.count else {
+            return false
+        }
+        return actual.withUnsafeBytes { actualBytes in
+            reference.withUnsafeBytes { referenceBytes in
+                guard let actualBase = actualBytes.baseAddress,
+                      let referenceBase = referenceBytes.baseAddress
+                else {
+                    return actualBytes.isEmpty
+                }
+                return memcmp(actualBase, referenceBase, actualBytes.count) == 0
+            }
+        }
+    }
+
+    /// The largest change in any channel of the pixel that starts at byte `start`.
+    ///
+    /// Over buffer pointers rather than arrays: an unoptimized test build checks bounds
+    /// and copies on every array subscript, which over a million pixels is seconds.
+    private static func delta(
+        _ actual: UnsafeBufferPointer<UInt8>,
+        _ reference: UnsafeBufferPointer<UInt8>,
+        at start: Int,
+    ) -> Int {
+        var largest = 0
+        for index in start ..< start + RGBAPixels.bytesPerPixel {
+            let change = abs(Int(actual[index]) - Int(reference[index]))
+            if change > largest {
+                largest = change
+            }
+        }
+        return largest
+    }
+
+    /// Where the differing pixels are, in pixels from the top left: for every band of
+    /// `bandHeight` rows that holds any, how many there are and the columns they span —
+    /// so a failure on a machine whose images nobody can see (CI) still says which part of
+    /// the scene moved.
+    func changedBands(bandHeight: Int) -> [String] {
+        let stride = RGBAPixels.bytesPerPixel
+        var bands: [String] = []
+        actual.bytes.withUnsafeBufferPointer { actualBytes in
+            reference.bytes.withUnsafeBufferPointer { referenceBytes in
+                for bandTop in Swift.stride(from: 0, to: reference.height, by: bandHeight) {
+                    var count = 0
+                    var left = Int.max
+                    var right = -1
+                    for row in bandTop ..< min(bandTop + bandHeight, reference.height) {
+                        for column in 0 ..< reference.width {
+                            let start = (row * reference.width + column) * stride
+                            if Self.delta(actualBytes, referenceBytes, at: start) > tolerance {
+                                count += 1
+                                left = min(left, column)
+                                right = max(right, column)
+                            }
+                        }
+                    }
+                    if count > 0 {
+                        let bottom = min(bandTop + bandHeight, reference.height)
+                        bands
+                            .append(
+                                "rows \(bandTop)–\(bottom): \(count) px in columns \(left)–\(right)",
+                            )
+                    }
+                }
+            }
+        }
+        return bands
     }
 }
 

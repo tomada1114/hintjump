@@ -2,14 +2,20 @@
 import Testing
 
 /// The fake every Core test of ``ConfigFileOpening`` uses: it records each path it was
-/// asked to open (`.claude/rules/testing.md` › Fakes, not mocks).
+/// asked to open or reveal (`.claude/rules/testing.md` › Fakes, not mocks).
 @MainActor
 final class FakeConfigFileOpener: ConfigFileOpening {
     /// Every path handed to ``open(path:)``, in order.
     private(set) var openedPaths: [String] = []
+    /// Every path handed to ``reveal(path:)``, in order.
+    private(set) var revealedPaths: [String] = []
 
     func open(path: String) {
         openedPaths.append(path)
+    }
+
+    func reveal(path: String) {
+        revealedPaths.append(path)
     }
 }
 

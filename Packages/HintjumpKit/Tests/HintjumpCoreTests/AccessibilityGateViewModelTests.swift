@@ -3,9 +3,10 @@ import Testing
 
 /// A fake, not a mock (`.claude/rules/testing.md` › Fakes, not mocks): a real conforming
 /// implementation whose answers are data, and whose calls are recorded in a value the
-/// test reads afterwards. Modeled on `FakeFrontmostAppProvider`.
+/// test reads afterwards. Modeled on `FakeFrontmostAppProvider`, and shared with
+/// `SettingsViewModelTests`, which reads the gate's state through the same port.
 @MainActor
-private final class FakeAccessibilityTrustChecking: AccessibilityTrustChecking {
+final class FakeAccessibilityTrustChecking: AccessibilityTrustChecking {
     /// What ``isTrusted`` answers on the next read.
     var isTrusted = false
     private(set) var requestTrustCallCount = 0

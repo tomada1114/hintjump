@@ -2,7 +2,8 @@ import AppKit
 import HintjumpCore
 import UniformTypeIdentifiers
 
-/// The `NSWorkspace`-backed adapter for ``HintjumpCore/ConfigFileOpening``.
+/// The `NSWorkspace`-backed adapter for ``HintjumpCore/ConfigFileOpening``: the editor
+/// for "Open", Finder for "Reveal in Finder".
 ///
 /// Opens the file in the user's default plain-text editor rather than in whatever
 /// handles `.toml`: many Macs have no `.toml` handler at all, and `NSWorkspace.open`
@@ -30,5 +31,10 @@ public struct WorkspaceConfigFileOpener: ConfigFileOpening {
             withApplicationAt: editor,
             configuration: NSWorkspace.OpenConfiguration(),
         )
+    }
+
+    /// Opens a Finder window with `path` selected.
+    public func reveal(path: String) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 }

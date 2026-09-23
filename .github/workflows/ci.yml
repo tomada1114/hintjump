@@ -62,6 +62,18 @@ jobs:
       - name: Run tests with coverage floor
         run: scripts/coverage.sh
 
+      # A failed rendering test writes the image it drew and the changed pixels under
+      # .build/snapshot-failures (ReferenceImages.swift); without this, nobody can see
+      # what the runner drew differently.
+      - name: Upload snapshot failures on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: snapshot-failures
+          path: Packages/HintjumpKit/.build/snapshot-failures
+          if-no-files-found: ignore
+          retention-days: 7
+
       # Not in the lint job the issue named: that one runs on ubuntu-latest with no
       # Swift toolchain, and the probe links AppKit and ApplicationServices. It is a
       # separate SwiftPM package the app never links, so nothing else here compiles it.

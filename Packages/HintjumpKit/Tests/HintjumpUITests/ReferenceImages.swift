@@ -19,6 +19,9 @@ enum ReferenceImages {
     /// tens to hundreds (`a tag moved by one point is caught` holds that).
     static let tolerance = 8
 
+    /// How many rows of pixels a failure's "where" line groups together.
+    static let bandHeight = 40
+
     /// This test target's own directory, found from this file's path at compile time.
     private static let testsDirectory = URL(filePath: #filePath).deletingLastPathComponent()
 
@@ -75,11 +78,12 @@ enum ReferenceImages {
             return
         }
         let evidence = writeEvidence(named: name, actual: actual, difference: difference)
+        let bands = difference.changedBands(bandHeight: bandHeight).joined(separator: "; ")
         Issue.record("""
         \(name): \(difference.differingPixels) of \(actual.width * actual.height) pixels \
         differ from \(referenceURL.lastPathComponent) (largest channel change \
-        \(difference.largestChannelDelta)/255). \(evidence) If the change is intended, run \
-        `just record-snapshots` and review the new image in the pull request.
+        \(difference.largestChannelDelta)/255). Where: \(bands). \(evidence) If the change is \
+        intended, run `just record-snapshots` and review the new image in the pull request.
         """)
     }
 

@@ -1,11 +1,26 @@
 import Foundation
+import Observation
+
+/// What a look at the configuration file found, for the Settings window's Config File
+/// pane: whether to offer "Create Default File", or to say the file cannot be read.
+public enum ConfigFileState: Equatable, Sendable {
+    /// The file is missing — deleted since the last load, or never written because the
+    /// write failed.
+    case missing
+    /// The file is there and could be read, whatever it says.
+    case present
+    /// The file is there but reading it failed, e.g. for its permissions.
+    case unreadable
+}
 
 /// Reads the configuration file, remembers the last attempt, and writes changed keys
 /// back in place.
 ///
-/// `@MainActor` because the Status window reads ``lastLoad`` and the status menu calls
+/// `@MainActor` because the Settings window reads ``lastLoad`` and the status menu calls
 /// ``setDisabled(_:_:)``; the file access it delegates to is a port, so a test drives
-/// the whole thing against a fake with no file system in sight.
+/// the whole thing against a fake with no file system in sight. `@Observable` so the
+/// Settings window's Config File pane and its sidebar tile follow a reload made from the
+/// status menu while the window is open.
 ///
 /// Reload is explicit — the status menu's "Reload Config" — and there is no file
 /// watching: a user editing a file half-way through a save would otherwise be read
@@ -17,10 +32,11 @@ import Foundation
 /// adopted configuration — the triggers and the disabled-apps policy — is
 /// ``ConfigApplier``'s, which every caller runs after an adoption.
 @MainActor
+@Observable
 public final class ConfigStore {
     /// What the last ``load()`` or ``reload()`` produced, and when.
     ///
-    /// Kept as a ``Result`` rather than an optional error so the Status window can show
+    /// Kept as a ``Result`` rather than an optional error so the Settings window can show
     /// either `Loaded at 12:03` or the line-numbered failure from the same value,
     /// without a second "did it work" flag that could disagree with it.
     public struct LoadRecord: Equatable, Sendable {
@@ -43,7 +59,7 @@ public final class ConfigStore {
     private let loginItem: LoginItemSync
     private let now: @Sendable () -> Date
 
-    /// Where the file is, for the Status window and for an error message.
+    /// Where the file is, for the Settings window and for an error message.
     public var path: String {
         file.path
     }
@@ -147,6 +163,22 @@ public final class ConfigStore {
             } else {
                 config.disabledApps.removeAll { $0 == bundleID }
             }
+        }
+    }
+
+    /// Looks at the file without loading it: whether it is there and can be read.
+    ///
+    /// Reads the whole file, since the port has no cheaper question to ask; the file is
+    /// a few hundred bytes. A read failure is the answer here rather than an error to
+    /// throw, so it is logged `.private` — its text can carry a path — and reported as
+    /// ``ConfigFileState/unreadable``.
+    public func fileState() -> ConfigFileState {
+        do {
+            return try file.read() == nil ? .missing : .present
+        } catch {
+            AppLog.config
+                .error("config file unreadable: \(String(describing: error), privacy: .private)")
+            return .unreadable
         }
     }
 
