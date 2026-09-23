@@ -29,8 +29,8 @@ struct Ranking {
 
     /// `rank=N tier=T` for a target, or `rank=- excluded=<reason>` for anything else —
     /// so `grep 'rank=[0-9]'` lists the targets and `grep excluded=tooSmall` a reason,
-    /// a dropped duplicate (`sameFrame`, `insideTargetRow`, `underColumnHeader`,
-    /// `windowSizedGroup`) included.
+    /// a dropped duplicate (`sameFrame`, `insideTargetControl`, `insideTargetRow`,
+    /// `underColumnHeader`, `windowSizedGroup`) included.
     func fields(forElementAt index: Int) -> [String] {
         if let target = targetsByElementIndex[index] {
             return ["rank=\(target.rank)", "tier=\(target.tier.rawValue)"]

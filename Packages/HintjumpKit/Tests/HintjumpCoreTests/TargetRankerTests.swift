@@ -4,7 +4,7 @@ import Testing
 
 /// The ranker's suites share one set of fixtures, declared here; the suites themselves
 /// are nested, one per concern, in its `+Filter`, `+Tiers`, `+Regions`, `+AppShell`,
-/// `+Order`, `+Duplicates`, and `+ColumnHeaders` extensions.
+/// `+Order`, `+Duplicates`, `+ControlContent`, and `+ColumnHeaders` extensions.
 @Suite("TargetRanker")
 enum TargetRankerTests {
     /// A fully specified element, with the defaults that make it a clickable, enabled,

@@ -526,6 +526,15 @@ file is their public record.
   visible center lies inside a column-header button of its nearest outline or table —
   an `AXSortButton` under it, or an `AXButton` in a group directly in it — since that
   click presses the header; its cells stay dropped with it.
+- Amended (#109): right after the window-sized groups, an element admitted only
+  through `AXPress` is dropped when its nearest control — the nearest container
+  clickable by role, or any `AXRow` — is an `AXButton` or `AXLink` that is still a
+  target. Chromium reports `AXPress` on a button's icon and title group, so each Claude
+  Desktop sidebar entry took three labels for one destination; HTML allows no
+  interactive content in a button or a link, so a click there lands in the control.
+  Controls clickable by role inside it stay, and so does the content of a checkbox,
+  pop-up or menu button, or row nested in it; a button that is no target keeps its
+  content reachable.
 - Amended (#110): an `AXButton`, `AXLink`, or `AXPopUpButton` is primary as a web app
   shell's sidebar entry when its nearest `AXLandmarkComplementary` ancestor ends within
   the window's leading third (the sidebar row test's bound) and the element is at least

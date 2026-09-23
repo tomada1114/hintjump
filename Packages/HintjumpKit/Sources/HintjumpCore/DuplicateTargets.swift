@@ -1,9 +1,9 @@
 import CoreGraphics
 
 /// The duplicates among the clickable filter's admitted elements: the structural ones —
-/// a window-sized pressable group, what is inside a row that is itself a target, and a
-/// row hidden under its column header — and the frame key the ranker collapses
-/// same-frame twins by.
+/// a window-sized pressable group, pressable content inside a button or link that is
+/// itself a target, what is inside a row that is itself a target, and a row hidden under
+/// its column header — and the frame key the ranker collapses same-frame twins by.
 ///
 /// Measured in `docs/research/target-counts.md`: none of them reached the singles, but
 /// they spent two-character labels (Finder's list view held 186 targets, about 74
@@ -29,11 +29,22 @@ enum DuplicateTargets {
     /// The share of the read's root a pressable group must cover to be window-sized.
     static let windowSizedShare: CGFloat = 0.5
 
-    /// Marks, in `exclusions`, the window-sized groups, then what is inside a target
-    /// row, then the rows hidden under their column header — in that order, so a row
-    /// dropped as a window-sized group is no target row and its cells stay reachable,
-    /// while a row dropped under its header takes its cells with it: they share its
-    /// hidden spot, and a click there would press the header just the same.
+    /// The controls whose pressable content ``excludeControlContent(in:exclusions:)``
+    /// drops.
+    private static let contentOwningRoles: Set<String> = ["AXButton", "AXLink"]
+
+    /// Marks, in `exclusions`, the window-sized groups, then the pressable content of a
+    /// target button or link, then what is inside a target row, then the rows hidden
+    /// under their column header — in that order, so a row dropped as a window-sized
+    /// group is no target row and its cells stay reachable, while a row dropped under
+    /// its header takes its cells with it: they share its hidden spot, and a click there
+    /// would press the header just the same.
+    ///
+    /// A control's content comes right after the window-sized groups, so a group that
+    /// is both keeps the reason that says more. No pass drops a button or a link — a
+    /// window-sized group is never clickable by role, and the row passes drop only
+    /// cells, text fields, and rows — so the control each piece of content defers to is
+    /// final whichever order they run in.
     ///
     /// `exclusions` holds the filter's verdict for each element of `elements`, `nil` for
     /// an admitted one, and `root` is the frame of the read's root. Every pass is linear
@@ -49,6 +60,7 @@ enum DuplicateTargets {
                 exclusions[index] = .windowSizedGroup
             }
         }
+        excludeControlContent(in: elements, exclusions: &exclusions)
         for index in elements.indices where exclusions[index] == nil {
             if isInsideTargetRow(elementAt: index, in: elements, exclusions: exclusions) {
                 exclusions[index] = .insideTargetRow
@@ -90,6 +102,55 @@ enum DuplicateTargets {
         }
         let covered = frame.intersection(root)
         return covered.width * covered.height >= windowSizedShare * root.width * root.height
+    }
+
+    /// Marks, in `exclusions`, each still-admitted element that is not clickable by role
+    /// — so admitted only through `AXPress` — whose nearest control above it is an
+    /// `AXButton` or an `AXLink` that is itself a target, as
+    /// ``TargetExclusion/insideTargetControl``.
+    ///
+    /// The nearest control is the nearest container that is clickable by role, or an
+    /// `AXRow` of any kind: content of a checkbox, a pop-up or menu button, or a row
+    /// nested in the button belongs to that control, and its own rules. HTML allows no
+    /// interactive content inside a button or a link, so what is pressable there is the
+    /// control's own icon and text, and a click on it lands inside the control.
+    private static func excludeControlContent(
+        in elements: [ElementSnapshot],
+        exclusions: inout [TargetExclusion?],
+    ) {
+        let byRole = elements.indices.map { index in
+            TargetRanker.isClickableByRole(elementAt: index, in: elements)
+        }
+        let controls = nearestControls(in: elements, byRole: byRole)
+        for index in elements.indices where exclusions[index] == nil && !byRole[index] {
+            guard let control = controls[index],
+                  contentOwningRoles.contains(elements[control].role ?? ""),
+                  exclusions[control] == nil
+            else {
+                continue
+            }
+            exclusions[index] = .insideTargetControl
+        }
+    }
+
+    /// The index of each element's nearest container that is clickable by role or is an
+    /// `AXRow`, or `nil`.
+    ///
+    /// One forward pass: the pre-order puts a parent before its child, so the parent's
+    /// answer is already known.
+    private static func nearestControls(
+        in elements: [ElementSnapshot],
+        byRole: [Bool],
+    ) -> [Int?] {
+        var controls = [Int?](repeating: nil, count: elements.count)
+        for index in elements.indices {
+            guard let parent = TargetRanker.parentIndex(ofElementAt: index, in: elements) else {
+                continue
+            }
+            let isControl = byRole[parent] || elements[parent].role == "AXRow"
+            controls[index] = isControl ? parent : controls[parent]
+        }
+        return controls
     }
 
     /// An `AXCell`, or an `AXTextField` with an `AXCell` between it and its row, whose

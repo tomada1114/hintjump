@@ -225,9 +225,11 @@ public struct TargetRanker: Sendable {
 
     /// The targets of `elements` in rank order, and why every other element is not one.
     ///
-    /// The filter's admitted elements lose their duplicates in four steps, each a
+    /// The filter's admitted elements lose their duplicates in five steps, each a
     /// ``TargetExclusion``: a pressable group covering half the root that holds another
-    /// target (``TargetExclusion/windowSizedGroup``); a cell, or a text field in a cell,
+    /// target (``TargetExclusion/windowSizedGroup``); an element admitted only through
+    /// `AXPress` whose nearest control is a button or link that is still a target
+    /// (``TargetExclusion/insideTargetControl``); a cell, or a text field in a cell,
     /// whose nearest row is still a target (``TargetExclusion/insideTargetRow``); a row
     /// whose visible center lies inside a column-header button of its own outline or
     /// table, so its click would press the header (``TargetExclusion/underColumnHeader``);
