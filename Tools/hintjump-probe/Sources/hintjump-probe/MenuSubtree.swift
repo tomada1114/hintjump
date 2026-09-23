@@ -4,10 +4,10 @@ import HintjumpCore
 /// The elements under a menu the probe found by hit-testing, as `ElementSnapshot`s
 /// `TargetRanker` can rank.
 ///
-/// Why a walk of the probe's own: `AXUIElementTreeReader` can start a read only at a
-/// `ReadScope` — the application, its focused window, or its menu bar — and a context
-/// menu is reachable from none of them. The scope that would reach it is #48's to add
-/// (`docs/research/topmost-container.md`), so until then the probe reads the same
+/// Why a walk of the probe's own: `front` reads the menu its own hit test found, the
+/// `AXUIElement` it already holds, and prints that hit test's chain alongside the count.
+/// `AXUIElementTreeReader` can now start at the same menu (`ReadScope.popUpMenu`, #48, or
+/// `dump --scope popup`), but only by hit-testing again. The walk reads the same
 /// attributes the adapter reads, one call each, and prunes the same way its pruning
 /// strategies do: an element clipped to a sliver is recorded and not descended. The
 /// clickable decision stays `TargetRanker`'s.

@@ -68,6 +68,16 @@ public enum ReadScope: String, CaseIterable, Sendable {
     case focusedWindow
     /// The application's menu bar (`AXMenuBar`).
     case menuBar
+    /// The menu open in the application's frontmost pop-up-menu-level window: a context
+    /// menu, or the submenu open on one.
+    ///
+    /// A context menu is in no attribute of the application — not a child, not selected
+    /// on a bar, not among the clicked element's children — and `AXFocusedWindow` is
+    /// empty while it is open (`docs/research/topmost-container.md`). The adapter reaches
+    /// it by hit-testing inside its window and walking up to the nearest `AXMenu`, and
+    /// answers ``AccessibilityReadError/attributeUnsupported(_:)`` when there is no such
+    /// window or no menu of this process in it.
+    case popUpMenu
 }
 
 /// How an adapter walks the tree — a translation choice, never a product decision.

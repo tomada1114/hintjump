@@ -4,11 +4,12 @@ import ApplicationServices
 /// adapter's port has no word for: the focused window's subrole, `AXWindows`, whether a
 /// menu bar title is selected, which application the system says is focused.
 ///
-/// Kept here rather than in `HintjumpPlatform` on purpose: they exist so `front` can
-/// show what a future port would read (#48's `TopmostContainerProbing`), and adding
-/// that port before #9 has named its signals would decide its shape too early. Every
-/// read answers `nil` (or `[]`) for anything the application will not say, so a missing
-/// attribute is printed as `-` rather than stopping the probe.
+/// Kept here rather than in `HintjumpPlatform` on purpose: `front` prints more than the
+/// product reads — every `AXWindows` entry, menu-bar selections, the focused element —
+/// while `HintjumpPlatform`'s `SystemTopmostContainerProbe` (#48) reads only the signals
+/// the targeting rule needs. Every read answers `nil` (or `[]`) for anything the
+/// application will not say, so a missing attribute is printed as `-` rather than
+/// stopping the probe.
 enum AXRaw {
     /// How long one Accessibility call may wait for an application before it gives up,
     /// in seconds. Set once on the system-wide element, which makes it every element's

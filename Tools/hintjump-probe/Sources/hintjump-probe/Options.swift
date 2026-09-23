@@ -162,6 +162,9 @@ private func parseScope(_ raw: String) throws -> ReadScope {
     case "menubar":
         .menuBar
 
+    case "popup", "popupmenu":
+        .popUpMenu
+
     default:
         throw ProbeError.unknownValue(flag: "--scope", value: raw)
     }

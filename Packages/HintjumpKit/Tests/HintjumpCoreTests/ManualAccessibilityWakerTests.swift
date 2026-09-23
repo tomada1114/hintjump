@@ -23,8 +23,7 @@ final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Se
     private(set) var readRequests: [ReadRequest] = []
     private(set) var enableManualAccessibilityCalls: [pid_t] = []
 
-    private let readAnswers: [TreeSnapshot]
-    private let readError: AccessibilityReadError?
+    private let readResults: [Result<TreeSnapshot, AccessibilityReadError>]
     private let enableError: AccessibilityReadError?
 
     /// How many times `readTree` was called, whether it answered or threw.
@@ -35,27 +34,32 @@ final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Se
     /// Answers `readAnswers` in order, repeating the last one once they run out, and
     /// lets every `enableManualAccessibility(pid:)` call succeed.
     convenience init(readAnswers: [TreeSnapshot]) {
-        self.init(readAnswers: readAnswers, readError: nil, enableError: nil)
+        self.init(readResults: readAnswers.map { .success($0) }, enableError: nil)
     }
 
     /// As ``init(readAnswers:)``, but every `enableManualAccessibility(pid:)` call throws
     /// `enableError` instead of succeeding.
     convenience init(readAnswers: [TreeSnapshot], enableError: AccessibilityReadError) {
-        self.init(readAnswers: readAnswers, readError: nil, enableError: enableError)
+        self.init(readResults: readAnswers.map { .success($0) }, enableError: enableError)
     }
 
     /// Every `readTree` call throws `readError` — a read that never answers.
     convenience init(readError: AccessibilityReadError) {
-        self.init(readAnswers: [], readError: readError, enableError: nil)
+        self.init(readResults: [.failure(readError)], enableError: nil)
+    }
+
+    /// Answers or throws `readResults` in order, repeating the last one once they run
+    /// out — a first read that fails and a second that answers, for a caller that falls
+    /// back from one scope to another.
+    convenience init(readResults: [Result<TreeSnapshot, AccessibilityReadError>]) {
+        self.init(readResults: readResults, enableError: nil)
     }
 
     private init(
-        readAnswers: [TreeSnapshot],
-        readError: AccessibilityReadError?,
+        readResults: [Result<TreeSnapshot, AccessibilityReadError>],
         enableError: AccessibilityReadError?,
     ) {
-        self.readAnswers = readAnswers
-        self.readError = readError
+        self.readResults = readResults
         self.enableError = enableError
     }
 
@@ -65,14 +69,11 @@ final class FakeAccessibilityTreeReader: AccessibilityTreeReading, @unchecked Se
         strategy: ReadStrategy,
         maxDepth: Int?,
     ) throws -> TreeSnapshot {
-        let answerIndex = min(readRequests.count, readAnswers.count - 1)
+        let answerIndex = min(readRequests.count, readResults.count - 1)
         readRequests.append(
             ReadRequest(pid: pid, scope: scope, strategy: strategy, maxDepth: maxDepth),
         )
-        if let readError {
-            throw readError
-        }
-        return readAnswers[answerIndex]
+        return try readResults[answerIndex].get()
     }
 
     func enableManualAccessibility(pid: pid_t) throws {

@@ -21,7 +21,7 @@ public struct WindowListStatusItems: StatusItemListing {
     /// visible frame, or the status bar's thickness when the menu bar is auto-hidden and
     /// that strip is empty.
     @MainActor
-    private static func barFrame(of screen: NSScreen) -> CGRect {
+    static func barFrame(of screen: NSScreen) -> CGRect {
         let strip = screen.frame.maxY - screen.visibleFrame.maxY
         let height = strip > 0 ? strip : NSStatusBar.system.thickness
         return CGRect(x: screen.frame.minX, y: 0, width: screen.frame.width, height: height)
