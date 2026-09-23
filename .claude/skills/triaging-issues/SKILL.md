@@ -93,6 +93,22 @@ Two things belong in the body because nothing else can recover them later:
   correctly", "is cleaned up"). A closing condition that cannot be checked mechanically
   cannot be verified by anyone but the filer.
 
+### A close condition an agent can meet alone
+
+Write the close condition so the implementer can meet it without the developer: unit
+tests, rendering tests (`just record-snapshots`), `just lint`, a read-only
+`just probe dump`. A close condition should not require the developer's Mac. That
+means no owner re-run, no screenshot timed with the developer, and no check on the
+last rung of `AGENTS.md`'s "How far verification goes". The developer keeps working
+while issues ship, and an issue that waits on their hands stalls the backlog.
+
+The one exception is a change that nothing below the last rung can see: a new OS
+integration, or wiring in `App/`. Even then, the implementer judges whether the check
+is truly needed, and the check goes in the PR as evidence, not as a close condition.
+Tuning that only shows up in daily use, such as how a size feels or where a label reads
+best, is not a close condition either. Say so in the body ("the owner files any tuning
+from daily use as a follow-up"), and leave it to the owner to file later.
+
 ## Ordering constraints
 
 Write an ordering constraint as `Depends on #12`, one per line under a
