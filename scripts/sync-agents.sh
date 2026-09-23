@@ -12,9 +12,12 @@
 # Sync runs `rsync -a --delete` from the source into the mirror and never writes or
 # deletes outside <root>/.claude/skills/. --check runs `diff -r -q` and names every
 # path that is missing from the mirror, extra in it, or different. Both ignore
-# .DS_Store, which Finder drops into any directory it has shown (gitignored, but on
-# disk). rsync and diff are used because they ship with macOS (openrsync since
-# macOS 15) and the ubuntu-latest image, so no tool is added to mise.toml.
+# .DS_Store, which Finder drops into any directory it has shown, and __pycache__,
+# which Python writes beside a skill script whenever that script imports a sibling
+# module (both gitignored, but on disk): sync neither copies one into the mirror nor
+# deletes one already there, and --check reports neither. rsync and diff are used
+# because they ship with macOS (openrsync since macOS 15) and the ubuntu-latest
+# image, so no tool is added to mise.toml.
 #
 # Every path is relative to --root, which defaults to `git rev-parse
 # --show-toplevel`. Git work tree: needed only for that default — without --root
@@ -108,7 +111,7 @@ fi
 
 if [ "${CHECK}" = 0 ]; then
     mkdir -p "${MIRROR}"
-    rsync -a --delete --exclude .DS_Store "${SOURCE}/" "${MIRROR}/"
+    rsync -a --delete --exclude .DS_Store --exclude __pycache__ "${SOURCE}/" "${MIRROR}/"
     echo "agents:sync: ${MIRROR_REL}/ regenerated from ${SOURCE_REL}/."
     exit 0
 fi
@@ -123,7 +126,7 @@ fi
 DIFF_STATUS=0
 # Through env, not a bare LC_ALL=C prefix: Homebrew bash re-inits its locale for a
 # prefixed command in the forked child, which can SIGSEGV on macOS (exit 139).
-DIFF_OUTPUT=$(env LC_ALL=C diff -r -q -x .DS_Store "${SOURCE}" "${MIRROR}" 2>&1) || DIFF_STATUS=$?
+DIFF_OUTPUT=$(env LC_ALL=C diff -r -q -x .DS_Store -x __pycache__ "${SOURCE}" "${MIRROR}" 2>&1) || DIFF_STATUS=$?
 
 if [ "${DIFF_STATUS}" = 0 ]; then
     echo "agents:check: ${MIRROR_REL}/ is in sync."
@@ -165,7 +168,7 @@ while IFS= read -r line; do
 done <<EOF
 ${DIFF_OUTPUT}
 EOF
-echo "Expected: ${MIRROR_REL}/ byte-identical to ${SOURCE_REL}/ (ignoring .DS_Store)" >&2
+echo "Expected: ${MIRROR_REL}/ byte-identical to ${SOURCE_REL}/ (ignoring .DS_Store and __pycache__)" >&2
 echo "Actual: ${COUNT} difference(s), listed above" >&2
 echo "Next: run \`just agents-sync\` and commit both trees" >&2
 exit 1

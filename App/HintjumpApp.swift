@@ -16,9 +16,6 @@ import SwiftUI
 /// (`docs/architecture.md` › Layers).
 @main
 struct HintjumpApp: App {
-    /// The temporary status-item image, until the real template image lands.
-    static let statusItemImage = "rectangle.dashed"
-
     /// Composed once, here, rather than inside the view: it must survive scene
     /// recreation and keep its own `hasPrompted` state for the life of the process.
     @State private var accessibilityGate =
@@ -58,7 +55,10 @@ struct HintjumpApp: App {
             // has to run at launch and on activation is attached here, and so is the
             // start that loads the config (applying `launch_at_login`) and registers
             // the triggers.
-            Image(systemName: Self.statusItemImage)
+            // The hint-tag template image; which glyph it holds is `StatusIcon.candidate`
+            // in HintjumpUI. The update dot and config-error "!" states are drawn there
+            // too, for the features that will report them.
+            StatusIcon.image(for: .normal)
                 .accessibilityGate(accessibilityGate)
                 .onAppear {
                     composition.start()
