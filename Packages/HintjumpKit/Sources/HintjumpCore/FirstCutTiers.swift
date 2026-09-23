@@ -146,9 +146,11 @@ public enum FirstCutTiers {
     /// pressable element standing in for such a row.
     ///
     /// The element stands in for a row within ``rowStandInDepth`` containers above it
-    /// when that row is not a target itself — no `AXPress` and not directly in an outline
-    /// or table, as in VS Code's explorer. When the row is a target, what is inside it
-    /// keeps its own tier, so one row never takes two labels.
+    /// when the clickable filter turns that row away — no `AXPress` and not directly in
+    /// an outline or table, as in VS Code's explorer, or disabled, too small, or outside
+    /// the window. The filter itself decides (``TargetRanker/admits(_:parent:root:)``),
+    /// so this never disagrees with what becomes a target. When the row is a target,
+    /// what is inside it keeps its own tier, so one row never takes two labels.
     private static func isSidebarRow(_ candidate: TargetCandidate) -> Bool {
         let ancestors = candidate.ancestors
         let aboveRow: ArraySlice<ElementSnapshot>
@@ -160,7 +162,12 @@ public enum FirstCutTiers {
                 return false
             }
             aboveRow = ancestors[(rowIndex + 1)...]
-            guard !isRowTarget(ancestors[rowIndex], container: aboveRow.first) else {
+            let rowIsTarget = TargetRanker.admits(
+                ancestors[rowIndex],
+                parent: aboveRow.first,
+                root: candidate.windowFrame,
+            )
+            guard !rowIsTarget else {
                 return false
             }
         }
@@ -172,12 +179,5 @@ public enum FirstCutTiers {
         }
         let window = candidate.windowFrame
         return frame.maxX - window.minX <= window.width / sidebarWidthDivisor
-    }
-
-    /// Whether `row`, directly inside `container`, is itself a target — the clickable
-    /// filter's rule for a row (``TargetRanker/exclusion(ofElementAt:in:)``).
-    private static func isRowTarget(_ row: ElementSnapshot, container: ElementSnapshot?) -> Bool {
-        row.actions.contains("AXPress")
-            || TargetRanker.rowContainerRoles.contains(container?.role ?? "")
     }
 }
