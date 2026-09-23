@@ -50,8 +50,9 @@ enum Palette {
         }
     }
 
-    /// The sRGB color `0xRRGGBB` names.
-    private static func color(_ rgb: UInt32) -> Color {
+    /// The sRGB color `0xRRGGBB` names. Internal rather than private so the Settings
+    /// window's tiles (`SettingsPalette`) spell their colors the same way.
+    static func color(_ rgb: UInt32) -> Color {
         func channel(_ shift: UInt32) -> Double {
             Double((rgb >> shift) & channelMask) / channelMax
         }
