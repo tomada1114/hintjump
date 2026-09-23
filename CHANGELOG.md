@@ -75,5 +75,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounded tag with a pointer arrow inside. Its update-dot and config-error variants are
   drawn too — the error as a filled pill with a "!" cut out of it, large enough to read
   at the menu bar's real size — but nothing shows those variants yet
+- In the frontmost window, single-character labels go first to tabs, sidebar rows (also
+  behind an icon rail, as in Slack and VS Code), and the links in a web page's main
+  content. Toolbar buttons, a site's header and navigation bar, and links inside an
+  embedded frame get two-character labels (`docs/research/target-counts.md`)
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
