@@ -186,6 +186,10 @@ file is their public record.
   as a full-width sidebar entry, the tag sits mid-row rather than beside its short
   title. The rejection of "hints at the top-left corner or centered over the target"
   above still holds: this is neither.
+- Superseded in part (2026-09-23): the settings surface is no longer "a status-item
+  menu plus one Status window", and "a tabbed standard Settings window" is no longer
+  what was rejected in its place. See "The settings surface: a sidebar Settings window
+  over the config file" below; the overlay decisions in this entry stand.
 
 ## 2026-09-22 Planning notes stay outside the repository
 
@@ -638,3 +642,30 @@ file is their public record.
   wait on every surface the rule can reach.
 - Open: after the first release ships, each sub-issue of #80 is either taken off
   hold or closed as not planned, and #80 closes.
+
+## 2026-09-23 The settings surface: a sidebar Settings window over the config file
+
+- Decision: one Settings window with a sidebar, modeled on macOS System Settings
+  (SwiftUI `NavigationSplitView`, a grouped `Form` in each detail pane), opened from
+  the status menu's "Settings…" (⌘,). Its panes, in order, are Getting Started,
+  Shortcuts, Hints, Apps, General, Config File, and About; Getting Started is the
+  first-run guide. Every key in `config.toml` is editable in the window, and a change
+  is written back to the file at once, keeping the user's comments. The file stays the
+  source of truth, so it can still be shared and diffed ("Per-app disable, and a text
+  config file" above). Controls are system controls in the system accent color. The
+  one custom detail is the sidebar's icon tiles, drawn as near-black hint tags, which
+  take the red-orange accent (`#E5470F`) only while their pane needs the user. The
+  overlay stopped using that accent with #113, so the spec now defines it rather than
+  borrowing it. The screen-by-screen spec, copy included, is
+  `docs/design/settings-window.md`.
+- Why: people who had never used the app could not tell what to do first. A sidebar
+  makes each group of settings its own clearly labeled entry point, and the System
+  Settings layout is the one Mac users already know.
+- Rejected: the single scrolling window the Design entry planned (every section at
+  once, no entry point); storing settings in `UserDefaults` with the file as an import
+  and export format (two sources of truth, and sharing stops being "copy the file").
+- Supersedes: in "Design: signpost hints, one accent, system controls everywhere
+  else", the sentence that settles the settings surface and the rejection of "a tabbed
+  standard Settings window". What that sentence gave the window's About section, an
+  available update, goes to the About pane. Reloading the file only on request is not
+  changed here; #102 revises it.
