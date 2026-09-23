@@ -32,11 +32,24 @@ public enum FirstCutTiers {
     /// The landmark a web page marks its content with.
     private static let mainLandmarkSubrole = "AXLandmarkMain"
     private static let webAreaRole = "AXWebArea"
+    /// The landmark a page marks an `<aside>` with — in a web app shell, its sidebar.
+    private static let complementaryLandmarkSubrole = "AXLandmarkComplementary"
+    /// Roles an app shell's sidebar entry takes: Claude Desktop's sessions are buttons,
+    /// its settings entry a pop-up.
+    private static let sidebarEntryRoles: Set<String> = ["AXButton", "AXLink", "AXPopUpButton"]
+    /// A sidebar entry spans at least this share of its landmark's width, which admits
+    /// the full-width entries and the settings pop-up (216 of 349 pt) and leaves the icon
+    /// buttons and each entry's 30 pt "…" pop-up as plain buttons.
+    private static let sidebarEntryMinimumWidthShare: CGFloat = 0.5
+    /// How far an app shell's web area may sit from the window's top, leading, and
+    /// trailing edges, in points.
+    private static let appShellEdgeTolerance: CGFloat = 1
 
-    /// A sidebar's outline ends within the window's leading width divided by this — a
-    /// third — wherever it starts, so one behind an icon rail (Slack's workspace rail,
-    /// VS Code's activity bar) still counts. Structural rather than by `AXDescription`,
-    /// which is localized ("Sidebar", "サイドバー").
+    /// A sidebar — an outline, or an app shell's complementary landmark — ends within the
+    /// window's leading width divided by this (a third) wherever it starts, so one behind
+    /// an icon rail (Slack's workspace rail, VS Code's activity bar) still counts.
+    /// Structural rather than by `AXDescription`, which is localized ("Sidebar",
+    /// "サイドバー").
     private static let sidebarWidthDivisor: CGFloat = 3
     /// How many containers up from a pressable element its row may be for the element to
     /// stand in for the row: VS Code's explorer presses a group two levels inside it.
@@ -46,10 +59,10 @@ public enum FirstCutTiers {
     /// correcting it touches nothing else.
     ///
     /// 1. ``TargetTier/primary``: text and search fields, tabs, a button inside a sheet
-    ///    or a dialog, a sidebar row, and a link in a web page's main content — but
-    ///    nothing inside a page's banner or navigation landmark. A toolbar's buttons are
-    ///    not primary: measured, they took the singles from the tabs, sidebars, and
-    ///    article links people click.
+    ///    or a dialog, a sidebar row, an entry in a web app shell's sidebar, and a link
+    ///    in a web page's main content — but nothing inside a page's banner or
+    ///    navigation landmark. A toolbar's buttons are not primary: measured, they took
+    ///    the singles from the tabs, sidebars, and article links people click.
     /// 2. ``TargetTier/linkOrButton``: links and every other button.
     /// 3. ``TargetTier/rowOrCell``: rows and cells, and a text field inside a row — a
     ///    table's text field is how a row shows its name (every file in Finder's list
@@ -85,6 +98,7 @@ public enum FirstCutTiers {
             || isSheetOrDialogButton(candidate)
             || isSidebarRow(candidate)
             || isMainContentLink(candidate)
+            || isAppShellSidebarEntry(candidate)
     }
 
     private static func isInsidePageChrome(_ candidate: TargetCandidate) -> Bool {
@@ -177,7 +191,48 @@ public enum FirstCutTiers {
         guard let container = aboveRow.first(where: isContainer), let frame = container.frame else {
             return false
         }
+        return isInLeadingThird(frame, of: candidate.windowFrame)
+    }
+
+    /// A button, link, or pop-up at least half as wide as its nearest complementary
+    /// landmark, when that landmark ends within the window's leading third and the
+    /// nearest web area above it is an app shell (``isAppShell(_:in:)``).
+    ///
+    /// Claude Desktop's sidebar is such a landmark, holding buttons in plain groups with
+    /// no outline and no rows, so ``isSidebarRow(_:)`` does not see it. The guard keeps a
+    /// website's own `<aside>` from taking the singles #37 gave its main content.
+    private static func isAppShellSidebarEntry(_ candidate: TargetCandidate) -> Bool {
+        let ancestors = candidate.ancestors
+        let isLandmark = { (element: ElementSnapshot) in
+            element.subrole == complementaryLandmarkSubrole
+        }
+        let isWebArea = { (element: ElementSnapshot) in element.role == webAreaRole }
+        guard sidebarEntryRoles.contains(candidate.element.role ?? ""),
+              let elementFrame = candidate.element.frame,
+              let landmarkIndex = ancestors.firstIndex(where: isLandmark),
+              let landmarkFrame = ancestors[landmarkIndex].frame,
+              let webArea = ancestors[(landmarkIndex + 1)...].first(where: isWebArea),
+              let webAreaFrame = webArea.frame
+        else {
+            return false
+        }
         let window = candidate.windowFrame
-        return frame.maxX - window.minX <= window.width / sidebarWidthDivisor
+        return isInLeadingThird(landmarkFrame, of: window)
+            && elementFrame.width >= landmarkFrame.width * sidebarEntryMinimumWidthShare
+            && isAppShell(webAreaFrame, in: window)
+    }
+
+    /// A web area whose top edge is at the window's top and which spans the window's
+    /// width, each within ``appShellEdgeTolerance``: an Electron app's whole window. A
+    /// browser's page always sits below its native tab bar and toolbar.
+    private static func isAppShell(_ webArea: CGRect, in window: CGRect) -> Bool {
+        abs(webArea.minY - window.minY) <= appShellEdgeTolerance
+            && webArea.minX <= window.minX + appShellEdgeTolerance
+            && webArea.maxX >= window.maxX - appShellEdgeTolerance
+    }
+
+    /// Whether `frame` ends within the window's leading third, wherever it starts.
+    private static func isInLeadingThird(_ frame: CGRect, of window: CGRect) -> Bool {
+        frame.maxX - window.minX <= window.width / sidebarWidthDivisor
     }
 }
