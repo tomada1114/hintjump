@@ -33,7 +33,13 @@ extension TargetRankerTests {
                     Tiers.sidebar,
                     row(parent: 1),
                     group(parent: 2),
-                    row(parent: 3, actions: ["AXPress"]),
+                    // Inset like its group: at the outer row's frame it would be a twin.
+                    Spec(
+                        role: "AXRow",
+                        frame: rect(30, 60, 180, 28),
+                        actions: ["AXPress"],
+                        parent: 3,
+                    ),
                 ],
                 expected: .primary,
             ),
@@ -180,8 +186,10 @@ extension TargetRankerTests {
         }
 
         /// A plain container under the spec at `parent`, with `actions` (none by default).
+        /// Inset in its row as VS Code's pressable group is, so a group and the row around
+        /// it are never same-frame twins, of which only the first would be a target.
         private static func group(parent: Int, actions: [String] = []) -> Spec {
-            Spec(role: "AXGroup", frame: rect(10, 60, 200, 28), actions: actions, parent: parent)
+            Spec(role: "AXGroup", frame: rect(30, 60, 180, 28), actions: actions, parent: parent)
         }
 
         /// A row under the spec at `parent`, with `actions` (none by default).

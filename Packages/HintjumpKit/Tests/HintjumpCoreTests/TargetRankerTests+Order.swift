@@ -27,8 +27,13 @@ extension TargetRankerTests {
 
         @Test
         func `elements sharing a center keep their tree order`() {
-            let frame = rect(100, 100, 40, 20)
-            let elements = tree([Spec(frame: frame), Spec(frame: frame), Spec(frame: frame)])
+            // Three sizes around one center: identical frames would be twins, of which
+            // only the first is a target (`TargetRankerTests+Duplicates.swift`).
+            let elements = tree([
+                Spec(frame: rect(100, 100, 40, 20)),
+                Spec(frame: rect(90, 95, 60, 30)),
+                Spec(frame: rect(110, 105, 20, 10)),
+            ])
             #expect(TargetRanker().rank(elements).map(\.elementIndex) == [1, 2, 3])
         }
 
@@ -37,7 +42,8 @@ extension TargetRankerTests {
             let elements = tree([
                 Spec(role: "AXLink", frame: rect(500, 300, 40, 20)),
                 Spec(role: "AXTextField", frame: rect(10, 10, 200, 24)),
-                Spec(frame: rect(500, 300, 40, 20)),
+                // Right of the link above rather than on it: one frame would make twins.
+                Spec(frame: rect(600, 300, 40, 20)),
                 Spec(role: "AXCell", frame: rect(10, 400, 100, 20)),
                 Spec(role: "AXLink", frame: rect(10, 300, 40, 20)),
             ])

@@ -91,6 +91,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A window's close, minimize, zoom, and full-screen buttons now get the last labels in
   every window, dialogs included, instead of taking single-character labels
+- One spot on screen now gets one label: a list row no longer carries separate labels
+  for its cells and its name (Finder's list view), a control and an invisible twin of
+  the same size share one, and an Electron window's window-sized click-through groups
+  get none — so fewer targets need two-character labels
 
 ### Fixed
 

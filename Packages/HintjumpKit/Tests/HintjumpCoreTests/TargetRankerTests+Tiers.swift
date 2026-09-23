@@ -147,12 +147,16 @@ extension TargetRankerTests {
                 ],
                 expected: .rowOrCell,
             ),
+            // A cell and its text field are tiered in a row that is not a target — in a
+            // group, not directly in the outline — since a target row's cell and name
+            // field give way to the row (`TargetRankerTests+Duplicates.swift`).
             TierCase(
                 "a cell",
                 [
                     content,
-                    Spec(role: "AXRow", frame: rect(230, 50, 660, 30), parent: 1),
-                    Spec(role: "AXCell", frame: rect(230, 50, 300, 30), parent: 2),
+                    Spec(role: "AXGroup", frame: rect(230, 50, 660, 540), parent: 1),
+                    Spec(role: "AXRow", frame: rect(230, 50, 660, 30), parent: 2),
+                    Spec(role: "AXCell", frame: rect(230, 50, 300, 30), parent: 3),
                 ],
                 expected: .rowOrCell,
             ),
@@ -160,9 +164,10 @@ extension TargetRankerTests {
                 "a text field inside a row is the row's label, not an input",
                 [
                     content,
-                    Spec(role: "AXRow", frame: rect(230, 50, 660, 30), parent: 1),
-                    Spec(role: "AXCell", frame: rect(230, 50, 300, 30), parent: 2),
-                    Spec(role: "AXTextField", frame: rect(260, 55, 100, 18), parent: 3),
+                    Spec(role: "AXGroup", frame: rect(230, 50, 660, 540), parent: 1),
+                    Spec(role: "AXRow", frame: rect(230, 50, 660, 30), parent: 2),
+                    Spec(role: "AXCell", frame: rect(230, 50, 300, 30), parent: 3),
+                    Spec(role: "AXTextField", frame: rect(260, 55, 100, 18), parent: 4),
                 ],
                 expected: .rowOrCell,
             ),
