@@ -403,3 +403,55 @@ file is their public record.
   trip per process, and one hung process stalls the trigger past the 300 ms
   budget). If a real run shows an item the window list misses, that item's
   process's `AXExtrasMenuBar` is added as a second source then, not before.
+
+## 2026-09-22 What "whatever is on top" means: an ordered targeting rule; open menu-bar menus are out of scope
+
+- Decision: a frontmost-window trigger resolves its target with these checks, in
+  order, the first match winning (`docs/research/topmost-container.md`, runs of
+  2026-09-22):
+  1. The system-wide `AXFocusedApplication` is a process other than the frontmost
+     application and Hintjump itself, and it owns an on-screen window above the
+     normal layer, outside the menu bar strip and taller than 40 pt: that process's
+     `AXFocusedWindow` (Control Center's panels, Notification Center, Spotlight,
+     third-party launchers).
+  2. The frontmost application owns an on-screen window at
+     `kCGPopUpMenuWindowLevel`: hit-test the frontmost such window 20 pt below its top
+     edge and walk up to the nearest `AXMenu` of the frontmost pid. That is the
+     context menu (or the submenu open on it). No menu found: go on.
+  3. `AXFocusedWindow` is an `AXSheet` (save panels, save-changes alerts): the sheet.
+  4. The focused window's subtree holds an `AXPopover`: the popover.
+  5. Otherwise the focused window; with none, nothing, as today.
+
+  Open menu-bar menus are out of scope for the frontmost-window triggers. No event
+  tap and no Input Monitoring is added to reach them; macOS's own keyboard
+  navigation handles an open menu. Floating panels (`AXFloatingWindow`, such as
+  TextEdit's Fonts panel) are not targeted either, because they are not focused.
+  Both fall back to the focused window: check 5, or check 3 or 4 when a sheet or
+  popover is open. Stating that fallback in the README is #48's job, along with the
+  rule's implementation.
+- Why: the runs identified every case #9 listed, each by a different signal, so no
+  single attribute can answer "what is on top".
+  - A context menu is reachable only through its pop-up-menu-level window: the
+    application element has no `AXMenu` child, nothing on the bar is selected, the
+    right-clicked element does not list it, and `AXFocusedWindow` is empty while it
+    is open.
+  - A panel another process draws is found through the focused-application pid.
+    The window list alone gives a false positive: Notification Center keeps a
+    full-screen layer-21 window on screen while it is closed.
+  - Sheets and alerts need nothing new, because `AXFocusedWindow` already answers
+    the sheet.
+  - Menu-bar menus are out of scope because the Carbon hotkey is not delivered while
+    one is tracking. Two presses with Finder's File menu open logged no
+    `trigger pressed` line. With a context menu open the same hotkey was delivered.
+- Rejected: an event tap to receive the trigger during menu-bar menu tracking (it
+  costs Input Monitoring, the grant "The overlay is a key, non-activating panel"
+  above already declines for the same reason); searching the tree for a context menu (it is not in the tree);
+  taking any window above the normal layer as the target (Notification Center's
+  closed window, the Dock's, the screenshot service's, and Hintjump's own overlay
+  are all there); targeting a floating panel (it is not where the keyboard focus
+  is).
+- Open: #48 implements the rule. It also checks on a real Mac what these runs did
+  not test. First, whether the hotkey is delivered while Control Center,
+  Notification Center, or Spotlight has focus. Second, whether showing the overlay,
+  a key panel (#44), closes an open context menu. Third, why Spotlight's result
+  rows do not pass `TargetRanker`'s clickable filter.

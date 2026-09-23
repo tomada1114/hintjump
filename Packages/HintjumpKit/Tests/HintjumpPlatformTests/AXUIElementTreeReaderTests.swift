@@ -91,6 +91,20 @@ struct AXUIElementTreeReaderTests {
     }
 
     @Test
+    func `a pruning application read still descends below the application element`() throws {
+        let pid = try Self.finderProcessIdentifier()
+        let tree = try Self.readFinder(pid: pid, scope: .application, strategy: .batchedPruned)
+
+        // Finder's application element reports a zero-size frame. Taken as the visible
+        // rectangle, it intersects nothing, and every window and the menu bar would be
+        // recorded with nothing read under them; an empty root frame bounds nothing, the
+        // same as no frame at all. The menu bar's titles, one level under the bar, are
+        // on screen whatever the windows are doing.
+        let titles = tree.elements.filter { $0.role == "AXMenuBarItem" && $0.depth == 2 }
+        #expect(titles.count >= 5, "found \(titles.count) AXMenuBarItem titles at depth 2")
+    }
+
+    @Test
     func `a menu bar read one level deep stops at the titles`() throws {
         let pid = try Self.finderProcessIdentifier()
         let limited = try Self.readFinder(

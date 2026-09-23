@@ -27,7 +27,24 @@ hintjump-probe <command> …`:
 - `time` — the same read repeated, reported as p50 and p95:
   `just probe time --app com.apple.finder --strategy batched --runs 10`
 - `front` — the application's direct children (its windows, panels, and menu bar) and
-  then its focused-window root: `just probe front --app com.apple.finder`
+  its focused-window root, then a snapshot of what is on top, for the topmost-container
+  verification (#9): `AXFocusedWindow` and every `AXWindows` entry with its subrole, the
+  menu bar titles and status items that report `AXSelected`, every open `AXMenu`, every
+  on-screen window above the normal layer from `CGWindowListCopyWindowInfo` (layer,
+  bounds, owner pid and name), and each window, sheet, popover, drawer, or menu in the
+  tree with its count of clickable descendants — `TargetRanker`'s targets, rooted at
+  that container. For each pop-up-menu-level window (layer 101) the frontmost
+  application owns, it hit-tests a point inside the window and walks up to the nearest
+  `AXMenu`, the only signal a context menu gives, and prints it as a `popup` line with
+  the menu's clickable count. Any other application that owns such a window outside the menu bar
+  strip (Control Center's panels, Spotlight, Notification Center) is read the same way
+  and listed under its own pid: `just probe front --app com.apple.finder`. Without
+  `--app` it reads whichever application is frontmost. With `--watch <seconds>` it
+  samples every `--interval` milliseconds (500 by default), follows the frontmost
+  application from sample to sample, and prints a timestamped snapshot only when a
+  one-line signature of those signals changes, so a person can open menus and panels by
+  hand while it records: `just probe front --watch 300 > front-watch.log`. It only
+  reads — it never clicks, types, or activates anything
 - `wake` — set `AXManualAccessibility` on the application, which is what Chromium and
   Electron applications wait for, and dump either way:
   `just probe wake --app com.microsoft.VSCode`
