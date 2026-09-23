@@ -1,8 +1,9 @@
 import CoreGraphics
 
 /// The duplicates among the clickable filter's admitted elements: the structural ones —
-/// a window-sized pressable group, and what is inside a row that is itself a target —
-/// and the frame key the ranker collapses same-frame twins by.
+/// a window-sized pressable group, what is inside a row that is itself a target, and a
+/// row hidden under its column header — and the frame key the ranker collapses
+/// same-frame twins by.
 ///
 /// Measured in `docs/research/target-counts.md`: none of them reached the singles, but
 /// they spent two-character labels (Finder's list view held 186 targets, about 74
@@ -28,13 +29,15 @@ enum DuplicateTargets {
     /// The share of the read's root a pressable group must cover to be window-sized.
     static let windowSizedShare: CGFloat = 0.5
 
-    /// Marks, in `exclusions`, the window-sized groups and then what is inside a target
-    /// row — in that order, so a row dropped as a window-sized group is no target row
-    /// and its cells stay reachable.
+    /// Marks, in `exclusions`, the window-sized groups, then what is inside a target
+    /// row, then the rows hidden under their column header — in that order, so a row
+    /// dropped as a window-sized group is no target row and its cells stay reachable,
+    /// while a row dropped under its header takes its cells with it: they share its
+    /// hidden spot, and a click there would press the header just the same.
     ///
     /// `exclusions` holds the filter's verdict for each element of `elements`, `nil` for
-    /// an admitted one, and `root` is the frame of the read's root. Both passes are
-    /// linear in the read, apart from a walk up from each cell and text field to its row.
+    /// an admitted one, and `root` is the frame of the read's root. Every pass is linear
+    /// in the read, apart from a walk up from each cell and text field to its row.
     static func excludeStructural(
         in elements: [ElementSnapshot],
         root: CGRect,
@@ -51,6 +54,7 @@ enum DuplicateTargets {
                 exclusions[index] = .insideTargetRow
             }
         }
+        excludeRowsUnderColumnHeaders(in: elements, root: root, exclusions: &exclusions)
     }
 
     /// Whether each element has an admitted element somewhere below it.

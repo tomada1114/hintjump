@@ -3,7 +3,8 @@ import HintjumpCore
 import Testing
 
 /// The ranker's suites share one set of fixtures, declared here; the suites themselves
-/// are nested, one per concern, in its `+Filter`, `+Tiers`, `+Regions`, and `+Order`
+/// are nested, one per concern, in its `+Filter`, `+Tiers`, `+Regions`, `+Order`,
+/// `+Duplicates`, and `+ColumnHeaders`
 /// extensions.
 @Suite("TargetRanker")
 enum TargetRankerTests {
