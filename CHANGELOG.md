@@ -106,6 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   uppercase letters, the same for one- and two-character labels. The right-click
   entry point, and its "Right click" chip, show the same tag inverted. Labels are still
   typed in lowercase (or uppercase: both match)
+- A hint tag now sits at the bottom center of its target instead of on its left edge,
+  so it no longer hides the icon or the first letters that tell you which element it
+  labels, and a row scrolled partly out of view is labeled on the part you can see.
+  When two tags would overlap, the lower-ranked one moves to its target's top center,
+  bottom-left, or bottom-right corner, whichever is free, and the higher-ranked tag is
+  drawn on top
 
 ### Fixed
 

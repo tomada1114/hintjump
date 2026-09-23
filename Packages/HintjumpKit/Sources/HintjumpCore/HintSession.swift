@@ -232,13 +232,11 @@ public final class HintSession {
         }
         let rootCenter = CGPoint(x: set.rootFrame.midX, y: set.rootFrame.midY)
         let canvas = presenter.screenFrame(containing: rootCenter) ?? set.rootFrame
-        let placed = assignment.labeled.map { labeled in
-            HintLayout.placedHint(
-                label: labeled.label,
-                targetFrame: labeled.target.frame,
-                in: canvas,
-            )
-        }
+        let placed = HintLayout.placedHints(
+            assignment.labeled.map { LabeledFrame(label: $0.label, frame: $0.target.frame) },
+            within: set.rootFrame,
+            in: canvas,
+        )
         let rightClick = entryPoint == .rightClickInWindow
         generation += 1
         active = ActiveHints(

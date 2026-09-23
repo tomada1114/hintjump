@@ -169,6 +169,23 @@ file is their public record.
   a single, and in use on Claude Desktop and Chrome a mix of accented and
   near-black tags read as noise rather than information. Tag sizes are unchanged;
   the proportional system bold was rejected because `WW` is wider than a pair tag.
+- Amended (#114): a tag no longer straddles its target's left edge. It is centered
+  horizontally on the target and straddles its bottom edge, at the bottom center of
+  the target's visible part — its frame intersected with the read's root, the same
+  rectangle a click lands in the center of — still clamped inside the screen, so a
+  target at the screen's bottom edge gets its tag pushed up onto it, and the menu
+  bar's tags hang just below it. On the left edge a tag hid what identifies its
+  target (a title's first letters, a favicon, a leading icon), neighbors' tags
+  stacked on one another, and a row scrolled half out of view was labeled on its
+  hidden part. Tags are placed in rank order; one whose box, with a 1 pt gap around
+  it, overlaps a tag already placed tries the target's top center, then bottom
+  leading (its left edge on the target's left edge), then bottom trailing (its right
+  edge on the target's right edge), each clamped the same way, and keeps the bottom
+  center when all of them overlap. The best-ranked tag is drawn on top. The "Right
+  click" chip keeps its place and takes no part. Accepted cost: on a wide row, such
+  as a full-width sidebar entry, the tag sits mid-row rather than beside its short
+  title. The rejection of "hints at the top-left corner or centered over the target"
+  above still holds: this is neither.
 
 ## 2026-09-22 Planning notes stay outside the repository
 

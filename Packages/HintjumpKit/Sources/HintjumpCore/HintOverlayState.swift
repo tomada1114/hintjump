@@ -63,6 +63,14 @@ public struct HintOverlayState: Equatable, Sendable {
     /// The right-click chip, for ``EntryPoint/rightClickInWindow`` only.
     public let chip: PlacedChip?
 
+    /// ``hints`` in the order the overlay draws them, worst-ranked first: each tag is
+    /// painted over the ones before it, so where tags still overlap after
+    /// ``HintLayout/placedHints(_:within:in:)`` has moved them apart, the best-ranked —
+    /// the one most likely to be typed — is the one left readable on top.
+    public var hintsInDrawingOrder: [PlacedHint] {
+        hints.reversed()
+    }
+
     public init(
         entryPoint: EntryPoint,
         style: HintStyle,
