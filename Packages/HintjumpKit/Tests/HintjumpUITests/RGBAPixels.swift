@@ -110,6 +110,42 @@ struct PixelDifference {
         }
         return largest
     }
+
+    /// Where the differing pixels are, in pixels from the top left: for every band of
+    /// `bandHeight` rows that holds any, how many there are and the columns they span —
+    /// so a failure on a machine whose images nobody can see (CI) still says which part of
+    /// the scene moved.
+    func changedBands(bandHeight: Int) -> [String] {
+        let stride = RGBAPixels.bytesPerPixel
+        var bands: [String] = []
+        actual.bytes.withUnsafeBufferPointer { actualBytes in
+            reference.bytes.withUnsafeBufferPointer { referenceBytes in
+                for bandTop in Swift.stride(from: 0, to: reference.height, by: bandHeight) {
+                    var count = 0
+                    var left = Int.max
+                    var right = -1
+                    for row in bandTop ..< min(bandTop + bandHeight, reference.height) {
+                        for column in 0 ..< reference.width {
+                            let start = (row * reference.width + column) * stride
+                            if Self.delta(actualBytes, referenceBytes, at: start) > tolerance {
+                                count += 1
+                                left = min(left, column)
+                                right = max(right, column)
+                            }
+                        }
+                    }
+                    if count > 0 {
+                        let bottom = min(bandTop + bandHeight, reference.height)
+                        bands
+                            .append(
+                                "rows \(bandTop)–\(bottom): \(count) px in columns \(left)–\(right)",
+                            )
+                    }
+                }
+            }
+        }
+        return bands
+    }
 }
 
 /// An image's pixels as 8-bit sRGB RGBA, premultiplied, row by row — the one layout both
