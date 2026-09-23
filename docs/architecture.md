@@ -130,6 +130,39 @@ Keeping logic out of views is what makes the coverage floor honest: the gate
 measures the code that can regress silently, not SwiftUI layout. The same reasoning
 keeps decisions out of adapters — see "Ports and adapters" above.
 
+## The Settings window
+
+The Settings window (`docs/design/settings-window.md`) is a SwiftUI `Settings` scene,
+opened by the status menu's "Settings…" item through `@Environment(\.openSettings)`,
+rather than a `Window` scene opened with `openWindow`. macOS 14, the deployment floor,
+has both; #103 had to pick the one that meets three needs, and `Settings` meets them all:
+
+- **It opens from the `.menu`-style `MenuBarExtra`.** A menu item is a `Button`, and a
+  `Button` can call `openSettings()` like any action. `SettingsLink` would open the
+  window too, but runs no code of its own, and the activation below has to run first.
+- **It comes to the front from an `LSUIElement` agent.** An agent is never the active
+  app while another app is in front, so a window it opens appears behind that app. The
+  item calls `NSApplication.shared.activate()` before `openSettings()`, which is why it
+  is a `Button` and not a `SettingsLink` (`App/SettingsMenuItem.swift`).
+- **It can be opened from code**, which #107's first-launch open needs: `openSettings`
+  is an environment value, so any view in the app — the status item's label is always
+  there — can call it with the same activation first.
+
+What decided between them is launch. SwiftUI may present an app's first window scene
+when the app starts, and the modifier that rules that out for a `Window`,
+`.defaultLaunchBehavior(.suppressed)`, is macOS 15: on 14 an agent with a `Window`
+scene risks showing its settings on every start, where #107 wants that only on first
+launch. A `Settings` scene never opens by itself,
+comes with the title and the ⌘, a Mac app's settings have, and is one window however
+often it is asked for. The one thing it gives up — an `id` to open by name — nothing
+here needs.
+
+The window's state lives in `SettingsViewModel` (`HintjumpCore`), which `App/` builds
+once in `AppComposition`, so the selected pane outlives the window and every pane added
+later (#104, #105, #106) reads the same store, applier, and gate. A pane is one case of
+`SettingsPane`, in sidebar order, and one view in `HintjumpUI`; `SettingsDetail`
+switches over the enum, so a new case does not compile until its view exists.
+
 ## Recommended optional dependencies
 
 The template ships with zero. When a real need appears, these are vetted

@@ -86,9 +86,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   behind an icon rail, as in Slack and VS Code), and the links in a web page's main
   content. Toolbar buttons, a site's header and navigation bar, and links inside an
   embedded frame get two-character labels (`docs/research/target-counts.md`)
+- A Settings window, opened from the status menu's new "Settings…" item (⌘,), with a
+  sidebar of Getting Started, Config File, and About. Getting Started says whether
+  Accessibility is allowed, with "Open System Settings", and lists the four shortcuts
+  with their current key combinations and what each one labels. Config File shows the
+  file's path with "Open", "Reveal in Finder", and "Copy Path", when it last loaded or
+  the line and reason it failed on, and "Create Default File" once the file is gone.
+  About shows the version, the license, the repository, and that Hintjump sends no
+  analytics. A sidebar tile turns red-orange while its pane needs you: Getting Started
+  until Accessibility is allowed, Config File while the file fails to load
 
 ### Changed
 
+- The status menu is reordered: "Disable in <App>" / "Enable in <App>" first, then
+  "Settings…", "Open Config File", and "Reload Config", then "Quit Hintjump"
 - A window's close, minimize, zoom, and full-screen buttons now get the last labels in
   every window, dialogs included, instead of taking single-character labels
 - One spot on screen now gets one label: a list row no longer carries separate labels
