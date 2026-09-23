@@ -4,8 +4,8 @@ import CoreGraphics
 import SwiftUI
 import Testing
 
-/// One status-icon contact sheet: every variant the owner chooses between, on a strip
-/// that stands in for the menu bar in one appearance, at one magnification.
+/// One status-icon contact sheet: the icon in every state, on a strip that stands in for
+/// the menu bar in one appearance, at one magnification.
 struct StatusIconSheet: CustomTestStringConvertible {
     enum Appearance: String {
         case light
@@ -29,14 +29,14 @@ struct StatusIconSheet: CustomTestStringConvertible {
     }
 }
 
-/// The status icon's candidates and overlays, checked without a menu bar, a window, or a
-/// TCC grant — and, as reference images, what the owner picks a candidate from (#19).
+/// The status icon and its overlays, checked without a menu bar, a window, or a TCC grant.
 ///
-/// Each sheet draws, left to right: candidate A, B, and C in the normal state, then
-/// candidate A with the update dot, then candidate A with the config-error "!". The icons
-/// are the app's own template images (``StatusIcon/image(for:candidate:)``), tinted with
-/// the appearance's primary label colour on a flat stand-in for the menu bar: the real
-/// menu bar is translucent over the wallpaper, which no off-screen render reproduces.
+/// Each sheet draws, left to right: the icon in the normal state, with the update dot,
+/// and with the config-error "!". The real-size sheets are what the owner judges the
+/// overlays' legibility from (#70). The icons are the app's own template images
+/// (``StatusIcon/image(for:)``), tinted with the appearance's primary label colour on a
+/// flat stand-in for the menu bar: the real menu bar is translucent over the wallpaper,
+/// which no off-screen render reproduces.
 @Suite("The status icon, rendered off screen, against its reference images")
 struct StatusIconRenderingTests {
     /// A Retina display's pixels per point: the icon at the size the menu bar shows it.
@@ -52,14 +52,8 @@ struct StatusIconRenderingTests {
     static let lightMenuBar = Color(.sRGB, red: 0.93, green: 0.93, blue: 0.93)
     static let darkMenuBar = Color(.sRGB, red: 0.14, green: 0.14, blue: 0.15)
 
-    /// Every variant a sheet shows, in the order the suite's summary lists them.
-    static let variants: [(StatusIconCandidate, StatusIconState)] = [
-        (.letter, .normal),
-        (.letterPair, .normal),
-        (.pointer, .normal),
-        (.letter, .updateAvailable),
-        (.letter, .configError),
-    ]
+    /// Every state a sheet shows, in the order the suite's summary lists them.
+    static let states: [StatusIconState] = [.normal, .updateAvailable, .configError]
 
     static let sheets: [StatusIconSheet] = [
         StatusIconSheet(appearance: .light, scale: actualScale),
@@ -72,9 +66,8 @@ struct StatusIconRenderingTests {
     @MainActor
     static func image(of sheet: StatusIconSheet) -> CGImage? {
         let content = HStack(spacing: itemSpacing) {
-            ForEach(variants.indices, id: \.self) { index in
-                let (candidate, state) = variants[index]
-                StatusIcon.image(for: state, candidate: candidate)
+            ForEach(states, id: \.self) { state in
+                StatusIcon.image(for: state)
                     .frame(width: StatusIcon.size.width, height: StatusIcon.size.height)
             }
         }
@@ -92,12 +85,9 @@ struct StatusIconRenderingTests {
     /// One icon alone on a transparent background at ``actualScale``, tinted opaque black
     /// so a pixel's alpha is the artwork's coverage.
     @MainActor
-    static func pixels(
-        of candidate: StatusIconCandidate,
-        _ state: StatusIconState,
-    ) throws -> RGBAPixels {
+    static func pixels(of state: StatusIconState) throws -> RGBAPixels {
         let renderer = ImageRenderer(
-            content: StatusIcon.image(for: state, candidate: candidate)
+            content: StatusIcon.image(for: state)
                 .frame(width: StatusIcon.size.width, height: StatusIcon.size.height)
                 .foregroundStyle(.black),
         )
@@ -125,12 +115,9 @@ struct StatusIconRenderingTests {
 
     /// The menu bar tints a template image for its appearance, and only a template's
     /// alpha survives that tinting; the size is the menu bar's icon size.
-    @Test(arguments: StatusIconCandidate.allCases, StatusIconState.allCases)
-    func `is an 18 pt template image`(
-        candidate: StatusIconCandidate,
-        state: StatusIconState,
-    ) {
-        let image = StatusIcon.nsImage(for: state, candidate: candidate)
+    @Test(arguments: StatusIconState.allCases)
+    func `is an 18 pt template image`(state: StatusIconState) {
+        let image = StatusIcon.nsImage(for: state)
 
         #expect(image.isTemplate)
         #expect(image.size == CGSize(width: 18, height: 18))
@@ -138,14 +125,11 @@ struct StatusIconRenderingTests {
     }
 
     /// The tag is an outline, never a filled box: its stroke is opaque, and the space
-    /// between the stroke and the glyph is clear, for every candidate in every state.
-    @Test(arguments: StatusIconCandidate.allCases, StatusIconState.allCases)
+    /// between the stroke and the arrow is clear, in every state.
+    @Test(arguments: StatusIconState.allCases)
     @MainActor
-    func `draws the tag as an outline, never filled`(
-        candidate: StatusIconCandidate,
-        state: StatusIconState,
-    ) throws {
-        let pixels = try Self.pixels(of: candidate, state)
+    func `draws the tag as an outline, never filled`(state: StatusIconState) throws {
+        let pixels = try Self.pixels(of: state)
         let middle: CGFloat = 9
         let onTheStroke: CGFloat = 1.75
         let insideTheStroke: CGFloat = 2.75
@@ -156,15 +140,11 @@ struct StatusIconRenderingTests {
         #expect(Self.alpha(of: pixels, at: CGPoint(x: middle, y: insideTheStroke)) == 0)
     }
 
-    /// The comparison is not vacuous: every candidate and every state draws differently.
+    /// The comparison is not vacuous: every state draws differently.
     @Test
     @MainActor
-    func `every candidate and state renders to different pixels`() throws {
-        let images = try StatusIconCandidate.allCases.flatMap { candidate in
-            try StatusIconState.allCases.map { state in
-                try Self.pixels(of: candidate, state)
-            }
-        }
+    func `every state renders to different pixels`() throws {
+        let images = try StatusIconState.allCases.map { try Self.pixels(of: $0) }
 
         for (index, image) in images.enumerated() {
             for other in images[(index + 1)...] {
@@ -174,19 +154,49 @@ struct StatusIconRenderingTests {
         }
     }
 
-    /// The pick is one line: the image the app shows is the chosen candidate's.
-    @Test(arguments: StatusIconState.allCases)
+    /// An overlay's cut-out stops short of the arrow: every pixel the arrow covers in the
+    /// normal state is drawn the same with an overlay, so no overlay clips or touches it.
+    @Test(arguments: [StatusIconState.updateAvailable, .configError])
     @MainActor
-    func `draws the chosen candidate by default`(state: StatusIconState) throws {
-        let chosen = try Self.pixels(of: StatusIcon.candidate, state)
-        let renderer = ImageRenderer(
-            content: StatusIcon.image(for: state)
-                .frame(width: StatusIcon.size.width, height: StatusIcon.size.height)
-                .foregroundStyle(.black),
-        )
-        renderer.scale = Self.actualScale
-        let byDefault = try RGBAPixels(#require(renderer.cgImage))
+    func `an overlay leaves the arrow whole`(state: StatusIconState) throws {
+        let normal = try Self.pixels(of: .normal)
+        let overlaid = try Self.pixels(of: state)
+        // The arrow's bounds, in pixels from the top left: 5.5–12.5 pt across, 4–14.5 pt down.
+        let columns = 11 ..< 25
+        let rows = 8 ..< 29
+        let alphaChannel = 3
 
-        #expect(byDefault == chosen)
+        var changed = 0
+        for row in rows {
+            for column in columns {
+                let alpha = (row * normal.width + column) * RGBAPixels.bytesPerPixel + alphaChannel
+                if normal.bytes[alpha] > 0, overlaid.bytes[alpha] != normal.bytes[alpha] {
+                    changed += 1
+                }
+            }
+        }
+        #expect(changed == 0)
+    }
+
+    /// The "!" reads as one at the menu bar's real size, not only enlarged (#70): down the
+    /// badge's middle, at 2 pixels per point, the badge is solid above a clear bar, solid
+    /// again across the gap, clear at the point, and solid below it — so the bar and the
+    /// point are separate holes, each a few pixels across, not one blurred smudge.
+    @Test
+    @MainActor
+    func `the config-error mark is a legible "!" at real size`() throws {
+        let pixels = try Self.pixels(of: .configError)
+        let middle: CGFloat = 15.75
+        let expected: [(down: CGFloat, alpha: UInt8)] = [
+            (down: 8.75, alpha: .max), // the badge above the bar
+            (down: 11.5, alpha: 0), // the bar
+            (down: 14.5, alpha: .max), // the gap
+            (down: 15.75, alpha: 0), // the point
+            (down: 17.25, alpha: .max), // the badge below the point
+        ]
+
+        for (down, alpha) in expected {
+            #expect(Self.alpha(of: pixels, at: CGPoint(x: middle, y: down)) == alpha)
+        }
     }
 }
