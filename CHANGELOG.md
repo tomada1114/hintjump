@@ -87,4 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   content. Toolbar buttons, a site's header and navigation bar, and links inside an
   embedded frame get two-character labels (`docs/research/target-counts.md`)
 
+### Fixed
+
+- An empty embedded frame, such as an ad scrolled out of view, no longer wakes a
+  browser's accessibility tree and makes it read twice; only an empty top-level web
+  area does
+
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
