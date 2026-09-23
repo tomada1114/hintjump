@@ -91,9 +91,11 @@ reaches the singles under either rule below, but they spend two-character labels
 
 ## Hit rate
 
-Share of each category's items ranked within N, first cut → the rule recommended below
-(re-ranked from the same reads; the re-ranking reproduces every recorded first-cut rank
-exactly before the change is applied).
+Share of each category's items ranked within N, first cut → the rule recommended below,
+now applied. The "after" numbers come from ranking the same reads again: a scratch
+re-ranking first reproduced every recorded first-cut rank exactly, and once the rule
+landed, the shipped `TargetRanker` run over the recorded elements gave the same order
+and tiers as that re-ranking in all eight windows.
 
 | Window | Category | Items | N = 12 | N = 16 | N = 20 |
 |---|---|---|---|---|---|
@@ -167,9 +169,11 @@ article link (rank 31 after the change) is a larger image link lower on the page
 links that are not in an iframe — an ad the page renders itself is indistinguishable
 from content by role and structure.
 
-## Recommendation
+## Recommendation, applied
 
-**Change the tier rule; keep N = 16.**
+**Change the tier rule; keep N = 16.** The owner accepted this, including edit 1's
+cost, and it is applied in the same pull request (`docs/decisions.md` › "The tier rule
+after #37's measurement; N stays 16").
 
 Four edits to `FirstCutTiers` (`Packages/HintjumpKit/Sources/HintjumpCore/FirstCutTiers.swift`),
 nothing else — the filter, the order within a tier, `TargetTier`, and `RankedTarget` stay:
@@ -219,33 +223,33 @@ hint, one of the two decisive failures in `docs/decisions.md` › Speed budget. 
 change is worth +41 items pooled at N = 16; raising N from 16 to 20 under the first cut
 is worth +8.
 
-**Tests that would pin it**, in `Packages/HintjumpKit/Tests/HintjumpCoreTests/TargetRankerTests+Tiers.swift`
-(the parameterized "each kind of element gets its first-cut tier" cases):
+**Tests that pin it**, in `Packages/HintjumpKit/Tests/HintjumpCoreTests/`:
 
-- "a button nested in a toolbar", "a menu button in a toolbar", and "a segment in a
-  toolbar" change from `.primary` to `.linkOrButton`; "a button in a sheet" and the two
-  dialog cases stay `.primary`.
-- New: a link under `AXLandmarkMain` in one web area is `.primary`; the same link under a
-  second `AXWebArea` is `.linkOrButton`; a link under `AXLandmarkNavigation` or
-  `AXLandmarkBanner` is `.linkOrButton`; a text field under either landmark is
-  `.rowOrCell`; a link in a web area with no landmark stays `.linkOrButton`.
-- "a row in an outline narrow enough but away from the leading edge" is replaced by an
-  outline that starts past the leading third (`.rowOrCell`) and one that starts 88 pt in
-  but ends inside it (`.primary`); "a row in an outline at the leading edge but too wide
-  to be a sidebar" still holds.
-- New: a pressable group two levels inside a non-target row in a sidebar outline is
-  `.primary`; a pressable group inside a row that is itself a target keeps its tier.
-- In `TargetRankerTests+Order.swift`, one ranking test over a small browser-shaped tree
-  (tabs, a toolbar, a banner nav bar, main links) asserting tabs, then main links, ahead
-  of the toolbar.
+- `TargetRankerTests+Tiers.swift` ("tiers"): "a button nested in a toolbar", "a menu
+  button in a toolbar", and "a segment in a toolbar" are now plain buttons
+  (`.linkOrButton`); a button in a sheet or a dialog stays `.primary`. The outline case
+  away from the leading edge became "a row in a narrow outline past the leading third".
+- `TargetRankerTests+Regions.swift` ("tiers by region"), new: an outline behind an icon
+  rail, one ending exactly at the leading third (`.primary`) and one ending a point past
+  it (`.rowOrCell`); a pressable nested row, and a pressable group one and two levels
+  inside a non-target row (`.primary`), three levels inside (`.other`), inside a target
+  row or a pressable row (keeps its tier), and inside a content row or a row with no
+  outline above it (keeps its tier); a link under the main landmark (`.primary`), under
+  it but in an iframe, with no web area, or on a page with no landmarks
+  (`.linkOrButton`); a button under the main landmark (`.linkOrButton`); anything under
+  a banner or navigation landmark, including inside the main landmark, never primary.
+- `TargetRankerTests+Order.swift`: a browser-shaped window ranks its tabs, then the main
+  landmark's links, ahead of its toolbar, the site's navigation, and an iframe's link;
+  an editor-shaped window ranks an explorer row, pressed through a group two levels
+  inside it, ahead of the title bar's toolbar button.
 
 `LabelAssignerTests` needs no change while N stays 16.
 
 ## Follow-ups this note does not settle
 
 - A re-read of Claude Desktop's main window (with its sidebar) and of Obsidian with its
-  file list open, to score the logged categories these reads could not; the edit 4 test
-  is expected to cover Claude's sidebar but is unverified there.
+  file list open, to score the logged categories these reads could not; edit 4 is
+  expected to cover Claude's sidebar but is unverified there.
 - Whether a window's content rows (Finder's files, a Settings pane's controls) should
   outrank its sidebar — an owner call, since both categories were assumed.
 - Duplicate targets (a row and its cells, a row and its same-size inner group,

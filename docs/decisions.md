@@ -455,3 +455,38 @@ file is their public record.
   Notification Center, or Spotlight has focus. Second, whether showing the overlay,
   a key panel (#44), closes an open context menu. Third, why Spotlight's result
   rows do not pass `TargetRanker`'s clickable filter.
+
+## 2026-09-22 The tier rule after #37's measurement; N stays 16
+
+- Decision: supersedes "N = 16 and the first-cut tiers, pending #37's measurement"
+  above. The label assigner keeps N = 16 singles
+  (`LabelAssigner.defaultSingleCount`, 276 labels with 26 characters). The ranker's
+  tier rule (`FirstCutTiers`, edited in place) changes in four ways; the clickable
+  filter, the reading order within a tier, and `RankedTarget` do not.
+  - A toolbar's buttons are no longer primary; they rank with every other button.
+    A sheet's or a dialog's buttons still are.
+  - A link under a web page's `AXLandmarkMain`, with exactly one `AXWebArea` above it,
+    is primary. A second web area means an iframe, where ads are embedded.
+  - Nothing inside a page's `AXLandmarkBanner` or `AXLandmarkNavigation` is primary:
+    the site's header, navigation bar, and search box.
+  - A sidebar row is one whose nearest outline or table ends within the window's
+    leading third, so a sidebar behind an icon rail counts. A pressable element up to
+    two levels inside a row that is not itself a target stands in for that row.
+- Why: `docs/research/target-counts.md`. Under the first cut the singles went to the
+  toolbar in every window read. No browser article link and no VS Code explorer row
+  ranked within 16, and the categories the owner named reached 25% (mean of shares).
+  The new rule takes that to 68% at N = 16, and every scored item from 18% to 43%.
+  Raising N instead gains about three points per single with no knee, and N = 20
+  leaves 176 labels, fewer than the 186 targets a Finder list view held.
+- Accepted cost: toolbar buttons now get two-character labels. That includes the
+  browsers' back and reload, Finder's view switcher, and Slack's top bar and composer
+  buttons, Slack's send button among them. The owner accepted this explicitly: none of
+  the categories they named is a toolbar button.
+- Rejected: N = 18 or 20 (fewer labels for a smaller gain than the rule change);
+  demoting the window's close, minimize, and zoom buttons, and iframe links, to the
+  last tier (no measured effect); a sibling tier type beside the first cut (nothing
+  would call the first cut).
+- Open: the note's categories were described by the owner, not logged click by click,
+  and three of them were not in the reads (Claude Desktop's sidebar, Obsidian's file
+  list, Slack's send button). Whether a window's content rows should outrank its
+  sidebar, and collapsing duplicate targets (a row and its cells), are left for later.
