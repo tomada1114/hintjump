@@ -142,7 +142,7 @@ case_survivor_is_reported_not_forced() {
     root=$(make_fixture_root)
     executable=$(make_fixture_bundle Hintjump io.github.tomada1114.Hintjump)
     # SIG_IGN survives the fork, so this sleep really does ignore SIGTERM.
-    pid=$(spawn_detached 'trap "" TERM; sleep 5')
+    pid=$(spawn_detached 'trap "" TERM; sleep 30')
     stub_process_table "  ${pid} ${executable}" "  4242 ${executable}"
     stub_open
 
