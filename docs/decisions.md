@@ -490,6 +490,11 @@ file is their public record.
   and three of them were not in the reads (Claude Desktop's sidebar, Obsidian's file
   list, Slack's send button). Whether a window's content rows should outrank its
   sidebar, and collapsing duplicate targets (a row and its cells), are left for later.
+- Amended (#85): N = 16 is a ceiling. When 16 singles would leave targets unlabeled,
+  the assigner keeps the largest `s ≤ min(16, a)` with `s + (a − s) × a ≥ count`
+  for `a` hint characters, down to `s = 0` (`a × a` labels) when even that falls
+  short. With 8–16 characters a fixed 16 left no prefix at all; with the default
+  26 and at most 276 targets the labels are unchanged.
 
 ## 2026-09-22 The first release's target scope
 
