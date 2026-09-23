@@ -32,6 +32,10 @@ Config/Local.xcconfig
 .env
 .env.*
 
+# Python bytecode — written beside a skill script under .claude/skills/ or
+# .agents/skills/ that imports a sibling module; scripts/sync-agents.sh skips it too
+__pycache__/
+
 # OS
 .DS_Store
 Thumbs.db
