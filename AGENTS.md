@@ -209,7 +209,8 @@ tool that sees the generated copy rather than the authored one:
 | `create-pr` | opening or updating a pull request: the `just check` pre-check, title, template, and checklist |
 | `tdd` | a behavior change in `HintjumpCore`: writing a failing Swift Testing test before the implementation |
 | `changing-gates` | a file that enforces rather than implements: `.swiftlint.yml`, `.swiftformat`, `Package.swift`'s `strictSettings`, `mise.toml`, `.githooks/pre-commit`, `scripts/lint.sh`, `scripts/coverage.sh`, the `scripts/guard/` commit-time guard, or a workflow — and which gate would catch a change |
-| `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, and the `Depends on #N` convention |
+| `triaging-issues` | filing or triaging an issue: the labels in `.github/labels.yml` (`just labels`), priority tiers, the `Depends on #N` convention, and a close condition an agent can meet without the developer's Mac |
+| `filing-feedback` | turning the owner's report of something that bothers them in use (screenshots, a dictated note, a comparison with another app) into filed issues: a stale-build check, defect versus decision revisited, the questions only the owner can answer, and a parent with sub-issues |
 | `authoring-skills` | adding, editing, or reviewing a skill: authoring under `.agents/skills/`, the `just agents-sync` mirror, frontmatter, layout, and size limits |
 | `updating-docs` | deciding whether a change owes a documentation update and which surface it lands on: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/*.md`, a skill, or a `///` comment |
 | `writing-repo-scripts` | writing or testing a shell script under `scripts/`, `.githooks/pre-commit`, or `scripts/tests/`: why bash, refusing or skipping outside a git checkout, the stderr contract by example, and `scripts/tests/lib.sh` |
