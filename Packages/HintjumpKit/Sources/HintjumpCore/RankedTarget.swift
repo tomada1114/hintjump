@@ -30,13 +30,20 @@ public enum TargetTier: Int, CaseIterable, Comparable, Sendable {
 /// framed, large enough, inside the window, and reports the first that fails. Among the
 /// elements it admits, ``TargetRanker/ranking(_:)`` then drops the duplicates that would
 /// spend a label on a spot another target already covers — a window-sized group first,
-/// then what is inside a target row, then a row hidden under its column header, then a
-/// twin of a better-ranked target — since a click lands at the survivor's visible
-/// center either way (`docs/decisions.md` › "Clicks are synthesized mouse events at the
-/// element's visible center").
+/// then pressable content inside a target button or link, then what is inside a target
+/// row, then a row hidden under its column header, then a twin of a better-ranked
+/// target — since a click lands at the survivor's visible center either way
+/// (`docs/decisions.md` › "Clicks are synthesized mouse events at the element's visible
+/// center").
 public enum TargetExclusion: String, CaseIterable, Sendable {
     /// The element reports `AXEnabled` as `false`.
     case disabled
+    /// Admitted only through `AXPress`, not by its role, and inside an `AXButton` or
+    /// `AXLink` that is itself a target, with no other control clickable by role between
+    /// them: the button's or link's content, such as the icon and the title group of a
+    /// Claude Desktop sidebar entry, which Chromium reports as pressable. A click on it
+    /// lands inside the control, so the control takes the label.
+    case insideTargetControl
     /// An `AXCell`, or an `AXTextField` inside one, whose nearest `AXRow` is itself a
     /// target: the row takes the label. Its center selects the item without starting
     /// Finder's click-to-rename, and a right click there opens that item's menu. A row
