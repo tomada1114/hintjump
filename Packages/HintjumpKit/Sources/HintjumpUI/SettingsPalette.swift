@@ -29,6 +29,7 @@ enum SettingsPalette {
     static let chipHorizontalPadding: CGFloat = 6
     static let chipVerticalPadding: CGFloat = 1
     static let chipOutlineWidth: CGFloat = 1
-    /// The gap between a key chip and the words before it.
-    static let chipLeadingGap: CGFloat = 4
+    /// The pixels per point a key chip inside a line of text is drawn at: a Retina
+    /// display's, fixed so the chip does not depend on the screen that draws it.
+    static let chipImageScale: CGFloat = 2
 }

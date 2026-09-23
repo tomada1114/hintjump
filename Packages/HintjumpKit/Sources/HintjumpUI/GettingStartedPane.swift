@@ -1,20 +1,26 @@
 import HintjumpCore
 import SwiftUI
 
-/// One "Try it" line: the lead-in, the combination as a key chip, and what it does.
+/// One "Try it" line: the lead-in, the combination as a key chip, and what it does, as
+/// one paragraph that wraps like any other (see ``KeyChip/inlineImage(keys:colorScheme:)``).
 /// VoiceOver reads the whole line as one sentence.
 private struct ShortcutLineView: View {
     let line: ShortcutLine
+    @Environment(\.colorScheme)
+    private var colorScheme
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Text(line.lead)
-            KeyChip(keys: line.keys)
-                .padding(.leading, SettingsPalette.chipLeadingGap)
-            Text(line.rest)
+        Text("\(line.lead) \(chip)\(line.rest)")
+            .accessibilityLabel(line.sentence)
+    }
+
+    /// The chip inline, its text on the line's baseline; the keys as plain text only if
+    /// the chip could not be drawn.
+    private var chip: Text {
+        guard let image = KeyChip.inlineImage(keys: line.keys, colorScheme: colorScheme) else {
+            return Text(line.keys)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(line.sentence)
+        return Text(image).baselineOffset(KeyChip.inlineBaselineOffset)
     }
 }
 
