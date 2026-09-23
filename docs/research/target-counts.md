@@ -257,3 +257,5 @@ is worth +8.
 - Duplicate targets (a row and its cells, a row and its same-size inner group,
   window-sized pressable groups) are a filter question, not a tier one: collapsing them
   would take Finder from 186 targets to about 70 and free two-character labels.
+  Settled by #86: the ranker now collapses all three (`docs/decisions.md` › "The tier
+  rule after #37's measurement; N stays 16" › Amended (#86)).

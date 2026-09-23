@@ -504,6 +504,18 @@ file is their public record.
   for `a` hint characters, down to `s = 0` (`a × a` labels) when even that falls
   short. With 8–16 characters a fixed 16 left no prefix at all; with the default
   26 and at most 276 targets the labels are unchanged.
+- Amended (#86): duplicate targets are collapsed after the clickable filter, a filter
+  question rather than a tier one; the survivors keep their tiers and their order. A
+  target admitted only through `AXPress`, not by its role, that covers at least half
+  the read's root and holds another target is dropped (Electron's window-sized groups).
+  Then an `AXCell`, or an `AXTextField` inside one, is dropped when its nearest `AXRow`
+  is still a target: the row keeps the label, since its center selects the item
+  without starting Finder's click-to-rename and a right click there opens that item's
+  menu; the row's other controls (disclosure triangle, checkbox, pop-up, button) stay.
+  Last, of targets with identical frames only the best-ranked stays. A click lands at
+  the survivor's visible center either way, so this decides only where a tag sits.
+  Each drop is its own `TargetExclusion`, which the probe's `--rank` prints. Finder's
+  186 list-view targets were about 74 without these.
 
 ## 2026-09-22 The first release's target scope
 
