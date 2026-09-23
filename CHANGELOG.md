@@ -92,5 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An empty embedded frame, such as an ad scrolled out of view, no longer wakes a
   browser's accessibility tree and makes it read twice; only an empty top-level web
   area does
+- A hint-character set of 8–16 characters, or a window with more than 276 targets, no
+  longer leaves targets without a label: single-character labels give way to
+  two-character ones only when labels would otherwise run out
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
