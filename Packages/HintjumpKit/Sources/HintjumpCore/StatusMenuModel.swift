@@ -3,12 +3,12 @@
 ///
 /// A Core type rather than closures in `App/` because "a failed reload leaves the
 /// triggers alone" and "which app the item names" are decisions, and a decision belongs
-/// where the coverage floor sees it. There is one reload path: ``ConfigStore/reload()``
-/// already applies `launch_at_login`, and this adds the triggers on top of it.
+/// where the coverage floor sees it. Every item that adopts a configuration then hands
+/// it to ``ConfigApplier``, the one apply path, rather than applying pieces of it here.
 @MainActor
 public final class StatusMenuModel {
     private let store: ConfigStore
-    private let controller: TriggerController
+    private let applier: ConfigApplier
     private let opener: any ConfigFileOpening
     private let policy: DisabledAppsPolicy
 
@@ -25,16 +25,16 @@ public final class StatusMenuModel {
         return policy.isLastExternalAppDisabled ? "Enable in \(app.name)" : "Disable in \(app.name)"
     }
 
-    /// Takes the same store, controller, and policy `App/` starts with, so a reload
+    /// Takes the same store, applier, and policy `App/` starts with, so a reload
     /// re-reads the file launch read and re-registers the triggers launch registered.
     public init(
         store: ConfigStore,
-        controller: TriggerController,
+        applier: ConfigApplier,
         opener: any ConfigFileOpening,
         policy: DisabledAppsPolicy,
     ) {
         self.store = store
-        self.controller = controller
+        self.applier = applier
         self.opener = opener
         self.policy = policy
     }
@@ -44,8 +44,8 @@ public final class StatusMenuModel {
         opener.open(path: store.path)
     }
 
-    /// "Reload Config": re-reads the file and, only if it parsed, re-registers the
-    /// triggers from it.
+    /// "Reload Config": re-reads the file and, only if it parsed, applies it
+    /// (``ConfigApplier/apply()``).
     ///
     /// A failure leaves the registered triggers exactly as they are — the store keeps
     /// the last good configuration, and the shortcuts should keep matching it while the
@@ -65,16 +65,16 @@ public final class StatusMenuModel {
             return
         }
         AppLog.config.info("config reloaded")
-        controller.apply(store.config)
-        policy.reevaluate()
+        applier.apply()
     }
 
     /// "Disable in <App>" / "Enable in <App>": adds the last app to `[apps] disabled`, or
     /// removes it, and suspends or resumes the triggers at once.
     ///
     /// The write goes through ``ConfigStore/setDisabled(_:_:)``, which rewrites only
-    /// that list. A file that does not parse is not written over: the failure is logged
-    /// — a ``ConfigError``'s message `.public`, as on a reload — and nothing changes.
+    /// that list, and what it adopted is then applied. A file that does not parse is not
+    /// written over: the failure is logged — a ``ConfigError``'s message `.public`, as
+    /// on a reload — and nothing changes.
     public func toggleDisabledForLastApp() {
         guard let bundleID = policy.lastExternalApp?.bundleIdentifier else {
             return
@@ -94,6 +94,6 @@ public final class StatusMenuModel {
         AppLog.config.info(
             "\(disable ? "disabled" : "enabled", privacy: .public) in app=\(bundleID, privacy: .private)",
         )
-        policy.reevaluate()
+        applier.apply()
     }
 }
