@@ -158,6 +158,81 @@ struct EmptyWebAreaRuleTests {
         )
         #expect(!EmptyWebAreaRule.matches(snapshot))
     }
+
+    @Test
+    func `does not fire on an empty iframe web area nested inside a non-empty one`() {
+        // A page whose ad iframe `batchedPruned` left childless: the iframe is its own
+        // nested AXWebArea, so it is empty while the page's web area is not.
+        let snapshot = prunedSnapshot([
+            element("AXWindow", depth: 0, parent: nil),
+            element("AXWebArea", depth: 1, parent: 0),
+            element("AXGroup", depth: 2, parent: 1),
+            element("AXWebArea", depth: 3, parent: 2),
+        ])
+        #expect(!EmptyWebAreaRule.matches(snapshot))
+    }
+
+    @Test
+    func `does not fire on an empty web area whose web area ancestor is several levels up`() {
+        let snapshot = prunedSnapshot([
+            element("AXWebArea", depth: 0, parent: nil),
+            element("AXGroup", depth: 1, parent: 0),
+            element("AXGroup", depth: 2, parent: 1),
+            element("AXGroup", depth: 3, parent: 2),
+            element("AXWebArea", depth: 4, parent: 3),
+        ])
+        #expect(!EmptyWebAreaRule.matches(snapshot))
+    }
+
+    @Test
+    func `fires on an empty top-level web area under a window and a group`() {
+        let snapshot = prunedSnapshot([
+            element("AXWindow", depth: 0, parent: nil),
+            element("AXGroup", depth: 1, parent: 0),
+            element("AXWebArea", depth: 2, parent: 1),
+        ])
+        #expect(EmptyWebAreaRule.matches(snapshot))
+    }
+
+    @Test
+    func `fires on an empty top-level web area beside a non-empty one`() {
+        // Two sibling web areas, neither inside the other: the empty one is still a
+        // top-level tree that never built its children.
+        let snapshot = prunedSnapshot([
+            element("AXWindow", depth: 0, parent: nil),
+            element("AXWebArea", depth: 1, parent: 0),
+            element("AXButton", depth: 2, parent: 1),
+            element("AXWebArea", depth: 1, parent: 0),
+        ])
+        #expect(EmptyWebAreaRule.matches(snapshot))
+    }
+}
+
+/// One element with only the fields ``EmptyWebAreaRule`` reads set.
+private func element(_ role: String, depth: Int, parent: Int?) -> ElementSnapshot {
+    ElementSnapshot(
+        role: role,
+        subrole: nil,
+        title: nil,
+        description: nil,
+        frame: nil,
+        isEnabled: true,
+        actions: [],
+        depth: depth,
+        parentIndex: parent,
+    )
+}
+
+/// Wraps `elements` in a `batchedPruned` snapshot, the strategy the product reads with.
+private func prunedSnapshot(_ elements: [ElementSnapshot]) -> TreeSnapshot {
+    TreeSnapshot(
+        bundleIdentifier: "com.example.browser",
+        pid: 1,
+        scope: .focusedWindow,
+        strategy: .batchedPruned,
+        elements: elements,
+        readDuration: .zero,
+    )
 }
 
 @MainActor

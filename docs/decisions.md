@@ -233,8 +233,11 @@ file is their public record.
 - Decision: Slack, Claude Desktop, and other Electron or Chromium apps get hints
   like any native app. The reader does not set `AXManualAccessibility` on every
   read; it sets it once per process only when a read comes back with an
-  `AXWebArea` that has no children, as insurance for a Mac with no other
-  Accessibility client. No per-app exceptions.
+  `AXWebArea` that has no children and no `AXWebArea` among its ancestors, as
+  insurance for a Mac with no other Accessibility client. No per-app exceptions.
+  The ancestor condition (#84) keeps an iframe out: each iframe is its own nested
+  `AXWebArea`, and the pruned read leaves an off-screen or sliver-sized one
+  childless, which would otherwise wake Safari or Chrome and cost a second read.
 - Why: `docs/research/electron-accessibility.md` — all three apps expose their
   chat areas, composers, sidebars, and buttons with `AXPress` on the first read
   of a freshly launched process, with the attribute unset; setting it succeeds
@@ -496,6 +499,11 @@ file is their public record.
   and three of them were not in the reads (Claude Desktop's sidebar, Obsidian's file
   list, Slack's send button). Whether a window's content rows should outrank its
   sidebar, and collapsing duplicate targets (a row and its cells), are left for later.
+- Amended (#85): N = 16 is a ceiling. When 16 singles would leave targets unlabeled,
+  the assigner keeps the largest `s ≤ min(16, a)` with `s + (a − s) × a ≥ count`
+  for `a` hint characters, down to `s = 0` (`a × a` labels) when even that falls
+  short. With 8–16 characters a fixed 16 left no prefix at all; with the default
+  26 and at most 276 targets the labels are unchanged.
 
 ## 2026-09-22 The first release's target scope
 
