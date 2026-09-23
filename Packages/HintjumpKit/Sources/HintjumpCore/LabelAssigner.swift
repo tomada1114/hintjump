@@ -8,6 +8,12 @@
 /// prefixes; each is followed by every character of the set, in set order, before the
 /// next prefix starts. The same targets and characters always give the same labels.
 ///
+/// ``singleCount`` is a ceiling: when that many singles would leave too few prefixes to
+/// label every target — a short character set, or a window with many targets — singles
+/// give way to prefixes one at a time, down to none (`docs/decisions.md` › "The tier
+/// rule after #37's measurement; N stays 16"). While the full count covers the targets,
+/// the labels are exactly the fixed-count ones.
+///
 /// Generic over the target so every entry point can use it: the frontmost window labels
 /// ``RankedTarget``s (or what a session maps them to), the menu-bar entry points their
 /// bar's items.
@@ -31,23 +37,35 @@ public struct LabelAssigner: Equatable, Sendable {
         return characters.filter { seen.insert($0).inserted }
     }
 
-    /// How many targets `characters` can label: the singles plus every prefix times the
-    /// whole set. A repeated character counts once.
-    public func capacity(characters: [Character]) -> Int {
-        let alphabet = Self.distinct(characters)
-        let singles = min(singleCount, alphabet.count)
-        return singles + (alphabet.count - singles) * alphabet.count
+    /// How many of the first `size` characters are singles for `count` targets: the most,
+    /// up to ``singleCount``, that still leave a label for every target, and otherwise
+    /// the most that reach the set's whole supply of `size × size` labels.
+    private func singles(forCount count: Int, alphabetSize size: Int) -> Int {
+        let covered = min(count, size * size)
+        return (0 ... min(singleCount, size)).last { $0 + (size - $0) * size >= covered } ?? 0
     }
 
-    /// The first `count` labels in hand-out order, or all of them when `count` exceeds
-    /// ``capacity(characters:)``, and none when `count` is zero or negative.
+    /// The most targets `characters` can label at once: every character a prefix,
+    /// followed by every character. It does not depend on ``singleCount`` because
+    /// ``labels(count:characters:)`` gives singles up to reach it; a repeated character
+    /// counts once.
+    public func capacity(characters: [Character]) -> Int {
+        let size = Self.distinct(characters).count
+        return size * size
+    }
+
+    /// Labels for `count` targets in hand-out order — as many singles as still leave a
+    /// label for each — or ``capacity(characters:)`` labels when `count` exceeds it, and
+    /// none when `count` is zero or negative.
     ///
-    /// `characters` is used most preferred first; a repeated character is used once,
-    /// where it first appears, so the labels stay distinct whatever the caller passes.
+    /// The list for one count is not a prefix of the list for a larger one once singles
+    /// give way, so label the whole target list in one call. `characters` is used most
+    /// preferred first; a repeated character is used once, where it first appears, so
+    /// the labels stay distinct whatever the caller passes.
     public func labels(count: Int, characters: [Character]) -> [String] {
         let alphabet = Self.distinct(characters)
         let wanted = max(0, count)
-        let singles = min(singleCount, alphabet.count)
+        let singles = singles(forCount: wanted, alphabetSize: alphabet.count)
         var labels = alphabet.prefix(min(singles, wanted)).map { String($0) }
         for prefix in alphabet.dropFirst(singles) {
             for second in alphabet {

@@ -10,15 +10,9 @@ struct LabelAssignerTests {
     /// The characters the default set leaves for two-character prefixes once the first
     /// 16 are singles.
     static let prefixes = Array("iopzxcvbnm")
-    /// Single counts around the set's bounds, each with its capacity over 26 characters:
-    /// the singles plus the remaining characters times 26.
-    static let capacities: [(singleCount: Int, capacity: Int)] = [
-        (0, 676), // 0 + 26 × 26
-        (1, 651), // 1 + 25 × 26
-        (25, 51), // 25 + 1 × 26
-        (26, 26), // every character a single
-        (40, 26), // more singles asked for than characters
-    ]
+    /// Single counts around the set's bounds: whatever the count, the singles give way
+    /// once they would leave targets unlabeled, so every one reaches 26 × 26.
+    static let singleCounts = [0, 1, 25, 26, 40]
 
     let assigner = LabelAssigner()
 
@@ -32,24 +26,20 @@ struct LabelAssignerTests {
 
     @Test
     func `with 26 characters and 16 singles there are 260 pairs`() {
-        let labels = assigner.labels(count: 1_000, characters: Self.characters)
+        let labels = assigner.labels(count: 276, characters: Self.characters)
 
-        #expect(assigner.capacity(characters: Self.characters) == 276)
         #expect(labels.count == 276)
         #expect(labels.count { $0.count == 1 } == 16)
         #expect(labels.count { $0.count == 2 } == 260)
         #expect(Set(labels).count == labels.count)
     }
 
-    @Test(arguments: capacities)
-    func `capacity is the singles plus the prefixes times the set`(
-        singleCount: Int,
-        capacity: Int,
-    ) {
+    @Test(arguments: singleCounts)
+    func `capacity is every character a prefix, whatever the single count`(singleCount: Int) {
         let custom = LabelAssigner(singleCount: singleCount)
 
-        #expect(custom.capacity(characters: Self.characters) == capacity)
-        #expect(custom.labels(count: 1_000, characters: Self.characters).count == capacity)
+        #expect(custom.capacity(characters: Self.characters) == 676)
+        #expect(custom.labels(count: 1_000, characters: Self.characters).count == 676)
     }
 
     @Test
@@ -63,7 +53,7 @@ struct LabelAssignerTests {
     @Test
     func `a set smaller than the single count makes every character a single`() {
         let small = Array("asdfghjk")
-        let labels = assigner.labels(count: 20, characters: small)
+        let labels = assigner.labels(count: 8, characters: small)
 
         #expect(labels == small.map { String($0) })
     }
@@ -72,7 +62,7 @@ struct LabelAssignerTests {
 
     @Test
     func `no two-character label starts with a single's letter`() {
-        let labels = assigner.labels(count: 1_000, characters: Self.characters)
+        let labels = assigner.labels(count: 276, characters: Self.characters)
         let singles = Set(labels.filter { $0.count == 1 }.compactMap(\.first))
         let pairStarts = Set(labels.filter { $0.count == 2 }.compactMap(\.first))
 
@@ -82,7 +72,7 @@ struct LabelAssignerTests {
 
     @Test
     func `no label is a prefix of another`() {
-        let labels = assigner.labels(count: 1_000, characters: Self.characters)
+        let labels = assigner.labels(count: 276, characters: Self.characters)
 
         for label in labels {
             #expect(!labels.contains { $0 != label && $0.hasPrefix(label) })
@@ -98,7 +88,7 @@ struct LabelAssignerTests {
 
     @Test
     func `pairs run through the full set under each prefix in turn`() {
-        let pairs = Array(assigner.labels(count: 1_000, characters: Self.characters).dropFirst(16))
+        let pairs = Array(assigner.labels(count: 276, characters: Self.characters).dropFirst(16))
 
         #expect(pairs.prefix(3) == ["ia", "is", "id"])
         #expect(pairs[25] == "im")
@@ -128,7 +118,7 @@ struct LabelAssignerTests {
 
     @Test
     func `a repeated character is used once, where it first appears`() {
-        let labels = LabelAssigner(singleCount: 2).labels(count: 10, characters: Array("aasd"))
+        let labels = LabelAssigner(singleCount: 2).labels(count: 5, characters: Array("aasd"))
 
         #expect(labels == ["a", "s", "da", "ds", "dd"])
     }
@@ -171,12 +161,13 @@ struct LabelAssignerTests {
 
     @Test
     func `targets past the supply are left unlabeled and counted, in rank order`() {
-        let targets = Array(0 ..< 280)
+        let targets = Array(0 ..< 680)
         let assignment = assigner.assign(targets, characters: Self.characters)
 
-        #expect(assignment.labeled.count == 276)
-        #expect(assignment.labeled.last == LabeledTarget(label: "mm", target: 275))
-        #expect(assignment.unlabeled == [276, 277, 278, 279])
+        #expect(assignment.labeled.count == 676)
+        #expect(assignment.labeled.first == LabeledTarget(label: "aa", target: 0))
+        #expect(assignment.labeled.last == LabeledTarget(label: "mm", target: 675))
+        #expect(assignment.unlabeled == [676, 677, 678, 679])
         #expect(assignment.unlabeledCount == 4)
     }
 
