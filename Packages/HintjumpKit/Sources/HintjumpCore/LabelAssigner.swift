@@ -12,9 +12,9 @@
 /// ``RankedTarget``s (or what a session maps them to), the menu-bar entry points their
 /// bar's items.
 public struct LabelAssigner: Equatable, Sendable {
-    /// N, the number of single-character labels: provisional until the target-count
-    /// measurement (`docs/decisions.md` › "N = 16 and the first-cut tiers, pending #37's
-    /// measurement").
+    /// N, the number of single-character labels, kept at 16 by the target-count
+    /// measurement (`docs/decisions.md` › "The tier rule after #37's measurement; N stays
+    /// 16").
     public static let defaultSingleCount = 16
 
     /// How many targets get a single-character label, never negative.

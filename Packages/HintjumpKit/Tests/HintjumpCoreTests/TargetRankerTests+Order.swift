@@ -50,6 +50,92 @@ extension TargetRankerTests {
         }
 
         @Test
+        func `in a browser, tabs and the page's main links come before the toolbar and the site's chrome`() {
+            let elements = tree([
+                Spec(role: "AXTabGroup", frame: rect(0, 0, 900, 40)),
+                Spec(
+                    role: "AXRadioButton",
+                    subrole: "AXTabButton",
+                    frame: rect(100, 0, 120, 40),
+                    parent: 1,
+                ),
+                Spec(
+                    role: "AXRadioButton",
+                    subrole: "AXTabButton",
+                    frame: rect(220, 0, 120, 40),
+                    parent: 1,
+                ),
+                Spec(role: "AXToolbar", frame: rect(0, 40, 900, 50)),
+                Spec(frame: rect(10, 45, 40, 40), parent: 4),
+                Spec(frame: rect(60, 45, 40, 40), parent: 4),
+                Spec(role: "AXWebArea", frame: rect(0, 90, 900, 510)),
+                Spec(
+                    role: "AXGroup",
+                    subrole: "AXLandmarkBanner",
+                    frame: rect(0, 90, 900, 80),
+                    parent: 7,
+                ),
+                Spec(
+                    role: "AXGroup",
+                    subrole: "AXLandmarkNavigation",
+                    frame: rect(0, 130, 900, 40),
+                    parent: 8,
+                ),
+                Spec(role: "AXLink", frame: rect(10, 140, 60, 20), parent: 9),
+                Spec(role: "AXTextField", frame: rect(600, 100, 200, 24), parent: 8),
+                Spec(
+                    role: "AXGroup",
+                    subrole: "AXLandmarkMain",
+                    frame: rect(0, 170, 900, 430),
+                    parent: 7,
+                ),
+                Spec(role: "AXLink", frame: rect(10, 200, 400, 24), parent: 12),
+                Spec(role: "AXLink", frame: rect(10, 230, 400, 24), parent: 12),
+                Spec(role: "AXWebArea", frame: rect(600, 200, 280, 300), parent: 12),
+                Spec(role: "AXLink", frame: rect(600, 200, 280, 250), parent: 15),
+            ])
+            let ranked = TargetRanker().rank(elements)
+            // Tabs, then the main landmark's links; the browser's toolbar, the site's
+            // navigation link, and the iframe's link as plain links and buttons; the
+            // site's search field last, with the rows and cells.
+            #expect(ranked.map(\.elementIndex) == [2, 3, 13, 14, 5, 6, 10, 16, 11])
+            #expect(ranked.map(\.tier) == [
+                .primary, .primary, .primary, .primary,
+                .linkOrButton, .linkOrButton, .linkOrButton, .linkOrButton,
+                .rowOrCell,
+            ])
+        }
+
+        @Test
+        func `in an editor, the explorer's rows come before the title bar's toolbar`() {
+            // VS Code's shape: the explorer's rows sit in a group, not directly in the
+            // outline, behind a 70 pt activity bar; the pressable element is a group two
+            // levels inside each row.
+            let elements = tree([
+                Spec(role: "AXToolbar", frame: rect(0, 0, 900, 40)),
+                Spec(frame: rect(300, 5, 40, 30), parent: 1),
+                Spec(role: "AXOutline", frame: rect(70, 50, 220, 540)),
+                Spec(role: "AXGroup", frame: rect(70, 50, 220, 540), parent: 3),
+                Spec(
+                    role: "AXRow",
+                    subrole: "AXOutlineRow",
+                    frame: rect(75, 50, 210, 30),
+                    parent: 4,
+                ),
+                Spec(role: "AXGroup", frame: rect(75, 50, 210, 30), parent: 5),
+                Spec(
+                    role: "AXGroup",
+                    frame: rect(100, 50, 185, 30),
+                    actions: ["AXPress"],
+                    parent: 6,
+                ),
+            ])
+            let ranked = TargetRanker().rank(elements)
+            #expect(ranked.map(\.elementIndex) == [7, 2])
+            #expect(ranked.map(\.tier) == [.primary, .linkOrButton])
+        }
+
+        @Test
         func `a replacement tier assignment reorders without changing the output's shape`() {
             let elements = tree([
                 Spec(role: "AXTextField", frame: rect(10, 10, 200, 24)),

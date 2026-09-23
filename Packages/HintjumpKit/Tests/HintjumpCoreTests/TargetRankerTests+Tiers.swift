@@ -3,7 +3,7 @@ import HintjumpCore
 import Testing
 
 extension TargetRankerTests {
-    /// One first-cut tier case: a tree, which of its elements is under test, and the tier it gets.
+    /// One tier case: a tree, which of its elements is under test, and the tier it gets.
     struct TierCase: CustomTestStringConvertible {
         let name: String
         let specs: [Spec]
@@ -26,14 +26,13 @@ extension TargetRankerTests {
         }
     }
 
-    @Suite("first-cut tiers")
+    @Suite("tiers")
     struct Tiers {
         /// A narrow outline flush with the window's leading edge, as Finder's sidebar is.
-        private static let sidebar = Spec(role: "AXOutline", frame: rect(7, 50, 220, 540))
+        static let sidebar = Spec(role: "AXOutline", frame: rect(7, 50, 220, 540))
         /// A wide outline to the right of it, as Finder's list view is.
-        private static let content = Spec(role: "AXOutline", frame: rect(230, 50, 660, 540))
+        static let content = Spec(role: "AXOutline", frame: rect(230, 50, 660, 540))
         private static let toolbar = Spec(role: "AXToolbar", frame: rect(0, 0, 900, 50))
-
         static let cases: [TierCase] = [
             TierCase("a text field", [Spec(role: "AXTextField")], expected: .primary),
             TierCase("a text area", [Spec(role: "AXTextArea")], expected: .primary),
@@ -58,27 +57,36 @@ extension TargetRankerTests {
                 expected: .primary,
             ),
             TierCase(
-                "a button nested in a toolbar",
+                "a button nested in a toolbar is a plain button",
                 [
                     toolbar,
                     Spec(role: "AXGroup", frame: rect(10, 5, 100, 40), parent: 1),
                     Spec(frame: rect(10, 5, 40, 40), parent: 2),
                 ],
-                expected: .primary,
+                expected: .linkOrButton,
             ),
             TierCase(
-                "a menu button in a toolbar",
+                "a menu button in a toolbar is a plain button",
                 [toolbar, Spec(role: "AXMenuButton", frame: rect(60, 5, 40, 40), parent: 1)],
-                expected: .primary,
+                expected: .linkOrButton,
             ),
             TierCase(
-                "a segment in a toolbar",
+                "a segment in a toolbar is a plain button",
                 [toolbar, Spec(role: "AXRadioButton", subrole: "AXSegment", parent: 1)],
-                expected: .primary,
+                expected: .linkOrButton,
             ),
             TierCase(
                 "a button in a sheet",
                 [Spec(role: "AXSheet", frame: rect(200, 0, 400, 300)), Spec(parent: 1)],
+                expected: .primary,
+            ),
+            TierCase(
+                "a toolbar button inside a sheet is a sheet's button",
+                [
+                    Spec(role: "AXSheet", frame: rect(200, 0, 400, 300)),
+                    Spec(role: "AXToolbar", frame: rect(200, 0, 400, 50), parent: 1),
+                    Spec(frame: rect(210, 5, 40, 40), parent: 2),
+                ],
                 expected: .primary,
             ),
             TierCase("a button in a dialog", [Spec()], rootSubrole: "AXDialog", expected: .primary),
@@ -116,7 +124,7 @@ extension TargetRankerTests {
                 expected: .rowOrCell,
             ),
             TierCase(
-                "a row in an outline narrow enough but away from the leading edge",
+                "a row in a narrow outline past the leading third",
                 [
                     Spec(role: "AXOutline", frame: rect(400, 50, 200, 540)),
                     Spec(role: "AXRow", frame: rect(400, 50, 200, 30), parent: 1),
@@ -183,16 +191,8 @@ extension TargetRankerTests {
         ]
 
         @Test(arguments: cases)
-        func `each kind of element gets its first-cut tier`(of testCase: TierCase) throws {
-            let elements = tree(
-                testCase.specs,
-                rootFrame: windowFrame,
-                rootSubrole: testCase.rootSubrole,
-            )
-            let target = try #require(
-                TargetRanker().rank(elements).first { $0.elementIndex == elements.count - 1 },
-            )
-            #expect(target.tier == testCase.expected)
+        func `each kind of element gets its tier`(of testCase: TierCase) throws {
+            #expect(try tier(of: testCase) == testCase.expected)
         }
 
         @Test
@@ -214,5 +214,20 @@ extension TargetRankerTests {
             #expect(TargetTier.allCases.sorted() == [.primary, .linkOrButton, .rowOrCell, .other])
             #expect(TargetTier.allCases.sorted().map(\.rawValue) == [1, 2, 3, 4])
         }
+    }
+}
+
+extension TargetRankerTests {
+    /// The tier the ranker gives the last element of `testCase`'s tree.
+    static func tier(of testCase: TierCase) throws -> TargetTier {
+        let elements = tree(
+            testCase.specs,
+            rootFrame: windowFrame,
+            rootSubrole: testCase.rootSubrole,
+        )
+        let target = try #require(
+            TargetRanker().rank(elements).first { $0.elementIndex == elements.count - 1 },
+        )
+        return target.tier
     }
 }
