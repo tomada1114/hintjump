@@ -57,3 +57,10 @@
 - name: "blocked: external"
   color: d4c5f9
   description: "Waits on an owner-only action outside this repository (an account, a purchase, a signing identity)."
+
+# Hold label: deliberately deferred past the first release. Unlike a `blocked:`
+# label it waits on nothing; each issue carrying it is a sub-issue of the
+# post-v1 parent issue (#80).
+- name: "on hold"
+  color: c5def5
+  description: "Deliberately deferred past the first release; tracked under the post-v1 parent issue."
