@@ -1,9 +1,8 @@
 import AppKit
-import CoreText
 
 /// The status icon's geometry, in points on the 18 × 18 pt canvas with the origin at the
-/// bottom left (the image is not flipped). Edges sit on half-point boundaries so a
-/// 1.5 pt stroke lands on whole pixels on a Retina display.
+/// bottom left (the image is not flipped). Edges sit on half-point boundaries so they land
+/// on whole pixels on a Retina display.
 private enum Metrics {
     /// SF Symbols' regular weight at menu-bar size, so the icon matches the ones beside it.
     static let strokeWidth: CGFloat = 1.5
@@ -16,29 +15,20 @@ private enum Metrics {
     static let tagSide: CGFloat = 14.5
     static let tag = CGRect(x: tagInset, y: tagInset, width: tagSide, height: tagSide)
 
-    /// Where a glyph is centred: the middle of the tag.
-    static let middle: CGFloat = 9
-    static let glyphCenter = CGPoint(x: middle, y: middle)
-
-    /// Candidate A's letter, and the size its face is set at.
-    static let letter = "h"
-    static let letterSize: CGFloat = 12
-    /// Candidate B's label, and the size its face is set at: smaller, to fit two.
-    static let letterPair = "hj"
-    static let letterPairSize: CGFloat = 9.5
-
-    /// Candidate C's pointer, the classic arrow with its tip at the top left: the left
-    /// edge, the notch where the tail leaves the head, the tail, and the head's wing.
-    static let pointerLeft: CGFloat = 6
+    /// The pointer, the classic arrow with its tip at the top left: the left edge, the
+    /// notch where the tail leaves the head, the tail, and the head's wing. Its box,
+    /// 5.5–12.5 pt across, is centred on the tag's interior, which leaves the wing's tip
+    /// a point clear of the config-error badge.
+    static let pointerLeft: CGFloat = 5.5
     static let pointerTop: CGFloat = 14
     static let pointerBottom: CGFloat = 4.5
-    static let notchX: CGFloat = 8.25
+    static let notchX: CGFloat = 7.75
     static let notchY: CGFloat = 6.75
-    static let tailInnerX: CGFloat = 9.75
+    static let tailInnerX: CGFloat = 9.25
     static let tailBottom: CGFloat = 3.5
-    static let tailOuterX: CGFloat = 11.25
+    static let tailOuterX: CGFloat = 10.75
     static let tailOuterY: CGFloat = 4.25
-    static let wingX: CGFloat = 13
+    static let wingX: CGFloat = 12.5
     static let wingY: CGFloat = 7.5
     static let pointer = [
         CGPoint(x: pointerLeft, y: pointerTop),
@@ -50,81 +40,92 @@ private enum Metrics {
         CGPoint(x: wingX, y: wingY),
     ]
 
-    /// The overlays' centre, at the bottom right over the tag's corner.
-    static let badgeX: CGFloat = 15
-    static let badgeY: CGFloat = 3
-    /// The clear disc cut around an overlay, so it never touches the tag's outline.
-    static let knockoutRadius: CGFloat = 3.5
-    /// The update dot's radius.
+    /// The update dot, over the tag's bottom-right corner, and the clear disc cut around
+    /// it so it never touches the tag's outline.
+    static let dotX: CGFloat = 15
+    static let dotY: CGFloat = 3
     static let dotRadius: CGFloat = 2.25
-    /// The "!": a bar one stroke wide, and a point of the same width under it, both
-    /// centred on `badgeX`.
-    static let alertLeft: CGFloat = 14.25
-    static let alertBarHeight: CGFloat = 3.25
-    static let alertPointBottom: CGFloat = 0.5
+    static let dotKnockoutRadius: CGFloat = 3.5
+
+    /// The config-error badge: a filled pill standing in the tag's bottom-right corner,
+    /// with a "!" knocked out of it. A pill, not a disc, so its shape alone tells it from
+    /// the update dot; filled, so it stands apart from the stroked outline instead of
+    /// reading as a break in it; and tall, so the "!" in it is three pixels wide and
+    /// fourteen tall at the menu bar's real size — a mark, not a speck (#70).
+    static let badgeLeft: CGFloat = 13.5
+    static let badgeWidth: CGFloat = 4.5
+    static let badgeHeight: CGFloat = 10
+    static let badge = CGRect(x: badgeLeft, y: 0, width: badgeWidth, height: badgeHeight)
+    /// Half the width, so the pill's ends are round.
+    static let badgeRadius: CGFloat = 2.25
+    /// The "!" cut out of the badge, centred on it: a bar with rounded ends, a clear gap
+    /// two pixels tall, and a round point.
+    static let alertWidth: CGFloat = 1.5
+    /// Half the width, so the bar's ends are round.
+    static let alertRounding: CGFloat = 0.75
+    /// Centred on the badge: 1.5 pt of badge on either side.
+    static let alertLeft: CGFloat = 15
+    static let alertPointBottom: CGFloat = 1.5
+    static let alertBarBottom: CGFloat = 4
+    static let alertBarHeight: CGFloat = 4.5
     static let alertBar = CGRect(
         x: alertLeft,
-        y: badgeY,
-        width: strokeWidth,
+        y: alertBarBottom,
+        width: alertWidth,
         height: alertBarHeight,
     )
     static let alertPoint = CGRect(
         x: alertLeft,
         y: alertPointBottom,
-        width: strokeWidth,
-        height: strokeWidth,
+        width: alertWidth,
+        height: alertWidth,
     )
+    /// The clear space cut around the badge, which keeps it off the tag's outline and
+    /// clear of the arrow's wing.
+    static let badgeClearance: CGFloat = 0.75
+    static let badgeKnockout = badge.insetBy(dx: -badgeClearance, dy: -badgeClearance)
 }
 
-/// Draws one candidate in one state into a graphics context, in solid black: the image
-/// is a template, so only coverage matters and the menu bar supplies the colour.
+/// Draws the icon in one state into a graphics context, in solid black: the image is a
+/// template, so only coverage matters and the menu bar supplies the colour.
 struct StatusIconArtwork {
-    let candidate: StatusIconCandidate
     let state: StatusIconState
 
-    /// A disc of `radius` around the overlays' centre.
-    private static func disc(radius: CGFloat) -> CGRect {
+    /// The clear area cut out of the tag around this state's overlay, so the overlay
+    /// stands apart from the tag's corner rather than merging into it; `nil` for none.
+    private var knockout: CGPath? {
+        switch state {
+        case .normal:
+            nil
+
+        case .updateAvailable:
+            CGPath(ellipseIn: Self.dotDisc(radius: Metrics.dotKnockoutRadius), transform: nil)
+
+        case .configError:
+            CGPath(
+                roundedRect: Metrics.badgeKnockout,
+                cornerWidth: Metrics.badgeRadius + Metrics.badgeClearance,
+                cornerHeight: Metrics.badgeRadius + Metrics.badgeClearance,
+                transform: nil,
+            )
+        }
+    }
+
+    /// A disc of `radius` around the update dot's centre.
+    private static func dotDisc(radius: CGFloat) -> CGRect {
         CGRect(
-            x: Metrics.badgeX - radius,
-            y: Metrics.badgeY - radius,
+            x: Metrics.dotX - radius,
+            y: Metrics.dotY - radius,
             width: radius + radius,
             height: radius + radius,
         )
     }
 
-    private static func polygon(_ points: [CGPoint]) -> CGPath {
+    private static func pointer() -> CGPath {
         let path = CGMutablePath()
-        path.addLines(between: points)
+        path.addLines(between: Metrics.pointer)
         path.closeSubpath()
         return path
-    }
-
-    /// `text` as glyph outlines in the hints' bold monospaced face, its ink centred on
-    /// the tag. Outlines rather than drawn text, so the ink box — not the line box, which
-    /// counts ascender and descender space the letters may not use — is what is centred.
-    private static func letters(_ text: String, size: CGFloat) -> CGPath {
-        let font = NSFont.monospacedSystemFont(ofSize: size, weight: .bold) as CTFont
-        let characters = Array(text.utf16)
-        var glyphs = [CGGlyph](repeating: 0, count: characters.count)
-        CTFontGetGlyphsForCharacters(font, characters, &glyphs, characters.count)
-        var advances = [CGSize](repeating: .zero, count: glyphs.count)
-        CTFontGetAdvancesForGlyphs(font, .horizontal, glyphs, &advances, glyphs.count)
-
-        let outlines = CGMutablePath()
-        var penX: CGFloat = 0
-        for (glyph, advance) in zip(glyphs, advances) {
-            if let outline = CTFontCreatePathForGlyph(font, glyph, nil) {
-                outlines.addPath(outline, transform: CGAffineTransform(translationX: penX, y: 0))
-            }
-            penX += advance.width
-        }
-
-        let ink = outlines.boundingBoxOfPath
-        var centring = CGAffineTransform(
-            translationX: Metrics.glyphCenter.x - ink.midX,
-            y: Metrics.glyphCenter.y - ink.midY,
-        )
-        return outlines.copy(using: &centring) ?? outlines
     }
 
     func draw(in context: CGContext) {
@@ -132,20 +133,19 @@ struct StatusIconArtwork {
         context.setStrokeColor(CGColor(gray: 0, alpha: 1))
 
         context.saveGState()
-        if state != .normal {
-            // Clip away a disc around the badge, so the badge stands apart from the
-            // tag's corner rather than merging into it.
+        if let knockout {
             let clip = CGMutablePath()
             clip.addRect(CGRect(origin: .zero, size: StatusIcon.size))
-            clip.addEllipse(in: Self.disc(radius: Metrics.knockoutRadius))
+            clip.addPath(knockout)
             context.addPath(clip)
             context.clip(using: .evenOdd)
         }
         drawTag(in: context)
-        drawGlyph(in: context)
+        context.addPath(Self.pointer())
+        context.fillPath()
         context.restoreGState()
 
-        drawBadge(in: context)
+        drawOverlay(in: context)
     }
 
     /// The hint tag's outline: stroked, never filled.
@@ -160,33 +160,31 @@ struct StatusIconArtwork {
         context.strokePath()
     }
 
-    private func drawGlyph(in context: CGContext) {
-        let glyph: CGPath = switch candidate {
-        case .letter:
-            Self.letters(Metrics.letter, size: Metrics.letterSize)
-
-        case .letterPair:
-            Self.letters(Metrics.letterPair, size: Metrics.letterPairSize)
-
-        case .pointer:
-            Self.polygon(Metrics.pointer)
-        }
-        context.addPath(glyph)
-        context.fillPath()
-    }
-
-    private func drawBadge(in context: CGContext) {
+    private func drawOverlay(in context: CGContext) {
         switch state {
         case .normal:
             return
 
         case .updateAvailable:
-            context.addEllipse(in: Self.disc(radius: Metrics.dotRadius))
+            context.addEllipse(in: Self.dotDisc(radius: Metrics.dotRadius))
+            context.fillPath()
 
         case .configError:
-            context.addRect(Metrics.alertBar)
+            // Even-odd, so the "!" inside the pill is a hole the menu bar shows through.
+            context.addPath(CGPath(
+                roundedRect: Metrics.badge,
+                cornerWidth: Metrics.badgeRadius,
+                cornerHeight: Metrics.badgeRadius,
+                transform: nil,
+            ))
+            context.addPath(CGPath(
+                roundedRect: Metrics.alertBar,
+                cornerWidth: Metrics.alertRounding,
+                cornerHeight: Metrics.alertRounding,
+                transform: nil,
+            ))
             context.addEllipse(in: Metrics.alertPoint)
+            context.fillPath(using: .evenOdd)
         }
-        context.fillPath()
     }
 }

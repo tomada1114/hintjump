@@ -55,9 +55,9 @@ struct HintjumpApp: App {
             // has to run at launch and on activation is attached here, and so is the
             // start that loads the config (applying `launch_at_login`) and registers
             // the triggers.
-            // The hint-tag template image; which glyph it holds is `StatusIcon.candidate`
-            // in HintjumpUI. The update dot and config-error "!" states are drawn there
-            // too, for the features that will report them.
+            // The hint-tag template image with the pointer arrow inside, drawn by
+            // `StatusIcon` in HintjumpUI. The update dot and config-error "!" states are
+            // drawn there too, for the features that will report them.
             StatusIcon.image(for: .normal)
                 .accessibilityGate(accessibilityGate)
                 .onAppear {

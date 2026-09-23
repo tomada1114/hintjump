@@ -72,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no label. It works even while Hintjump's own window is frontmost
 - The status item shows a hint-tag icon instead of the placeholder symbol: a monochrome
   template image that follows the menu bar's light or dark appearance, the outline of a
-  rounded tag with a lowercase `h` inside. Two more glyph candidates (the label `hj`,
-  and a pointer arrow) and the icon's update-dot and config-error "!" variants are drawn
-  alongside it for the final pick; nothing shows those variants yet
+  rounded tag with a pointer arrow inside. Its update-dot and config-error variants are
+  drawn too — the error as a filled pill with a "!" cut out of it, large enough to read
+  at the menu bar's real size — but nothing shows those variants yet
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
