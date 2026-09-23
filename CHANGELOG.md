@@ -102,6 +102,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   New chat, and the settings button — now take single-character labels ahead of the
   window's top bar, whose buttons get two-character ones; a web page's own sidebar in
   a browser is unaffected
+- Every hint tag now has one high-contrast style: a yellow tag with near-black
+  uppercase letters, the same for one- and two-character labels. The right-click
+  entry point, and its "Right click" chip, show the same tag inverted. Labels are still
+  typed in lowercase (or uppercase: both match)
 
 ### Fixed
 
