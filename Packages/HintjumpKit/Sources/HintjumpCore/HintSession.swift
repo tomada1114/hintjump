@@ -126,9 +126,11 @@ public final class HintSession {
         let total = start.duration(to: clock.now)
         let labeled = overlay?.hints.count ?? 0
         let targets = set.targets.count
+        let container = set.container?.rawValue ?? "-"
+        let scope = set.container?.scope.rawValue ?? "-"
         AppLog.hints.info(
             // swiftlint:disable:next line_length
-            "shown entry=\(entryPoint.rawValue, privacy: .public) targets=\(targets, privacy: .public) labeled=\(labeled, privacy: .public) unlabeled=\(targets - labeled, privacy: .public) read=\(Self.milliseconds(set.readDuration), privacy: .public)ms total=\(Self.milliseconds(total), privacy: .public)ms",
+            "shown entry=\(entryPoint.rawValue, privacy: .public) container=\(container, privacy: .public) scope=\(scope, privacy: .public) pid=\(set.pid, privacy: .public) targets=\(targets, privacy: .public) labeled=\(labeled, privacy: .public) unlabeled=\(targets - labeled, privacy: .public) read=\(Self.milliseconds(set.readDuration), privacy: .public)ms total=\(Self.milliseconds(total), privacy: .public)ms",
         )
     }
 

@@ -4,7 +4,9 @@ import HintjumpCore
 import Testing
 
 /// Reading the frontmost window and turning it into hint targets, against
-/// `FakeAccessibilityTreeReader`.
+/// `FakeAccessibilityTreeReader`, with nothing on top of the window
+/// (`FakeTopmostContainerProbe.nothingOnTop`); what is on top is
+/// `WindowTargetCollectorTests+Topmost.swift`'s.
 @MainActor
 @Suite("WindowTargetCollector")
 struct WindowTargetCollectorTests {
@@ -67,7 +69,7 @@ struct WindowTargetCollectorTests {
     @Test
     func `reads the frontmost app's focused window with the batchedPruned strategy`() throws {
         let reader = FakeAccessibilityTreeReader(readAnswers: [Self.snapshot(children: [])])
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         _ = try collector.collect(from: Self.app)
 
@@ -94,7 +96,7 @@ struct WindowTargetCollectorTests {
                 Self.element(role: "AXButton", frame: clipped),
             ]),
         ])
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         let set = try collector.collect(from: Self.app)
 
@@ -108,6 +110,7 @@ struct WindowTargetCollectorTests {
                 HintTarget(frame: clipped, clickPoint: CGPoint(x: 15, y: 510), role: "AXButton"),
             ],
             readDuration: .milliseconds(12),
+            container: .focusedWindow,
         ))
     }
 
@@ -124,7 +127,7 @@ struct WindowTargetCollectorTests {
                 rootFrame: nil,
             ),
         ])
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         let set = try collector.collect(from: Self.app)
 
@@ -137,7 +140,7 @@ struct WindowTargetCollectorTests {
     func `a read error propagates unchanged`() {
         let reader =
             FakeAccessibilityTreeReader(readError: .attributeUnsupported("AXFocusedWindow"))
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         #expect(throws: AccessibilityReadError.attributeUnsupported("AXFocusedWindow")) {
             try collector.collect(from: Self.app)
@@ -147,7 +150,7 @@ struct WindowTargetCollectorTests {
     @Test
     func `an app without a process identifier is no process to read`() {
         let reader = FakeAccessibilityTreeReader(readAnswers: [Self.snapshot(children: [])])
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         #expect(throws: AccessibilityReadError.noSuchProcess(0)) {
             try collector.collect(from: FrontmostApp(name: "Helper"))
@@ -166,7 +169,7 @@ struct WindowTargetCollectorTests {
             Self.element(role: "AXButton", frame: button, parent: 1),
         ])
         let reader = FakeAccessibilityTreeReader(readAnswers: [empty, populated, empty])
-        let collector = WindowTargetCollector(reader: reader)
+        let collector = WindowTargetCollector(reader: reader, probe: FakeTopmostContainerProbe())
 
         let set = try collector.collect(from: Self.app)
         _ = try collector.collect(from: Self.app)

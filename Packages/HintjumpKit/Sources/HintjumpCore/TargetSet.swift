@@ -14,18 +14,25 @@ public struct TargetSet: Equatable, Sendable {
     public let targets: [HintTarget]
     /// What the read behind this set cost, as the reader measured it.
     public let readDuration: Duration
+    /// What a frontmost-window trigger labeled (``TopmostContainerRule``), for the
+    /// session's `shown` log line; `nil` for the menu-bar entry points, which have no
+    /// container to choose.
+    public let container: TopmostContainer?
 
+    /// A set of `targets`; `container` is left out by the collectors that do not choose one.
     public init(
         pid: pid_t,
         bundleIdentifier: String?,
         rootFrame: CGRect,
         targets: [HintTarget],
         readDuration: Duration,
+        container: TopmostContainer? = nil,
     ) {
         self.pid = pid
         self.bundleIdentifier = bundleIdentifier
         self.rootFrame = rootFrame
         self.targets = targets
         self.readDuration = readDuration
+        self.container = container
     }
 }

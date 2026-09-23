@@ -26,7 +26,12 @@ struct AccessibilityTreeReadingTests {
 
     @Test
     func `every scope and strategy has a stable name a command line can use`() {
-        #expect(ReadScope.allCases.map(\.rawValue) == ["application", "focusedWindow", "menuBar"])
+        #expect(ReadScope.allCases.map(\.rawValue) == [
+            "application",
+            "focusedWindow",
+            "menuBar",
+            "popUpMenu",
+        ])
         #expect(
             ReadStrategy.allCases.map(\.rawValue) == [
                 "batched",

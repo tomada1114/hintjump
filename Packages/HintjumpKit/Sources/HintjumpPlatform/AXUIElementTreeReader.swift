@@ -129,11 +129,12 @@ extension AXUIElementTreeReader {
     /// The element a walk starts from, per scope.
     ///
     /// `.application` needs no Accessibility call: `AXUIElementCreateApplication` always
-    /// answers, even for a process that will never talk to us. The other two ask the
-    /// application for an attribute and can therefore fail — an application with no
-    /// window answers nothing for `AXFocusedWindow`, which is
+    /// answers, even for a process that will never talk to us. `.focusedWindow` and
+    /// `.menuBar` ask the application for an attribute and can therefore fail — an
+    /// application with no window answers nothing for `AXFocusedWindow`, which is
     /// ``HintjumpCore/AccessibilityReadError/attributeUnsupported(_:)`` and not a broken
-    /// adapter.
+    /// adapter. `.popUpMenu` is found by a hit test instead (``popUpMenu(of:)``), and
+    /// answers the same error when there is no menu to find.
     static func root(
         of application: AXUIElement,
         scope: ReadScope,
@@ -148,6 +149,9 @@ extension AXUIElementTreeReader {
 
         case .menuBar:
             try element(kAXMenuBarAttribute as String, of: application, pid: pid)
+
+        case .popUpMenu:
+            try popUpMenu(of: pid)
         }
     }
 
@@ -182,7 +186,9 @@ extension AXUIElementTreeReader {
         }
     }
 
-    private static func element(
+    /// `attribute` of `element`, when its value is itself an element; the failure
+    /// translated by ``readError(_:attribute:pid:)`` otherwise.
+    static func element(
         _ attribute: String,
         of element: AXUIElement,
         pid: pid_t,

@@ -79,7 +79,8 @@ commands:
 options:
     --app <bundle-id>  the running application to read (required, except for front,
         which otherwise reads whichever application is frontmost)
-    --scope <scope>    focusedWindow (default), menuBar, or application
+    --scope <scope>    focusedWindow (default), menuBar, application, or popUpMenu (the
+        menu open in the application's frontmost pop-up-menu-level window: a context menu)
     --strategy <name>  naive (default), batched, pruned, or batchedPruned
     --runs <n>         reads for `time` (default \(Options.defaultRuns))
     --rank             with dump or wake: each element's rank, or why it is not a target
@@ -89,7 +90,7 @@ options:
     --interval <ms>    with --watch: time between samples (default \(Options
     .defaultIntervalMilliseconds))
 
-`--scope` also accepts the short spellings focused, menubar, and app.
+`--scope` also accepts the short spellings focused, menubar, app, and popup.
 
 Reading another application's tree needs the Accessibility permission, which macOS
 holds against the process: grant it to the terminal that launches this tool, in
