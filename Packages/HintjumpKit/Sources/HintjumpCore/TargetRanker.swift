@@ -120,12 +120,36 @@ public struct TargetRanker: Sendable {
         return parent
     }
 
+    /// Whether the clickable filter admits `element`, a snapshot rather than an index —
+    /// how a tier rule, shown only ``TargetCandidate``'s snapshots, asks the filter
+    /// itself about one of the candidate's ancestors instead of re-deciding it.
+    ///
+    /// `parent` is the element's container, which decides whether a row is clickable,
+    /// and `root` is the frame of the read's root: ``TargetCandidate/windowFrame``.
+    static func admits(_ element: ElementSnapshot, parent: ElementSnapshot?, root: CGRect) -> Bool {
+        admission(of: element, parent: parent, root: root).exclusion == nil
+    }
+
     private static func admission(
         ofElementAt index: Int,
         in elements: [ElementSnapshot],
     ) -> Admission {
-        let element = elements[index]
-        guard isClickable(elementAt: index, in: elements) else {
+        admission(
+            of: elements[index],
+            parent: parentIndex(ofElementAt: index, in: elements).map { elements[$0] },
+            root: elements.first?.frame,
+        )
+    }
+
+    /// The clickable filter: everything it reads is the element, its parent, and the
+    /// frame of the read's root, so an index and a tier rule's snapshots reach one rule.
+    private static func admission(
+        of element: ElementSnapshot,
+        parent: ElementSnapshot?,
+        root: CGRect?,
+    ) -> Admission {
+        let isPressable = element.actions.contains("AXPress")
+        guard isPressable || isClickableByRole(element, parent: parent) else {
             return .excluded(.notClickable)
         }
         guard element.isEnabled else {
@@ -138,30 +162,32 @@ public struct TargetRanker: Sendable {
             return .excluded(.tooSmall)
         }
         let center = CGPoint(x: frame.midX, y: frame.midY)
-        guard let windowFrame = elements.first?.frame, windowFrame.contains(center) else {
+        guard let root, root.contains(center) else {
             return .excluded(.outsideWindow)
         }
         return .admitted(frame)
     }
 
-    private static func isClickable(elementAt index: Int, in elements: [ElementSnapshot]) -> Bool {
-        elements[index].actions.contains("AXPress")
-            || isClickableByRole(elementAt: index, in: elements)
-    }
-
     /// Whether the element's role alone would let it through the filter — a listed role,
     /// or a row directly in an outline or a table — with or without an `AXPress` action.
     static func isClickableByRole(elementAt index: Int, in elements: [ElementSnapshot]) -> Bool {
-        guard let role = elements[index].role else {
+        isClickableByRole(
+            elements[index],
+            parent: parentIndex(ofElementAt: index, in: elements).map { elements[$0] },
+        )
+    }
+
+    private static func isClickableByRole(
+        _ element: ElementSnapshot,
+        parent: ElementSnapshot?,
+    ) -> Bool {
+        guard let role = element.role else {
             return false
         }
         if clickableRoles.contains(role) {
             return true
         }
-        guard role == "AXRow", let parent = parentIndex(ofElementAt: index, in: elements) else {
-            return false
-        }
-        return rowContainerRoles.contains(elements[parent].role ?? "")
+        return role == "AXRow" && rowContainerRoles.contains(parent?.role ?? "")
     }
 
     /// `sorted` as ranked targets, keeping only the first of each frame and marking the

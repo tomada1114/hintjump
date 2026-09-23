@@ -84,6 +84,58 @@ extension TargetRankerTests {
                 expected: .other,
             ),
             TierCase(
+                "a pressable group inside a disabled pressable sidebar row",
+                [
+                    Tiers.sidebar, group(parent: 1),
+                    Spec(
+                        role: "AXRow",
+                        frame: rect(10, 60, 200, 28),
+                        isEnabled: false,
+                        actions: ["AXPress"],
+                        parent: 2,
+                    ),
+                    group(parent: 3, actions: ["AXPress"]),
+                ],
+                expected: .primary,
+            ),
+            TierCase(
+                "a pressable group inside a pressable sidebar row too small to be a target",
+                [
+                    Tiers.sidebar, group(parent: 1),
+                    Spec(
+                        role: "AXRow",
+                        frame: rect(10, 60, 200, 4),
+                        actions: ["AXPress"],
+                        parent: 2,
+                    ),
+                    group(parent: 3, actions: ["AXPress"]),
+                ],
+                expected: .primary,
+            ),
+            TierCase(
+                "a pressable group inside a pressable sidebar row centered outside the window",
+                [
+                    Tiers.sidebar, group(parent: 1),
+                    Spec(
+                        role: "AXRow",
+                        frame: rect(10, 590, 200, 28),
+                        actions: ["AXPress"],
+                        parent: 2,
+                    ),
+                    group(parent: 3, actions: ["AXPress"]),
+                ],
+                expected: .primary,
+            ),
+            TierCase(
+                "a pressable group inside a disabled row directly in a sidebar outline",
+                [
+                    Tiers.sidebar,
+                    Spec(role: "AXRow", frame: rect(10, 60, 200, 28), isEnabled: false, parent: 1),
+                    group(parent: 2, actions: ["AXPress"]),
+                ],
+                expected: .primary,
+            ),
+            TierCase(
                 "a pressable group inside a content row that is not a target keeps its tier",
                 [
                     Tiers.content,

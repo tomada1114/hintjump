@@ -107,5 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A popover opened from inside another popover, or from a control in a sheet, is now
   what the click-in-window triggers label, rather than the outer popover or the whole
   sheet behind it
+- A sidebar item whose row is disabled, too small, or outside the window, and so takes
+  no label itself, now ranks the pressable element inside it with the sidebar's rows
+  rather than leaving the item with no likely target
 
 [Unreleased]: https://github.com/tomada1114/hintjump/commits/main
