@@ -33,9 +33,10 @@ private struct Admitted {
 ///
 /// Two separable steps. The clickable filter (``exclusion(ofElementAt:in:)``) is fixed
 /// here. The tier each surviving element gets is one replaceable function,
-/// ``TierAssignment``, defaulting to ``FirstCutTiers/tier(_:)``: the first-cut weights are a
-/// guess the target-count measurement exists to correct, and correcting them must not
-/// change what callers receive. Within a tier the order is reading order — top to
+/// ``TierAssignment``, defaulting to ``FirstCutTiers/tier(_:)``: the rule as #37's
+/// target-count measurement revised it (`docs/decisions.md` › "The tier rule after #37's
+/// measurement; N stays 16"). Keeping it replaceable means a later revision changes
+/// nothing callers receive. Within a tier the order is reading order — top to
 /// bottom by the element's center, then left to right, then tree order — so the same
 /// list always ranks the same way.
 public struct TargetRanker: Sendable {

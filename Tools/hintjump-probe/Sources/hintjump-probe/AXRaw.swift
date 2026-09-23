@@ -22,7 +22,7 @@ enum AXRaw {
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), messagingTimeout)
     }
 
-    static func value(_ attribute: String, of element: AXUIElement) -> CFTypeRef? {
+    private static func value(_ attribute: String, of element: AXUIElement) -> CFTypeRef? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success
         else {

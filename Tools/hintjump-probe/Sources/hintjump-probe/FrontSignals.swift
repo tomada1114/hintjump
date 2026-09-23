@@ -61,9 +61,10 @@ struct FrontSignals {
     let windows: [WindowSignal]
     let menus: MenuSignals
     let serverWindows: [WindowServerWindow]
-    /// The frontmost application's pop-up-menu-level windows, hit-tested for a menu —
-    /// the context-menu signal, which nothing above carries.
-    let popups: [PopupMenu]
+    /// The frontmost application's pop-up-menu-level windows, front to back — the
+    /// context-menu signal, which nothing above carries. Only their presence is read
+    /// here; the menu inside is read through the adapter when a snapshot is printed.
+    let popups: [WindowServerWindow]
 
     /// One line that changes exactly when one of the signals does, so a watch prints a
     /// snapshot only then. Titles and frames are left out on purpose: a window that
@@ -80,7 +81,7 @@ struct FrontSignals {
             "menus=[\(menuOwners.joined(separator: ","))]",
             "selected=[\(selected.joined(separator: ","))]",
             "above=[\(Self.counted(serverWindows.map(\.signatureKey)))]",
-            "popups=[\(popups.map(\.signatureKey).joined(separator: ","))]",
+            "popups=[\(popups.map { "\($0.layer)@\($0.pid)" }.joined(separator: ","))]",
         ]
         return fields.joined(separator: " ")
     }
@@ -114,7 +115,9 @@ struct FrontSignals {
             windows: AXRaw.elements(kAXWindowsAttribute, of: application).map(WindowSignal.init),
             menus: MenuSignals.read(from: application),
             serverWindows: onScreen,
-            popups: PopupMenu.read(from: onScreen, pid: target.pid),
+            popups: onScreen.filter { window in
+                window.layer == WindowServerWindow.popUpMenuLayer && window.pid == target.pid
+            },
         )
     }
 

@@ -13,7 +13,8 @@ func timing(_ signatureRead: Duration) -> String {
 }
 
 /// The frontmost application's own signals, one line per window, selection, and menu.
-func printFrontmost(_ signals: FrontSignals, target: FrontTarget) {
+@MainActor
+func printFrontmost(_ signals: FrontSignals, target: FrontTarget, reader: AXUIElementTreeReader) {
     print(
         "front bundle=\(target.bundleIdentifier ?? "-") pid=\(target.pid) "
             + "axFocusedApp=\(signals.axFocusedApplication.map(String.init) ?? "-") "
@@ -27,32 +28,45 @@ func printFrontmost(_ signals: FrontSignals, target: FrontTarget) {
         print("windows none")
     }
     printMenus(signals.menus, pid: target.pid)
-    printPopups(signals.popups)
+    printPopups(signals.popups, pid: target.pid, reader: reader)
 }
 
-/// One line per pop-up-menu-level window of the frontmost application: what the hit
-/// test inside it answered and, when that was a menu, the menu as a container with its
-/// clickable count.
-func printPopups(_ popups: [PopupMenu]) {
-    for (index, popup) in popups.enumerated() {
-        let head = "popup #\(index) pid=\(popup.window.pid) layer=\(popup.window.layer) "
-            + "bounds=\(formatted(popup.window.bounds)) hitPid=\(popup.hitPid.map(String.init) ?? "-") "
-            + "chain=\(popup.chain.isEmpty ? "-" : popup.chain.joined(separator: "<"))"
-        guard let menu = popup.menu else {
-            print(head + " menu=none")
-            continue
+/// One line per pop-up-menu-level window of the frontmost application, front to back.
+///
+/// The frontmost window's line carries the menu open in it, read the way the app reads a
+/// context menu — `AXUIElementTreeReader`'s `.popUpMenu` scope with `.batchedPruned`,
+/// ranked by `TargetRanker` — so its clickable count is what the app would label. That
+/// read starts only at the frontmost such window, so a window behind it (the menu a
+/// submenu opened from) is listed with `menu=unread`. `menu=none` is the adapter finding
+/// no menu of this application's there: a menu fading out, a popover, or a menu another
+/// process owns.
+@MainActor
+func printPopups(_ popups: [WindowServerWindow], pid: pid_t, reader: AXUIElementTreeReader) {
+    for (index, window) in popups.enumerated() {
+        let head = "popup #\(index) pid=\(window.pid) layer=\(window.layer) "
+            + "bounds=\(formatted(window.bounds))"
+        let menu = index == 0 ? popUpMenuFields(pid: pid, reader: reader) : "menu=unread"
+        print(head + " " + menu)
+    }
+}
+
+/// `menu=AXMenu frame=… elements=N clickable=N read=Xms` for the adapter's `.popUpMenu`
+/// read of `pid`, or why there is no menu to count.
+@MainActor
+private func popUpMenuFields(pid: pid_t, reader: AXUIElementTreeReader) -> String {
+    do {
+        let tree = try reader.readTree(pid: pid, scope: .popUpMenu, strategy: .batchedPruned)
+        let clickable = TargetRanker().rank(tree.elements).count
+        return "menu=AXMenu frame=\(formatted(tree.elements.first?.frame)) "
+            + "elements=\(tree.elements.count) clickable=\(clickable) "
+            + "read=\(formatted(tree.readDuration.milliseconds))ms"
+    } catch let error as AccessibilityReadError {
+        guard case .attributeUnsupported = error else {
+            return "menu=failed: \(describe(error))"
         }
-        let clock = ContinuousClock()
-        let start = clock.now
-        let elements = MenuSubtree.snapshots(from: menu)
-        let clickable = TargetRanker().rank(elements).count
-        let read = (clock.now - start).milliseconds
-        print(
-            head + " menu=AXMenu parent=\(popup.menuParentRole ?? "-") "
-                + "owner=\(AXRaw.processIdentifier(of: menu).map(String.init) ?? "-") "
-                + "frame=\(formatted(elements.first?.frame)) elements=\(elements.count) "
-                + "clickable=\(clickable) read=\(formatted(read))ms",
-        )
+        return "menu=none"
+    } catch {
+        return "menu=failed: \(error)"
     }
 }
 

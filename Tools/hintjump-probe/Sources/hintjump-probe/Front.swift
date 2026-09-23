@@ -113,7 +113,7 @@ func printSnapshot(_ signals: FrontSignals, reader: AXUIElementTreeReader, headi
     print(heading)
     print("signature " + signals.signature)
     if let target = signals.target {
-        printFrontmost(signals, target: target)
+        printFrontmost(signals, target: target, reader: reader)
         printContainers(of: target.pid, reader: reader)
     } else {
         print("front none axFocusedApp=\(signals.axFocusedApplication.map(String.init) ?? "-")")
