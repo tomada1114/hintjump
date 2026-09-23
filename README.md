@@ -37,8 +37,8 @@ Privacy & Security › Accessibility), which it asks for at launch.
 "Whatever is on top" is, in this order: a panel another app has open with the keyboard
 focus — Control Center's (Wi-Fi, Sound, and the rest), Notification Center, Spotlight,
 or a launcher such as Raycast; an open context menu (or the submenu open on it); a
-sheet, such as a save panel or a save-changes alert; a popover inside the window; and
-otherwise the window itself. Two things fall back to the window instead: an open menu
+popover inside the window or its sheet (the innermost, when one opens from another); a
+sheet, such as a save panel or a save-changes alert; and otherwise the window itself. Two things fall back to the window instead: an open menu
 bar menu — the shortcut does not reach Hintjump while one is open, and its own arrow
 keys and type-ahead already work — and a floating panel such as TextEdit's Fonts
 panel, which does not have the keyboard focus. When a context menu or panel cannot be
