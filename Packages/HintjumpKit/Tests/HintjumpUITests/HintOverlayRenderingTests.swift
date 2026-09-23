@@ -49,6 +49,15 @@ struct HintOverlayRenderingTests {
             ),
         ),
         OverlayScene(
+            name: "filled-widest-pairs",
+            overlay: overlay(
+                .clickInWindow,
+                .filled,
+                hints: hints(["mw", "wm", "ww", "mw", "wm", "ww"], at: rowOrigins, typed: 0),
+                chip: nil,
+            ),
+        ),
+        OverlayScene(
             name: "outlined-with-chip",
             overlay: overlay(
                 .rightClickInWindow,
@@ -94,7 +103,6 @@ struct HintOverlayRenderingTests {
             return PlacedHint(
                 label: placed.label,
                 typedCount: typed,
-                isSingle: placed.isSingle,
                 center: placed.center,
                 size: placed.size,
             )
@@ -121,8 +129,8 @@ struct HintOverlayRenderingTests {
     /// `ImageRenderer` needs no window, no display, and no TCC grant, so this runs under
     /// `just test` and in CI. The overlay is drawn over a backdrop split into a light and a
     /// dark half: the overlay itself is transparent, and its tags sit over other apps' light
-    /// and dark content alike, so an image of the tags alone would hide the halo that cuts
-    /// them out of a dark background.
+    /// and dark content alike, so an image of the tags alone would hide how the outline
+    /// separates a tag from a light background and the fill from a dark one.
     @MainActor
     static func image(of scene: OverlayScene) -> CGImage? {
         let size = scene.overlay.canvas.size
@@ -151,6 +159,17 @@ struct HintOverlayRenderingTests {
         try ReferenceImages.check(rendered, named: scene.name)
     }
 
+    /// The widest pair the default hint characters make, uppercased, fits inside a pair
+    /// tag with room to spare, so no label is clipped.
+    @Test(arguments: ["MW", "WM", "WW", "MM"])
+    @MainActor
+    func `the widest pair fits the pair width`(label: String) throws {
+        let renderer = ImageRenderer(content: Text(label).font(Palette.labelFont).fixedSize())
+        renderer.scale = 1
+        let image = try #require(renderer.cgImage)
+        #expect(CGFloat(image.width) <= HintLayout.pairTagWidth - 2 * Palette.outlineWidth)
+    }
+
     /// The comparison is not vacuous: two different states render to different pixels.
     @Test
     @MainActor
@@ -177,7 +196,6 @@ struct HintOverlayRenderingTests {
         moved.hints[0] = PlacedHint(
             label: first.label,
             typedCount: first.typedCount,
-            isSingle: first.isSingle,
             center: CGPoint(x: first.center.x + 1, y: first.center.y),
             size: first.size,
         )

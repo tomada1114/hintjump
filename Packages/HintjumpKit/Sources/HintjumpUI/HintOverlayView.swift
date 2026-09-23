@@ -4,36 +4,51 @@ import SwiftUI
 /// The overlay's provisional palette and type, replaced by `docs/design/design-system.md`
 /// when #21 lands. Fixed regardless of system appearance: the tags sit over other apps'
 /// light and dark content alike (`docs/decisions.md` › "Design: signpost hints, one
-/// accent, system controls everywhere else"). Sizes come from ``HintLayout``, which Core
-/// placed the tags with.
-private enum Palette {
+/// accent, system controls everywhere else", amended by #113). Every label gets the same
+/// yellow tag with near-black uppercase text, whatever its length; the right-click entry
+/// point inverts it. Sizes come from ``HintLayout``, which Core placed the tags with.
+enum Palette {
     private static let channelMax: Double = 255
     private static let channelMask: UInt32 = 0xFF
     private static let redShift: UInt32 = 16
     private static let greenShift: UInt32 = 8
 
-    private static let tagRGB: UInt32 = 0x1C1C1E
-    private static let accentRGB: UInt32 = 0xE5470F
-    private static let haloOpacity = 0.6
+    private static let yellowRGB: UInt32 = 0xFFD60A
+    private static let inkRGB: UInt32 = 0x1C1C1E
     private static let labelFontSize: CGFloat = 12
     private static let chipFontSize: CGFloat = 11
 
-    /// The near-black tag fill, `#1C1C1E`.
-    static let tag = color(tagRGB)
-    /// The one accent, `#E5470F`, that marks a single-character hint.
-    static let accent = color(accentRGB)
-    static let text = Color.white
-    /// The light halo that cuts a tag out of a dark background.
-    static let halo = Color.white.opacity(haloOpacity)
+    /// The tag yellow, `#FFD60A`: the fill of a left-click tag, the text and outline of a
+    /// right-click one.
+    static let yellow = color(yellowRGB)
+    /// The near-black ink, `#1C1C1E`: the text and outline of a left-click tag, the fill
+    /// of a right-click one.
+    static let ink = color(inkRGB)
     /// How an already-typed character is dimmed.
     static let typedOpacity = 0.4
 
     static let cornerRadius: CGFloat = 4
-    static let haloWidth: CGFloat = 1
-    static let outlineWidth: CGFloat = 1.5
+    /// The outline drawn just inside every tag. On a light background it is what
+    /// separates a yellow tag; on a dark one the fill does.
+    static let outlineWidth: CGFloat = 1
+    /// Bold monospaced type, shown uppercased: capitals of one height read faster than
+    /// lowercase letters. Monospaced, because the proportional system bold puts `WW` wider
+    /// than ``HintjumpCore/HintLayout/pairTagWidth`` allows, while every pair here takes
+    /// the same width and fits with room to spare.
     static let labelFont = Font.system(size: labelFontSize, weight: .bold, design: .monospaced)
     static let chipFont = Font.system(size: chipFontSize, weight: .semibold)
     static let chipPadding: CGFloat = 8
+
+    /// The fill, the text, and the outline for `style`.
+    static func colors(for style: HintStyle) -> TagColors {
+        switch style {
+        case .filled:
+            TagColors(fill: yellow, text: ink, outline: ink)
+
+        case .outlined:
+            TagColors(fill: ink, text: yellow, outline: yellow)
+        }
+    }
 
     /// The sRGB color `0xRRGGBB` names.
     private static func color(_ rgb: UInt32) -> Color {
@@ -44,25 +59,24 @@ private enum Palette {
     }
 }
 
-/// A tag's shape and its halo: the near-black (or accent) rounded box with a 1 pt light
-/// ring drawn just outside it.
+/// The three colors one tag is painted with.
+struct TagColors {
+    let fill: Color
+    let text: Color
+    let outline: Color
+}
+
+/// A tag's shape: a rounded box in `fill` with a 1 pt `outline` just inside its edge.
 private struct TagBackground: View {
     let fill: Color
-    let outline: Color?
+    let outline: Color
 
     var body: some View {
         RoundedRectangle(cornerRadius: Palette.cornerRadius)
             .fill(fill)
             .overlay {
-                if let outline {
-                    RoundedRectangle(cornerRadius: Palette.cornerRadius)
-                        .strokeBorder(outline, lineWidth: Palette.outlineWidth)
-                }
-            }
-            .background {
-                RoundedRectangle(cornerRadius: Palette.cornerRadius + Palette.haloWidth)
-                    .fill(Palette.halo)
-                    .padding(-Palette.haloWidth)
+                RoundedRectangle(cornerRadius: Palette.cornerRadius)
+                    .strokeBorder(outline, lineWidth: Palette.outlineWidth)
             }
     }
 }
@@ -72,50 +86,40 @@ private struct HintTag: View {
     let hint: PlacedHint
     let style: HintStyle
 
-    private var fill: Color {
-        style == .filled && hint.isSingle ? Palette.accent : Palette.tag
-    }
-
-    private var outline: Color? {
-        guard style == .outlined else {
-            return nil
-        }
-        return hint.isSingle ? Palette.accent : Palette.text
-    }
-
-    private var textColor: Color {
-        style == .outlined && hint.isSingle ? Palette.accent : Palette.text
-    }
-
     var body: some View {
-        // Labels render as the lowercase letters the user types: no uppercasing.
+        let colors = Palette.colors(for: style)
+        // Labels are shown uppercased; typing is unchanged, since the session lowercases
+        // what is typed.
         HStack(spacing: 0) {
-            Text(hint.label.prefix(hint.typedCount))
-                .foregroundStyle(textColor.opacity(Palette.typedOpacity))
-            Text(hint.label.dropFirst(hint.typedCount))
-                .foregroundStyle(textColor)
+            Text(hint.label.prefix(hint.typedCount).uppercased())
+                .foregroundStyle(colors.text.opacity(Palette.typedOpacity))
+            Text(hint.label.dropFirst(hint.typedCount).uppercased())
+                .foregroundStyle(colors.text)
         }
         .font(Palette.labelFont)
         .lineLimit(1)
         .fixedSize()
         .frame(width: hint.size.width, height: hint.size.height)
-        .background(TagBackground(fill: fill, outline: outline))
+        .background(TagBackground(fill: colors.fill, outline: colors.outline))
     }
 }
 
-/// The right-click entry point's "Right click" chip.
+/// The right-click entry point's "Right click" chip, in the inverted right-click style.
 private struct ChipTag: View {
     let chip: PlacedChip
 
     var body: some View {
         Text(chip.text)
             .font(Palette.chipFont)
-            .foregroundStyle(Palette.text)
+            .foregroundStyle(Palette.colors(for: .outlined).text)
             .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, Palette.chipPadding)
             .frame(width: chip.size.width, height: chip.size.height)
-            .background(TagBackground(fill: Palette.tag, outline: nil))
+            .background(TagBackground(
+                fill: Palette.colors(for: .outlined).fill,
+                outline: Palette.colors(for: .outlined).outline,
+            ))
     }
 }
 

@@ -32,7 +32,6 @@ struct ActiveHints {
             PlacedHint(
                 label: hint.label,
                 typedCount: typedCount,
-                isSingle: hint.isSingle,
                 center: hint.center,
                 size: hint.size,
             )

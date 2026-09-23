@@ -157,6 +157,18 @@ file is their public record.
   standard Settings window; themes.
 - The measured values and the screen-by-screen spec live in `docs/design/`
   once ported (a tracked issue).
+- Amended (#113): every tag has one style, whatever its label's length: a yellow
+  fill (`#FFD60A`) with near-black (`#1C1C1E`) bold monospaced text and a 1 pt
+  near-black outline in place of the white halo. On a light background the outline
+  separates the tag; on a dark one the fill does, which answers the keycap
+  objection above. The right-click entry point inverts it — a near-black fill,
+  yellow text, a yellow outline — and so does its "Right click" chip. Labels are
+  shown uppercased (capitals of one height read faster than lowercase letters);
+  typing is unchanged, since the session lowercases what is typed. The red-orange
+  single-character accent is dropped: a label's length already says whether it is
+  a single, and in use on Claude Desktop and Chrome a mix of accented and
+  near-black tags read as noise rather than information. Tag sizes are unchanged;
+  the proportional system bold was rejected because `WW` is wider than a pair tag.
 
 ## 2026-09-22 Planning notes stay outside the repository
 
