@@ -77,10 +77,8 @@ struct HintLayoutTests {
         #expect(hint == PlacedHint(
             label: "ia",
             typedCount: 0,
-            isSingle: false,
             center: CGPoint(x: 100, y: 215),
             size: CGSize(width: 26, height: 18),
         ))
-        #expect(HintLayout.placedHint(label: "a", targetFrame: target, in: Self.canvas).isSingle)
     }
 }

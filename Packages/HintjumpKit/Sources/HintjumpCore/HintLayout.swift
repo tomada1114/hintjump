@@ -61,7 +61,6 @@ public enum HintLayout {
         return PlacedHint(
             label: label,
             typedCount: 0,
-            isSingle: label.count == 1,
             center: tagCenter(for: targetFrame, size: size, in: canvas),
             size: size,
         )

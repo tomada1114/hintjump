@@ -1,12 +1,13 @@
 import CoreGraphics
 
-/// How the tags look: the frontmost-window left click fills them, the right click
-/// outlines them (`docs/decisions.md` › "Design: signpost hints, one accent, system
-/// controls everywhere else").
+/// How the tags look: the left-click entry points fill them, the right click inverts
+/// them (`docs/decisions.md` › "Design: signpost hints, one accent, system controls
+/// everywhere else").
 public enum HintStyle: Equatable, Sendable {
-    /// Near-black tags, singles filled with the accent.
+    /// Yellow tags with near-black text and outline, the same for every label length.
     case filled
-    /// The same tags outlined, which is how the right-click entry point reads.
+    /// The same tags inverted — near-black fill, yellow text and outline — which is how
+    /// the right-click entry point reads.
     case outlined
 }
 
@@ -17,17 +18,14 @@ public struct PlacedHint: Equatable, Sendable {
     public let label: String
     /// How many leading characters of ``label`` are already typed — the view dims them.
     public let typedCount: Int
-    /// Whether the label is a single character, which the accent marks.
-    public let isSingle: Bool
     /// The tag's center, relative to the canvas's top-left corner.
     public let center: CGPoint
     /// The tag's fixed size (``HintLayout``).
     public let size: CGSize
 
-    public init(label: String, typedCount: Int, isSingle: Bool, center: CGPoint, size: CGSize) {
+    public init(label: String, typedCount: Int, center: CGPoint, size: CGSize) {
         self.label = label
         self.typedCount = typedCount
-        self.isSingle = isSingle
         self.center = center
         self.size = size
     }
