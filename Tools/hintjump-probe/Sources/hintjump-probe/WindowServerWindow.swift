@@ -10,6 +10,8 @@ import AppKit
 struct WindowServerWindow {
     /// `kCGNormalWindowLevel`: document windows. Everything listed is above it.
     static let normalLayer = Int(CGWindowLevelForKey(.normalWindow))
+    /// `kCGPopUpMenuWindowLevel`: open menus, context menus, and some popovers.
+    static let popUpMenuLayer = Int(CGWindowLevelForKey(.popUpMenuWindow))
 
     let layer: Int
     let pid: pid_t
