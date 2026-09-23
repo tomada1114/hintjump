@@ -114,6 +114,22 @@ struct SettingsRenderingTests {
         return bitmap.cgImage
     }
 
+    /// The widths of the window's split view columns, as AppKit laid out
+    /// ``HintjumpUI/SettingsView`` — the real split view, which the scenes above stand in
+    /// for because its sidebar list draws nothing without a window.
+    static func columnWidths(of view: some View) -> [CGFloat] {
+        let host = NSHostingView(rootView: view)
+        host.frame = CGRect(origin: .zero, size: size)
+        host.layoutSubtreeIfNeeded()
+        func splitView(in view: NSView) -> NSSplitView? {
+            if let split = view as? NSSplitView {
+                return split
+            }
+            return view.subviews.lazy.compactMap(splitView(in:)).first
+        }
+        return splitView(in: host)?.arrangedSubviews.map(\.frame.width) ?? []
+    }
+
     @Test(arguments: SettingsScene.all)
     func `renders exactly as its reference image`(scene: SettingsScene) throws {
         let rendered = try #require(
@@ -121,6 +137,20 @@ struct SettingsRenderingTests {
             "NSHostingView produced no image for \(scene.name)",
         )
         try ReferenceImages.check(rendered, named: scene.name)
+    }
+
+    /// The sidebar is the full 200 pt the spec gives it, so no pane's name is cut short.
+    /// It once came out about 140 pt, because a modifier outside the column width kept
+    /// the width from reaching the split view.
+    @Test
+    func `the sidebar column is its full width`() throws {
+        let model = SettingsSceneModel.model(
+            for: SettingsScene(pane: .gettingStarted, appearance: .light, needsAttention: false),
+        )
+        let widths = Self.columnWidths(of: SettingsView(model: model))
+        let sidebar = try #require(widths.filter { $0 < Self.size.width }.min())
+
+        #expect(sidebar >= SettingsLayout.sidebarWidth)
     }
 
     /// The comparison is not vacuous: the attention tile draws differently from a normal

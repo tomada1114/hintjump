@@ -30,8 +30,17 @@ public struct SettingsView: View {
                         .tag(pane)
                 }
             }
-            .navigationSplitViewColumnWidth(SettingsLayout.sidebarWidth)
             .toolbar(removing: .sidebarToggle)
+            // Outermost, and with minimum, ideal, and maximum all at the one width. With
+            // `.toolbar(removing:)` outside it, the width never reached the split view:
+            // the sidebar came out about 140 pt wide and cut "Getting Started" short
+            // (`SettingsRenderingTests` holds the width). Equal bounds also keep the user
+            // from dragging it narrower or wider.
+            .navigationSplitViewColumnWidth(
+                min: SettingsLayout.sidebarWidth,
+                ideal: SettingsLayout.sidebarWidth,
+                max: SettingsLayout.sidebarWidth,
+            )
         } detail: {
             SettingsDetail(model: model)
         }
